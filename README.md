@@ -83,7 +83,7 @@ docker compose exec api alembic upgrade head
 docker compose run --rm api sh -c "pip install -r requirements-dev.txt && pytest"
 ```
 
-Las pruebas de núcleo operan contra PostgreSQL del servicio `postgres`; así validan UUID, restricciones y llaves foráneas del esquema real.
+Las pruebas usan la base separada `yarvis_test` dentro del mismo servicio PostgreSQL. Pytest la crea y trunca entre pruebas; nunca usa ni borra el volumen o los datos de `yarvis`.
 
 ### Datos de demostración opcionales
 
@@ -122,3 +122,21 @@ curl http://localhost:8000/cases/{case_id}/events
 ```
 
 El comando de pruebas indicado arriba cubre también ingreso, evidencia y eventos sobre PostgreSQL.
+
+### Catálogos y checklists configurables
+
+Aplicar la migración y cargar los catálogos idempotentes:
+
+```bash
+docker compose exec api alembic upgrade head
+docker compose exec api python -m yarvis_api.catalogs
+```
+
+Crear un Caso con `case_type_id` obtenido de `GET /case-types`, crear su checklist y consultar su avance:
+
+```bash
+curl -X POST http://localhost:8000/cases/{case_id}/checklists
+curl http://localhost:8000/case-checklists/{case_checklist_id}
+```
+
+La clasificación manual se crea en `POST /intake/{intake_id}/classifications` y se confirma en `POST /intake-classifications/{classification_id}/confirm`. Un requisito se recibe con `POST /case-checklists/{id}/requirements/{requirement_id}/fulfill` y se valida en `POST /requirement-fulfillments/{id}/validate`.

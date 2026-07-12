@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from yarvis_api.database import get_db
 from yarvis_api.models.case import Case
+from yarvis_api.models.checklist import CaseType
 from yarvis_api.models.domain_event import record_event
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.person import Person
@@ -20,6 +21,8 @@ def create_case(payload: CaseCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=422, detail="owner_organization_id does not exist")
     if payload.primary_person_id and db.get(Person, payload.primary_person_id) is None:
         raise HTTPException(status_code=422, detail="primary_person_id does not exist")
+    if payload.case_type_id and db.get(CaseType, payload.case_type_id) is None:
+        raise HTTPException(status_code=422, detail="case_type_id does not exist")
     case = Case(**payload.model_dump(mode="json"))
     db.add(case)
     db.flush()

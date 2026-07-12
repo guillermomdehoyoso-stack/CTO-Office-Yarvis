@@ -33,6 +33,7 @@ class CaseCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = None
     case_type: CaseType
+    case_type_id: UUID | None = None
     status: CaseStatus = CaseStatus.open
     stage: CaseStage = CaseStage.intake
     priority: CasePriority = CasePriority.normal
@@ -58,6 +59,7 @@ class CaseRead(BaseModel):
     title: str
     description: str | None
     case_type: CaseType
+    case_type_id: UUID | None
     status: CaseStatus
     stage: CaseStage
     priority: CasePriority

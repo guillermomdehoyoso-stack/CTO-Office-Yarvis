@@ -19,6 +19,7 @@ class Case(TimestampedUUIDMixin, Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     case_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    case_type_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("case_types.id"), nullable=True, index=True)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="open")
     stage: Mapped[str] = mapped_column(String(50), nullable=False, default="intake")
     priority: Mapped[str] = mapped_column(String(50), nullable=False, default="normal")
