@@ -1,0 +1,319 @@
+# CTO Office / Yarvis — Diseño técnico inicial v0.1
+
+## 1. Análisis del repositorio actual
+
+El repositorio presenta una base documental inicial, pero aún no contiene una implementación ejecutable de la plataforma ni una consolidación completa del modelo de Yarvis.
+
+### Hallazgos
+- Existe una estructura de documentación estratégica bien organizada en [docs](docs), con visión, arquitectura, ingeniería, producto, investigación y plantillas.
+- El archivo [README.md](README.md) describe el propósito de la plataforma como base de conocimiento estratégico, pero no define todavía una aplicación ni un entorno operativo.
+- No hay backend, frontend, modelo de datos, migraciones, contenedores ni pruebas automatizadas implementados.
+- La documentación existente ya establece principios coherentes con el handoff: dominio primero, monolito modular, auditoría, trazabilidad y evolución incremental.
+
+### Implicación para el MVP
+El punto de partida no es construir una arquitectura compleja, sino crear un esqueleto modular que permita demostrar el flujo de ingreso y avance de Casos en una sola iteración funcional, bajo la misión de amplificar la capacidad del fundador.
+
+---
+
+## 2. Arquitectura propuesta para el MVP
+
+### Principios de diseño
+- Monolito modular, no microservicios.
+- Dominio claro: organizaciones, actores, relaciones, casos, documentos, checklist, eventos y auditoría.
+- Separación entre dominio, infraestructura e interfaz.
+- La inteligencia artificial se incorpora como adaptador desacoplado y no bloquea el flujo base.
+- El caso es la entidad raíz de la operación.
+
+### Diagrama textual de componentes
+
+Cliente web / usuario
+  → Frontend mínimo
+  → API REST (FastAPI)
+    → Servicios de dominio
+      → Modelo de casos y workflow
+      → Módulos de documentos y checklist
+      → Módulos de eventos y auditoría
+    → Persistencia (PostgreSQL)
+    → Almacenamiento documental (MinIO o abstracción local)
+    → Adaptador de IA (reglas + sugerencias confirmables)
+
+### Componente recomendado
+- Backend: Python + FastAPI + SQLAlchemy 2 + Alembic + Pydantic.
+- Base de datos: PostgreSQL.
+- Almacenamiento documental: MinIO como primera opción; se puede abstraer con una interfaz para permitir reemplazo posterior.
+- Frontend: interfaz mínima administrativa, preferentemente Next.js o una simple UI interna si el objetivo es avanzar rápido.
+- Contenedores: Docker Compose con api, postgres, minio y frontend opcional.
+
+### Decisiones arquitectónicas clave
+1. Se implementará un monolito modular con módulos internos bien delimitados.
+2. El flujo de negocio crítico vivirá en el dominio y no dependerá de n8n ni de proveedores externos.
+3. El almacenamiento documental se abstraerá para evitar acoplamiento a rutas locales.
+4. La IA será un proveedor desacoplado con resultado, confianza, evidencia y necesidad de confirmación.
+5. Cada transición de estado generará un evento auditable.
+6. El caso será el punto de entrada para documentos, checklist, acciones y bitácora.
+
+---
+
+## 3. Modelo de datos inicial
+
+El modelo debe ser simple, explícito y suficiente para cubrir el flujo de recepción y avance de casos.
+
+### Entidades principales
+
+#### Organization
+- id
+- name
+- kind
+- status
+- metadata
+
+#### Actor
+- id
+- full_name
+- email
+- phone
+- preferred_channel
+- organization_id
+- status
+- notes
+
+#### Relationship
+- id
+- source_actor_id
+- target_actor_id
+- relationship_type
+- organization_id
+- notes
+
+#### CaseType
+- id
+- code
+- name
+- description
+- workflow_key
+- default_priority
+
+#### Case
+- id
+- readable_id
+- organization_id
+- case_type_id
+- title
+- description
+- primary_actor_id
+- related_organization_id
+- product
+- current_stage
+- status
+- priority
+- assignee_id
+- next_assignee_id
+- next_action
+- blocker
+- due_date
+- created_at
+- updated_at
+- metadata
+
+#### Expediente
+- id
+- case_id
+- title
+- status
+- created_at
+
+#### Document
+- id
+- case_id
+- expediente_id
+- original_name
+- normalized_name
+- document_type
+- storage_key
+- mime_type
+- size_bytes
+- checksum
+- source
+- sender_actor_id
+- received_at
+- validity_date
+- validation_status
+- version
+- extracted_text
+- classification
+- confidence
+- created_at
+
+#### ChecklistRequirement
+- id
+- case_type_id
+- code
+- label
+- required
+- sort_order
+- applies_when
+- due_days
+
+#### RequirementCompliance
+- id
+- case_id
+- requirement_id
+- document_id
+- status
+- notes
+- updated_at
+
+#### WorkflowState
+- id
+- case_type_id
+- key
+- name
+- order_index
+
+#### WorkflowTransition
+- id
+- case_type_id
+- from_state_key
+- to_state_key
+- requires_all_required
+- auto_generate_action
+
+#### Event
+- id
+- case_id
+- event_type
+- payload
+- created_at
+- correlation_id
+
+#### Action
+- id
+- case_id
+- actor_type
+- assigned_to
+- title
+- status
+- due_date
+- created_at
+
+#### AuditLog
+- id
+- entity_type
+- entity_id
+- user_or_agent
+- action
+- old_state
+- new_state
+- occurred_at
+- source
+- correlation_id
+
+### Relaciones mínimas
+- Organization tiene muchos Actors.
+- Actor participa en muchas Relationships.
+- Case pertenece a una Organization y a un CaseType.
+- Case tiene uno o varios Documents y uno o varios RequirementCompliance.
+- Case genera muchos Events y Actions.
+- AuditLog registra cambios de entidades clave.
+
+### Configuración inicial recomendada
+- CaseType inicial 1: Expediente CFE residencial.
+- CaseType inicial 2: Alta NetPay.
+- Estos dos tipos deben cargarse como datos base o seed data para poder demostrar el flujo sin codificar casos individuales.
+
+---
+
+## 4. Estructura de carpetas propuesta
+
+La estructura debe ser simple y suficiente para un MVP, sin introducir complejidad prematura.
+
+```text
+cto-office/
+├── README.md
+├── docker-compose.yml
+├── .env.example
+├── apps/
+│   ├── api/
+│   │   ├── src/
+│   │   │   ├── main.py
+│   │   │   ├── core/
+│   │   │   ├── modules/
+│   │   │   │   ├── identity/
+│   │   │   │   ├── organizations/
+│   │   │   │   ├── actors/
+│   │   │   │   ├── relationships/
+│   │   │   │   ├── cases/
+│   │   │   │   ├── case_types/
+│   │   │   │   ├── workflows/
+│   │   │   │   ├── documents/
+│   │   │   │   ├── checklists/
+│   │   │   │   ├── actions/
+│   │   │   │   ├── events/
+│   │   │   │   ├── audit/
+│   │   │   │   ├── storage/
+│   │   │   │   ├── ai/
+│   │   │   │   └── integrations/
+│   │   │   └── schemas/
+│   │   └── tests/
+│   └── web/
+├── migrations/
+├── docs/
+│   ├── architecture/
+│   ├── adr/
+│   └── api/
+├── tests/
+├── scripts/
+└── storage/
+```
+
+### Observación importante
+La organización por módulos internos debe mantenerse clara para evitar dependencias circulares. El dominio debe ser independiente de la interfaz, del almacenamiento y de los proveedores de IA.
+
+---
+
+## 5. Plan de implementación en 10 pasos
+
+1. Crear la estructura base del repositorio y el primer Docker Compose con api, postgres y minio.
+2. Definir las decisiones de arquitectura en documentos ADR y dejar el alcance del MVP explícito.
+3. Implementar el modelo de datos inicial y las migraciones de base de datos.
+4. Crear los módulos base de identidad, organizaciones, actores y relaciones.
+5. Implementar casos, tipos de caso y la máquina de estados simple configurada por tipo.
+6. Implementar documentos, almacenamiento y asociación al expediente/caso.
+7. Implementar checklist, cumplimiento de requisitos, eventos y generación de siguiente acción.
+8. Implementar la API mínima para crear organizaciones, actores, casos, documentos y consultar la bitácora.
+9. Crear una interfaz mínima para subir documentos, confirmar sugerencias y ver el detalle del caso.
+10. Añadir pruebas automatizadas, datos de demostración y un README ejecutable.
+
+---
+
+## 6. Riesgos y contradicciones detectadas
+
+### Riesgo 1: equilibrio entre automatización y confirmación
+El handoff exige que Robin proponga antes de ejecutar acciones sensibles, pero también quiere inferir actor, caso y tipo documental automáticamente. La solución correcta es una propuesta con confianza y necesidad de confirmación, no una ejecución automática.
+
+### Riesgo 2: fuente de verdad vs almacenamiento documental
+Se indica que la carpeta no es la fuente de verdad, pero el flujo de documentos requiere almacenamiento físico. La solución es mantener la base de datos como fuente de verdad y usar el almacenamiento como repositorio de blobs con una clave referenciada por el registro documental.
+
+### Riesgo 3: alcance inicial vs ambición del producto
+El documento define un ecosistema amplio, pero el primer MVP solo debe demostrar un flujo usable de extremo a extremo. La implementación debe evitar abrir módulos que no sean indispensables para ese flujo.
+
+### Riesgo 4: consistencia del workflow
+La máquina de estados debe ser simple, pero suficiente para garantizar que no se avance sin requisitos obligatorios, que se registren eventos y que la siguiente acción quede explícita.
+
+### Riesgo 5: despliegue y persistencia
+El requisito de reiniciar contenedores sin perder datos exige volúmenes persistentes y migraciones reproducibles.
+
+---
+
+## Recomendación inicial
+
+El mejor camino para el primer entregable es construir un MVP pequeño pero completo que permita:
+- crear organización y actor;
+- crear un caso de tipo Expediente CFE o Alta NetPay;
+- subir un archivo;
+- clasificarlo y asociarlo;
+- actualizar el checklist;
+- cambiar de etapa y generar una siguiente acción;
+- consultar la bitácora.
+
+Este flujo es suficientemente ambicioso para demostrar valor y lo bastante acotado para ser implementable de forma ordenada.

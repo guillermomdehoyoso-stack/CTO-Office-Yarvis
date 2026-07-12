@@ -1,18 +1,19 @@
-# EF CTO Office
+# CTO Office / Yarvis
 
-Base de conocimiento estrat間ica para arquitectura, ingenier韆, producto, investigaci髇 y toma de decisiones tecnol骻icas de Energ韆 Fot髇ica.
+Base de conocimiento y plataforma inicial para el desarrollo de CTO Office y Yarvis, con enfoque en la amplificaci贸n del fundador, la gesti贸n operativa por Casos y el Foundation Sprint.
 
 ## Estructura
 
-- docs/vision: visi髇 tecnol骻ica y North Star.
-- docs/engineering: forma oficial de construir software.
-- docs/architecture: patrones, context maps y evoluci髇 de dominios.
-- docs/research: radar tecnol骻ico e ideas.
-- docs/product: visi髇 de producto y roadmap.
+- docs/vision: manifiesto, sistema operativo y visi贸n de largo plazo.
+- docs/business: business blueprint y modelo de negocio.
+- docs/architecture: blueprint t茅cnico, modelo de dominio y arquitectura del MVP.
+- docs/product: scope, backlog, sprint y criterios de aceptaci贸n.
+- docs/decisions: decisiones arquitect贸nicas registradas.
+- docs/build-log: historial de construcci贸n.
+- docs/engineering: est谩ndares y pr谩cticas de ingenier铆a.
 - docs/templates: plantillas reutilizables.
-- docs/standards: est醤dares internos.
-- docs/adr: decisiones arquitect髇icas reutilizables.
+- docs/standards: est谩ndares de documentaci贸n.
 
 ## Principio central
 
-Modelar primero el dominio, despu閟 la arquitectura y finalmente el c骴igo.
+Modelar primero el dominio, despu茅s la arquitectura y finalmente el c贸digo.
