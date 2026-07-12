@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from yarvis_api.database import get_db
 from yarvis_api.models.case import Case
+from yarvis_api.models.domain_event import record_event
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.person import Person
 from yarvis_api.schemas.case import CaseCreate, CaseRead
@@ -21,6 +22,16 @@ def create_case(payload: CaseCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=422, detail="primary_person_id does not exist")
     case = Case(**payload.model_dump(mode="json"))
     db.add(case)
+    db.flush()
+    record_event(
+        db,
+        event_type="case.created",
+        aggregate_type="case",
+        aggregate_id=case.id,
+        organization_id=case.owner_organization_id,
+        case_id=case.id,
+        payload={"case_number": case.case_number},
+    )
     db.commit()
     db.refresh(case)
     return case

@@ -104,3 +104,21 @@ docker compose exec api alembic upgrade head
 ```
 
 El volumen `pgdata` se conserva. Se puede comprobar la persistencia con `GET /organizations`, `GET /people` o `GET /cases`.
+
+### Ingreso manual, evidencia y bitácora
+
+Tras aplicar migraciones, se puede registrar texto recibido y asociarlo a un Caso:
+
+```bash
+curl -X POST http://localhost:8000/intake -H "Content-Type: application/json" -d '{"source_type":"manual_text","content_type":"text/plain","text_content":"Cliente solicitó cambio de servicio"}'
+curl -X POST http://localhost:8000/intake/{intake_id}/link-case/{case_id}
+```
+
+Registrar evidencia sin almacenar archivos binarios y consultar la bitácora inmutable:
+
+```bash
+curl -X POST http://localhost:8000/cases/{case_id}/evidence -H "Content-Type: application/json" -d '{"evidence_type":"photo","title":"Fotografías de preparación"}'
+curl http://localhost:8000/cases/{case_id}/events
+```
+
+El comando de pruebas indicado arriba cubre también ingreso, evidencia y eventos sobre PostgreSQL.
