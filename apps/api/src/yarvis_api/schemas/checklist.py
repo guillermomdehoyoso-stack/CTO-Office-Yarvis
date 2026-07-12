@@ -58,6 +58,12 @@ class FulfillmentInput(BaseModel):
 class NotesInput(BaseModel):
     notes: str = Field(min_length=1)
 
+class ReviewInput(BaseModel):
+    reviewed_by: str | None = None
+    document_date: datetime | None = None
+    valid_from: datetime | None = None
+    rejection_reason: str | None = None
+
 
 class FulfillmentRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -71,6 +77,13 @@ class FulfillmentRead(BaseModel):
     validated_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    document_date: datetime | None
+    valid_from: datetime | None
+    valid_until: datetime | None
+    reviewed_by: str | None
+    reviewed_at: datetime | None
+    rejection_reason: str | None
+    expiration_evaluated_at: datetime | None
 
 
 class RequirementRead(BaseModel):

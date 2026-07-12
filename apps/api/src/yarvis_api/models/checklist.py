@@ -70,6 +70,13 @@ class RequirementFulfillment(TimestampedUUIDMixin, Base):
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
     validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    document_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    valid_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reviewed_by: Mapped[str | None] = mapped_column(String(255))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
+    expiration_evaluated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class IntakeClassification(TimestampedUUIDMixin, Base):

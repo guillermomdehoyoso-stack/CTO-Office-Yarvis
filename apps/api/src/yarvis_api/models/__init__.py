@@ -5,6 +5,7 @@ from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.evidence import Evidence
 from yarvis_api.models.intake import IntakeItem
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.operational import NextActionSuggestion, OperationalAlert
 from yarvis_api.models.person import Person
 
 __all__ = ["Base", "Case", "CaseChecklist", "CaseType", "ChecklistRequirement", "ChecklistTemplate", "DocumentType", "DomainEvent", "Evidence", "IntakeClassification", "IntakeItem", "Organization", "Person", "RequirementFulfillment"]

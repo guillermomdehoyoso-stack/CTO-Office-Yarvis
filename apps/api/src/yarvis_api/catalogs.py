@@ -43,6 +43,9 @@ def load_catalogs(db: Session) -> None:
             db.add(item)
             db.flush()
         document_types[code] = item
+    # Operational defaults, not universal legal validity rules.
+    for code, validity_days in {"tax_certificate": 30, "bank_statement": 90, "address_proof": 90, "cfe_bill": 90}.items():
+        document_types[code].validity_days = validity_days
     for case_code, requirements in TEMPLATES.items():
         template = db.scalar(select(ChecklistTemplate).where(ChecklistTemplate.case_type_id == case_types[case_code].id, ChecklistTemplate.version == 1))
         if template is None:

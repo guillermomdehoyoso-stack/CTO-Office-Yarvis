@@ -140,3 +140,28 @@ curl http://localhost:8000/case-checklists/{case_checklist_id}
 ```
 
 La clasificación manual se crea en `POST /intake/{intake_id}/classifications` y se confirma en `POST /intake-classifications/{classification_id}/confirm`. Un requisito se recibe con `POST /case-checklists/{id}/requirements/{requirement_id}/fulfill` y se valida en `POST /requirement-fulfillments/{id}/validate`.
+
+### Revisión, vigencia y alertas
+
+Revisar y validar un cumplimiento usando su fecha documental, o rechazarlo con un motivo:
+
+```bash
+curl -X POST http://localhost:8000/requirement-fulfillments/{id}/review -H "Content-Type: application/json" -d '{"confirmed_by":"operador"}'
+curl -X POST http://localhost:8000/requirement-fulfillments/{id}/validate -H "Content-Type: application/json" -d '{"document_date":"2026-07-12T00:00:00Z","reviewed_by":"operador"}'
+curl -X POST http://localhost:8000/requirement-fulfillments/{id}/reject -H "Content-Type: application/json" -d '{"rejection_reason":"documento ilegible"}'
+```
+
+Evaluar y gestionar el estado operativo:
+
+```bash
+curl -X POST http://localhost:8000/cases/{case_id}/evaluate-operational-state
+curl http://localhost:8000/cases/{case_id}/alerts
+curl -X POST http://localhost:8000/alerts/{alert_id}/acknowledge
+curl -X POST http://localhost:8000/alerts/{alert_id}/resolve
+curl http://localhost:8000/cases/{case_id}/next-action-suggestions
+curl -X POST http://localhost:8000/next-action-suggestions/{id}/accept
+```
+
+Las vigencias de 30/90 días son reglas operativas configurables, no afirmaciones legales universales. Las pruebas siguen usando exclusivamente `yarvis_test`.
+
+Al validar un cumplimiento, `valid_until` se calcula una sola vez con la configuración vigente del `DocumentType`. Cambios posteriores del catálogo no reescriben cumplimientos ya validados; una recalculación futura requerirá una acción explícita y auditable.
