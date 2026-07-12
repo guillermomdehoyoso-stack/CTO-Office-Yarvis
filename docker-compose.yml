@@ -1,0 +1,33 @@
+services:
+  api:
+    image: python:3.12-slim
+    working_dir: /app
+    volumes:
+      - ./apps/api:/app
+    command: sh -c "pip install -r requirements.txt && uvicorn yarvis_api.main:app --app-dir src --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-yarvis}:${POSTGRES_PASSWORD:-yarvis}@postgres:5432/${POSTGRES_DB:-yarvis}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-yarvis}
+      POSTGRES_USER: ${POSTGRES_USER:-yarvis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-yarvis}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

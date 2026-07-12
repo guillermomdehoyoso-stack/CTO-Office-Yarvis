@@ -1,0 +1,25 @@
+from fastapi import FastAPI, HTTPException, status
+
+from yarvis_api.config import get_settings
+from yarvis_api.database import check_database_connection
+
+settings = get_settings()
+
+app = FastAPI(title=settings.app_name, version=settings.app_version)
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    try:
+        check_database_connection(settings.database_url)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "status": "degraded",
+                "service": "yarvis-api",
+                "database": "unavailable",
+            },
+        ) from exc
+
+    return {"status": "ok", "service": "yarvis-api", "database": "ok"}
