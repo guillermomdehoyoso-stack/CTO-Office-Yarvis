@@ -2,10 +2,15 @@ from fastapi import FastAPI, HTTPException, status
 
 from yarvis_api.config import get_settings
 from yarvis_api.database import check_database_connection
+from yarvis_api.api.routes import cases, organizations, people
 
 settings = get_settings()
 
 app = FastAPI(title=settings.app_name, version=settings.app_version)
+
+app.include_router(organizations.router)
+app.include_router(people.router)
+app.include_router(cases.router)
 
 
 @app.get("/health")

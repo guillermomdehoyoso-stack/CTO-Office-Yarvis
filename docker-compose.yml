@@ -9,6 +9,7 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-yarvis}:${POSTGRES_PASSWORD:-yarvis}@postgres:5432/${POSTGRES_DB:-yarvis}
+      PYTHONPATH: /app/src
     depends_on:
       postgres:
         condition: service_healthy

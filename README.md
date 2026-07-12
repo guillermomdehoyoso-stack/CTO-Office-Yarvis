@@ -69,8 +69,38 @@ Respuesta esperada:
 }
 ```
 
+### Migraciones
+
+La API no crea tablas automáticamente. Con los servicios arriba, aplicar el esquema versionado:
+
+```bash
+docker compose exec api alembic upgrade head
+```
+
 ### Pruebas
 
 ```bash
 docker compose run --rm api sh -c "pip install -r requirements-dev.txt && pytest"
 ```
+
+Las pruebas de núcleo operan contra PostgreSQL del servicio `postgres`; así validan UUID, restricciones y llaves foráneas del esquema real.
+
+### Datos de demostración opcionales
+
+Después de aplicar migraciones, crear Energía Fotónica, Juan Manuel y su Caso demostrativo (el comando es idempotente):
+
+```bash
+docker compose exec api python -m yarvis_api.seed
+```
+
+### Persistencia y detención
+
+Para detener los servicios sin eliminar los datos de PostgreSQL:
+
+```bash
+docker compose down
+docker compose up -d
+docker compose exec api alembic upgrade head
+```
+
+El volumen `pgdata` se conserva. Se puede comprobar la persistencia con `GET /organizations`, `GET /people` o `GET /cases`.
