@@ -30,5 +30,14 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./apps/web:/app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "5173:5173"
+
 volumes:
   pgdata:

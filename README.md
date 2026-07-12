@@ -1,113 +1,162 @@
 # CTO Office / Yarvis
 
-Base de conocimiento y plataforma inicial para el desarrollo de CTO Office y Yarvis, con enfoque en la amplificación del fundador, la gestión operativa por Casos y el Foundation Sprint.
+## Visión general de Yarvis
 
-## Estructura
+Yarvis es la capa operativa de CTO Office para convertir el trabajo del fundador en un sistema de ejecución auditable: capturar intakes, organizar casos, revisar documentos, evaluar cumplimiento, generar alertas y coordinar conversaciones con contexto verificable. El producto combina una API FastAPI, PostgreSQL, migraciones Alembic y un frontend React/Vite para ofrecer una experiencia operativa mínima pero reproducible.
 
-- docs/vision: manifiesto, sistema operativo y visión de largo plazo.
-- docs/business: business blueprint y modelo de negocio.
-- docs/architecture: blueprint técnico, modelo de dominio y arquitectura del MVP.
-- docs/product: scope, backlog, sprint y criterios de aceptación.
-- docs/decisions: decisiones arquitectónicas registradas.
-- docs/build-log: historial de construcción.
-- docs/engineering: estándares y prácticas de ingeniería.
-- docs/templates: plantillas reutilizables.
-- docs/standards: estándares de documentación.
+## Estructura del repositorio
 
-## Principio central
+- docs/: visión, negocio, arquitectura, producto, decisiones, engineering y estándares.
+- apps/api/: API FastAPI, modelos SQLAlchemy, rutas, migraciones Alembic y pruebas backend.
+- apps/web/: frontend React + Vite + React Router + TanStack Query.
+- docker-compose.yml: servicios api, postgres y web.
+- README.md: guía de ejecución, arquitectura y operaciones.
 
-Modelar primero el dominio, después la arquitectura y finalmente el código.
+## Principios arquitectónicos
 
-## Foundation Sprint - Bloque 1
+- Modelar primero el dominio y luego la implementación.
+- Preferir un monolito modular sobre una arquitectura distribuida prematura.
+- Mantener PostgreSQL como fuente de verdad para casos, evidencia, alertas y eventos.
+- Requerir confirmación humana para acciones sensibles y para contextualizar intakes.
+- Mantener el almacenamiento documental fuera del alcance del bloque actual; los adjuntos se registran como metadatos, no como binarios.
 
-Primer incremento tecnico ejecutable:
+## Resumen de los Bloques 1–6
 
-- API FastAPI;
-- endpoint `GET /health`;
-- comprobacion de conexion con PostgreSQL;
-- configuracion por variables de entorno;
-- Docker Compose para API y PostgreSQL;
-- prueba automatizada del endpoint de salud.
+- Bloque 1: base técnica inicial, API FastAPI, health check, PostgreSQL y Docker Compose.
+- Bloque 2: intake manual, evidencia, eventos de dominio y bitácora operativa.
+- Bloque 3: catálogos, clasificación de intakes y checklists configurables por caso.
+- Bloque 4: revisión de cumplimiento, vigencia de documentos, alertas operativas y siguientes acciones.
+- Bloque 5: base operativa para casos, organizaciones, personas y trazabilidad.
+- Bloque 6: Mission Control, Cases, Case Detail, Yarvis Conversation, Organizations, People, Conversational Intake con confirmación de contexto y validación frontend/backend.
 
-MinIO queda deliberadamente fuera del Bloque 1. El almacenamiento documental pertenece a un incremento posterior; este bloque valida solamente API, salud, configuracion y PostgreSQL.
+## Ejecutar el entorno local
 
-### Requisitos
+Requisitos:
 
 - Docker
 - Docker Compose
 
-### Configuracion
-
-Copiar `.env.example` a `.env` si se desea ajustar la configuracion local. Docker Compose tambien funciona con los valores por defecto definidos en `docker-compose.yml`.
-
-Variables principales:
-
-- `POSTGRES_DB`
-- `POSTGRES_USER`
-- `POSTGRES_PASSWORD`
-- `DATABASE_URL`
-
-### Ejecutar
-
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
-Verificar salud:
+Servicios disponibles:
 
-```bash
-curl http://localhost:8000/health
-```
+- Frontend: http://localhost:5173
+- API: http://localhost:8000/docs
+- PostgreSQL: localhost:5432
 
-Respuesta esperada:
-
-```json
-{
-  "status": "ok",
-  "service": "yarvis-api",
-  "database": "ok"
-}
-```
-
-### Migraciones
-
-La API no crea tablas automáticamente. Con los servicios arriba, aplicar el esquema versionado:
-
-```bash
-docker compose exec api alembic upgrade head
-```
-
-### Pruebas
-
-```bash
-docker compose run --rm api sh -c "pip install -r requirements-dev.txt && pytest"
-```
-
-Las pruebas usan la base separada `yarvis_test` dentro del mismo servicio PostgreSQL. Pytest la crea y trunca entre pruebas; nunca usa ni borra el volumen o los datos de `yarvis`.
-
-### Datos de demostración opcionales
-
-Después de aplicar migraciones, crear Energía Fotónica, Juan Manuel y su Caso demostrativo (el comando es idempotente):
-
-```bash
-docker compose exec api python -m yarvis_api.seed
-```
-
-### Persistencia y detención
-
-Para detener los servicios sin eliminar los datos de PostgreSQL:
+Para detener los servicios sin borrar los datos de PostgreSQL:
 
 ```bash
 docker compose down
 docker compose up -d
+```
+
+El volumen `pgdata` se conserva y las migraciones siguen aplicándose sobre el mismo estado.
+
+## Migraciones Alembic
+
+La API no crea tablas automáticamente. Para aplicar el esquema versionado:
+
+```bash
 docker compose exec api alembic upgrade head
 ```
 
-El volumen `pgdata` se conserva. Se puede comprobar la persistencia con `GET /organizations`, `GET /people` o `GET /cases`.
+La migración activa de conversaciones está en:
 
-### Ingreso manual, evidencia y bitácora
+- apps/api/migrations/versions/20260712_05_conversations.py
 
-Tras aplicar migraciones, se puede registrar texto recibido y asociarlo a un Caso:
+Para revisar el estado actual del head:
+
+```bash
+docker compose exec api alembic current
+```
+
+## Catálogos
+
+Los catálogos se cargan de forma idempotente con:
+
+```bash
+docker compose exec api python -m yarvis_api.catalogs
+```
+
+Esto inicializa tipos de caso, tipos de documento y reglas base para los checklists.
+
+## Casos, Checklists, Evidencia, Alertas y Mission Control
+
+- Crear un caso mediante `POST /cases`.
+- Crear una checklist para un caso con `POST /cases/{case_id}/checklists`.
+- Registrar cumplimiento con `POST /case-checklists/{id}/requirements/{requirement_id}/fulfill`.
+- Validar o rechazar el cumplimiento con los endpoints de `requirement-fulfillments`.
+- Registrar evidencia en `POST /cases/{case_id}/evidence`.
+- Revisar la bitácora inmutable en `GET /cases/{case_id}/events`.
+- Evaluar el estado operativo con `POST /cases/{case_id}/evaluate-operational-state`.
+- Consultar resumen y atención en `GET /mission-control/summary` y `GET /mission-control/attention-items`.
+
+## Conversational Intake
+
+El flujo conversacional permite capturar texto o adjuntos desde una conversación, crear un IntakeItem y confirmar el contexto asociado al caso.
+
+### Flujo recomendado
+
+1. Abrir http://localhost:5173 y navegar a "Yarvis Conversation".
+2. Crear o seleccionar una conversación vinculada a Organización, Persona y Caso.
+3. Enviar un mensaje; se crea un IntakeItem a partir del texto.
+4. Registrar adjuntos como metadatos (sin binarios).
+5. Confirmar contexto para enlazar el IntakeItem con el Caso y crear Evidence cuando corresponda.
+6. Revisar el evento asociado en la vista de detalle del Caso.
+
+### Confirmación de contexto
+
+```bash
+curl -X POST http://localhost:8000/intake/{intake_id}/confirm-context -H "Content-Type: application/json" -d '{"organization_id":"...","person_id":"...","case_id":"...","evidence_type":"document"}'
+```
+
+## Frontend React
+
+El frontend usa React, Vite, React Router y TanStack Query. La aplicación principal vive en `apps/web/src/App.tsx` y el punto de entrada mínimo en `apps/web/src/main.tsx`.
+
+Pantallas principales:
+
+- Mission Control
+- Cases
+- Case Detail
+- Yarvis Conversation
+- Organizations
+- People
+
+## Pruebas backend
+
+```bash
+docker compose exec api sh -lc "pip install -q -r requirements-dev.txt && pytest -ra"
+```
+
+Las pruebas usan la base separada `yarvis_test`; Pytest la crea y trunca entre ejecuciones.
+
+## Pruebas frontend
+
+```bash
+docker compose exec web sh -lc "npm install && npm test"
+```
+
+## Build frontend
+
+```bash
+docker compose exec web sh -lc "npm run build"
+```
+
+## Operación y troubleshooting básico
+
+- Si los servicios no arrancan, revisar `docker compose ps` y `docker compose logs api web postgres`.
+- Si una migración falla, validar que PostgreSQL esté saludable y volver a ejecutar `alembic upgrade head`.
+- Si una prueba de backend falla por conexión, verificar que `postgres` responda y que la base `yarvis_test` exista.
+- Si el frontend no carga, confirmar que `http://localhost:5173` y `http://localhost:8000/docs` estén accesibles.
+- Si se necesita reiniciar desde cero de forma segura, detener servicios con `docker compose down` y conservar `pgdata`.
+
+## Operación manual, evidencia y bitácora
+
+Tras aplicar migraciones, se puede registrar texto recibido y asociarlo a un caso:
 
 ```bash
 curl -X POST http://localhost:8000/intake -H "Content-Type: application/json" -d '{"source_type":"manual_text","content_type":"text/plain","text_content":"Cliente solicitó cambio de servicio"}'
@@ -121,27 +170,7 @@ curl -X POST http://localhost:8000/cases/{case_id}/evidence -H "Content-Type: ap
 curl http://localhost:8000/cases/{case_id}/events
 ```
 
-El comando de pruebas indicado arriba cubre también ingreso, evidencia y eventos sobre PostgreSQL.
-
-### Catálogos y checklists configurables
-
-Aplicar la migración y cargar los catálogos idempotentes:
-
-```bash
-docker compose exec api alembic upgrade head
-docker compose exec api python -m yarvis_api.catalogs
-```
-
-Crear un Caso con `case_type_id` obtenido de `GET /case-types`, crear su checklist y consultar su avance:
-
-```bash
-curl -X POST http://localhost:8000/cases/{case_id}/checklists
-curl http://localhost:8000/case-checklists/{case_checklist_id}
-```
-
-La clasificación manual se crea en `POST /intake/{intake_id}/classifications` y se confirma en `POST /intake-classifications/{classification_id}/confirm`. Un requisito se recibe con `POST /case-checklists/{id}/requirements/{requirement_id}/fulfill` y se valida en `POST /requirement-fulfillments/{id}/validate`.
-
-### Revisión, vigencia y alertas
+## Revisión, vigencia y alertas
 
 Revisar y validar un cumplimiento usando su fecha documental, o rechazarlo con un motivo:
 
@@ -162,6 +191,4 @@ curl http://localhost:8000/cases/{case_id}/next-action-suggestions
 curl -X POST http://localhost:8000/next-action-suggestions/{id}/accept
 ```
 
-Las vigencias de 30/90 días son reglas operativas configurables, no afirmaciones legales universales. Las pruebas siguen usando exclusivamente `yarvis_test`.
-
-Al validar un cumplimiento, `valid_until` se calcula una sola vez con la configuración vigente del `DocumentType`. Cambios posteriores del catálogo no reescriben cumplimientos ya validados; una recalculación futura requerirá una acción explícita y auditable.
+Las vigencias de 30/90 días son reglas operativas configurables, no afirmaciones legales universales. Los cambios posteriores del catálogo no reescriben cumplimientos ya validados; una recalculación futura requerirá una acción explícita y auditable.

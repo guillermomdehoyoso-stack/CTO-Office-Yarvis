@@ -10,6 +10,7 @@ from yarvis_api.models.domain_event import record_event
 from yarvis_api.models.intake import IntakeItem
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.person import Person
+from yarvis_api.models.evidence import Evidence
 from yarvis_api.schemas.intake import IntakeCreate, IntakeRead
 
 router = APIRouter(prefix="/intake", tags=["intake"])
@@ -93,3 +94,18 @@ def link_case(intake_id: UUID, case_id: UUID, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(item)
     return item
+
+@router.post("/{intake_id}/confirm-context")
+def confirm_context(intake_id: UUID, payload: dict, db: Session = Depends(get_db)):
+    item=db.get(IntakeItem,intake_id)
+    if item is None: raise HTTPException(404,"IntakeItem not found")
+    for field,model in (("organization_id",Organization),("person_id",Person),("case_id",Case)):
+        identifier=payload.get(field)
+        if identifier and db.get(model,identifier) is None: raise HTTPException(404,f"{field} not found")
+        if identifier: setattr(item,field,identifier)
+    evidence=None
+    if payload.get("evidence_type") and item.case_id:
+        evidence=Evidence(case_id=item.case_id,intake_item_id=item.id,evidence_type=payload["evidence_type"],title=item.title or item.original_filename or "Conversation intake")
+        db.add(evidence);db.flush()
+    record_event(db,event_type="intake.context_confirmed",aggregate_type="intake_item",aggregate_id=item.id,organization_id=item.organization_id,case_id=item.case_id,payload={"evidence_id":str(evidence.id) if evidence else None});db.commit();db.refresh(item)
+    return {"intake":item,"evidence_id":evidence.id if evidence else None,"status":"confirmed"}
