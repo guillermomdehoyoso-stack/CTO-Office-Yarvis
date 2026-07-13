@@ -1,5 +1,9 @@
 # Yarvis Technical Blueprint
 
+## Referencia superior
+- El documento [Yarvis Operating Model v1.0](YARVIS_OPERATING_MODEL.md) es la autoridad arquitectónica de mayor nivel para Yarvis.
+- Los ADR específicos siguen siendo vinculantes cuando no contradicen ese Operating Model.
+
 ## 1. Objetivos técnicos
 - Implementar un monolito modular para el Foundation Sprint.
 - Soportar el flujo de recepción y avance de Casos para Expediente CFE residencial y Alta NetPay.
