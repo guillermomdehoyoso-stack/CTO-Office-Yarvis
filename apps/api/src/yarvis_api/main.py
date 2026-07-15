@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from yarvis_api.config import get_settings
 from yarvis_api.database import check_database_connection
-from yarvis_api.api.routes import cases, checklists, evidence, intake, mission_control, organizations, people
+from yarvis_api.api.routes import cases, checklists, evidence, intake, mission_control, netpay, organizations, people
 
 settings = get_settings()
 
@@ -23,6 +23,7 @@ app.include_router(intake.router)
 app.include_router(evidence.router)
 app.include_router(checklists.router)
 app.include_router(mission_control.router)
+app.include_router(netpay.router)
 
 
 @app.get("/health")

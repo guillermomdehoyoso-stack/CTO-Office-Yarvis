@@ -140,6 +140,39 @@ Las pruebas usan la base separada `yarvis_test`; Pytest la crea y trunca entre e
 docker compose exec web sh -lc "npm install && npm test"
 ```
 
+## Uso NetPay Operations Inbox
+
+1. Importar correo NetPay normalizado:
+
+```bash
+curl -X POST http://localhost:8000/netpay/import-email -H "Content-Type: application/json" -d '{"gmail_message_id":"gmail-001","gmail_thread_id":"thread-001","from_address":"operaciones@netpay.mx","to_addresses":["netpay@empresa.com"],"cc_addresses":[],"reply_to_addresses":[],"delivered_to":"netpay.ops@empresa.com","subject":"Folio NP-2026-001 Guia 1234567890 envio","body":"Folio NetPay: NP-2026-001\nGuia: 1234567890\nStore ID: STO-100\nSerie TPV: TPV-ABC-01","received_at":"2026-07-13T12:00:00Z"}'
+```
+
+2. Listar casos NetPay y pendientes:
+
+```bash
+curl http://localhost:8000/netpay/service-cases
+curl http://localhost:8000/netpay/service-cases/pending
+```
+
+3. Confirmar investigación manual:
+
+```bash
+curl -X PATCH http://localhost:8000/netpay/service-cases/{id}/investigation -H "Content-Type: application/json" -d '{"case_type":"installation","customer_name":"Cliente","merchant_name":"Comercio","address":"Domicilio","store_id":"STO-100","device_serial":"TPV-ABC-01","movement_type":"outbound","notes":"confirmado","investigation_status":"confirmed"}'
+```
+
+4. Registrar envío/recolección:
+
+```bash
+curl -X POST http://localhost:8000/netpay/service-cases/{id}/shipments -H "Content-Type: application/json" -d '{"tracking_number":"TRK-001","carrier":"DHL","direction":"outbound","status":"shipped"}'
+```
+
+5. Consultar inventario de terminales:
+
+```bash
+curl http://localhost:8000/netpay/devices
+```
+
 ## Build frontend
 
 ```bash

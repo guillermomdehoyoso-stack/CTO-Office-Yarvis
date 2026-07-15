@@ -23,7 +23,7 @@ def clean_database(test_database):
     from yarvis_api.database import SessionLocal
     from yarvis_api.catalogs import load_catalogs
     with SessionLocal() as session:
-        session.connection().exec_driver_sql("TRUNCATE TABLE domain_events, next_action_suggestions, operational_alerts, requirement_fulfillments, intake_classifications, case_checklists, evidence, intake_items, checklist_requirements, checklist_templates, cases, people, organizations, document_types, case_types RESTART IDENTITY CASCADE")
+        session.connection().exec_driver_sql("TRUNCATE TABLE domain_events, netpay_device_assignments, netpay_shipments, netpay_service_cases, next_action_suggestions, operational_alerts, requirement_fulfillments, intake_classifications, case_checklists, evidence, intake_items, checklist_requirements, checklist_templates, cases, people, organizations, document_types, case_types RESTART IDENTITY CASCADE")
         session.commit()
         load_catalogs(session)
         session.commit()

@@ -40,6 +40,8 @@ Yarvis Core se implementa como una capa operativa sobre CTO Office con módulos 
 - auditoría;
 - IA desacoplada.
 
+La evolución futura de identidad operativa queda alineada con ADR-008 y con [IDENTITY_RESOLUTION.md](IDENTITY_RESOLUTION.md), incluyendo el uso de Asset como concepto general futuro cuando existan más de un dominio que requiera administración común de activos.
+
 ---
 
 ## 5. Monolito modular inicial
