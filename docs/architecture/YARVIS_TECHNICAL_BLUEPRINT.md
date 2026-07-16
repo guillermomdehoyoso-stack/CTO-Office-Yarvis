@@ -225,3 +225,9 @@ Solo si aparecen cuellos de botella reales o necesidad de escalabilidad demostra
 - Modelos locales.
 - Agentes autónomos.
 - Aplicación móvil nativa.
+
+## 31. Sprint 7.2 Addendum
+
+- Se incorpora una capa de Observation Engine con persistencia de Source, Document, Observation y ResolutionDecision.
+- Las políticas operativas se ejecutan de forma determinista sobre estado resuelto.
+- Mission Control consume resultados de políticas y conflictos como atención accionable.

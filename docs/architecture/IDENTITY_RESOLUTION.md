@@ -359,6 +359,12 @@ Yarvis debe:
 11. emitir eventos;
 12. mantener provenance.
 
+## 13. Sprint 7.2 Implementation Note
+
+Observation and resolution records are persisted explicitly and keep provenance, confidence, confirmation status, and auditable confirmation metadata.
+
+Automatic parser output remains candidate until explicit confirmation when identity or ownership is affected.
+
 ## 13. Asset Strategy
 
 Establecer:

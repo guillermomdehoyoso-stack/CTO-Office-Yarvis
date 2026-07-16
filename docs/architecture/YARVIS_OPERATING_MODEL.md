@@ -164,3 +164,11 @@ The focus of Phase II will be to build the capabilities that turn operational me
 - Founder Copilot: use the accumulated system state to help the founder decide and act faster.
 
 Phase II should deepen intelligence without breaking the principles established in this model. The domain remains primary, and intelligence serves the operating system rather than replacing it.
+
+## 11. Sprint 7.2 Addendum
+
+The Observation Engine pipeline is approved as the reusable memory path:
+
+Source -> Document -> Observation -> Identity Resolution -> Commercial Hierarchy -> Operational State -> Policy Evaluation -> Attention Item -> Mission Control.
+
+Evidence is not operational truth and no source may bypass this pipeline.

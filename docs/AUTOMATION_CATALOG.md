@@ -194,3 +194,11 @@ Each automation candidate must register:
 - Approval requirement: human confirmation required
 - Source: sales snapshots, hierarchy, and policy rules
 - Future status: planned
+
+### Accounting Intake Observation Hook
+- Trigger: Manual accounting intake import
+- Input: invoice photo, PDF invoice, CFDI XML, issued/received invoices, payment complements, bank movements, expense receipts, tax retentions, manual adjustments
+- Output: accounting observation candidates (issuer_rfc, receiver_rfc, uuid, invoice_date, subtotal, vat_amount, withheld taxes, total, period, source_document_hash)
+- Approval requirement: human/accountant confirmation required
+- Source: accounting evidence inputs
+- Future status: planned

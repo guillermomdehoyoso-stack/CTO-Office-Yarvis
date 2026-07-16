@@ -20,3 +20,9 @@ The Foundation phase established the minimum reliable platform for Yarvis:
 ## Next Phase
 
 Phase II — Operational Intelligence will focus on turning the current operational memory into stronger assistance, triage, and decision support without changing the architectural principles established in AR-1.
+
+## Sprint 7.2 Addendum
+
+- Observation Engine and operational policy foundation delivered.
+- NetPay now demonstrates Source -> Document -> Observation -> Policy -> Attention flow.
+- Accounting is registered as the next priority domain as documentation/schemas contract only.

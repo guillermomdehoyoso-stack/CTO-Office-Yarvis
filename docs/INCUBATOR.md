@@ -50,6 +50,16 @@ Yarvis defines three integration modes for all future adapters:
 - OperationalNode projection
 - document repository integration
 
+## Next Priority Domain
+
+Accounting is registered as the next priority future domain.
+
+Mandatory architecture disclaimer:
+- operational estimates do not replace official tax accounting;
+- CFDI XML and authoritative accounting records have higher evidentiary weight than photographs;
+- tax policies must be versioned by effective date;
+- every filing/payment recommendation requires human/accountant approval.
+
 ## Activation Policy
 
 - Default mode for new integration: Observation Mode.

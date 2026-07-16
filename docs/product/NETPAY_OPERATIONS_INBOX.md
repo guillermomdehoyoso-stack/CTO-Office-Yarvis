@@ -123,6 +123,12 @@ Alias de compatibilidad para algunos endpoints siguen disponibles en rutas previ
 - No incluye ventas, rentabilidad ni semaforo.
 - CSV de inventario soportado; XLSX queda para siguiente paso.
 
+## Sprint 7.2 Observation Engine Update
+
+- La importacion NetPay ahora registra Source, Document y Observation con provenance por campo.
+- La resolucion de identidad y ownership permanece separada de la extraccion parser.
+- Los datos confirmados no se sobreescriben silenciosamente.
+
 ## Pasos futuros
 
 - Integrar Gmail read-only con permisos minimos.

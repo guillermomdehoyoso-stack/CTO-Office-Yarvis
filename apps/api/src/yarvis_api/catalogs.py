@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from yarvis_api.models.checklist import CaseType, ChecklistRequirement, ChecklistTemplate, DocumentType
+from yarvis_api.models.observation_engine import OperationalPolicy
 
 DOCUMENT_TYPES = [
     ("cfe_bill", "Recibo CFE"), ("government_id", "Identificación oficial"), ("power_of_attorney", "Carta poder"),
@@ -24,6 +25,75 @@ TEMPLATES = {
         ("domain_ownership", "Comprobante de propiedad de dominio", "domain_ownership_proof", False),
     ],
 }
+
+OPERATIONAL_POLICIES = [
+    {
+        "policy_key": "netpay.store.watch_inactivity",
+        "domain": "netpay",
+        "version": 1,
+        "status": "active",
+        "description": "Watch stores that reached inactivity threshold.",
+        "severity": "warning",
+        "requires_human_approval": True,
+        "configuration": {
+            "conditions": [
+                {"field": "inactive_days", "operator": "greater_than_or_equal", "value": 30},
+            ],
+            "output": "watch",
+        },
+    },
+    {
+        "policy_key": "netpay.store.churn_candidate",
+        "domain": "netpay",
+        "version": 1,
+        "status": "active",
+        "description": "Flag churn candidate stores, never automatic cancellation.",
+        "severity": "critical",
+        "requires_human_approval": True,
+        "configuration": {
+            "conditions": [
+                {"field": "inactive_days", "operator": "greater_than_or_equal", "value": 60},
+                {"field": "open_service_case", "operator": "equals", "value": False},
+                {"field": "open_replacement", "operator": "equals", "value": False},
+            ],
+            "output": "churn_candidate",
+            "cancellation": "manual_only",
+        },
+    },
+    {
+        "policy_key": "netpay.store.critical_sales_drop",
+        "domain": "netpay",
+        "version": 1,
+        "status": "active",
+        "description": "Identify critical sales deterioration before churn window.",
+        "severity": "critical",
+        "requires_human_approval": True,
+        "configuration": {
+            "conditions": [
+                {"field": "historical_volume", "operator": "greater_than", "value": 1000},
+                {"field": "sales_drop_percentage", "operator": "greater_than_or_equal", "value": 35},
+            ],
+            "output": "critical_store_review",
+        },
+    },
+    {
+        "policy_key": "netpay.asset.recovery_review",
+        "domain": "netpay",
+        "version": 1,
+        "status": "active",
+        "description": "Recommend asset recovery review for churn candidate stores.",
+        "severity": "critical",
+        "requires_human_approval": True,
+        "configuration": {
+            "conditions": [
+                {"field": "is_churn_candidate", "operator": "equals", "value": True},
+                {"field": "asset_assigned", "operator": "equals", "value": True},
+                {"field": "active_shipment_or_replacement", "operator": "equals", "value": False},
+            ],
+            "output": "asset_recovery_review",
+        },
+    },
+]
 
 
 def load_catalogs(db: Session) -> None:
@@ -55,6 +125,16 @@ def load_catalogs(db: Session) -> None:
         for order, (code, name, document_code, required) in enumerate(requirements, start=1):
             if db.scalar(select(ChecklistRequirement).where(ChecklistRequirement.checklist_template_id == template.id, ChecklistRequirement.code == code)) is None:
                 db.add(ChecklistRequirement(checklist_template_id=template.id, code=code, name=name, document_type_id=document_types[document_code].id if document_code else None, required=required, multiple_allowed=False, display_order=order))
+
+    for policy_data in OPERATIONAL_POLICIES:
+        existing = db.scalar(
+            select(OperationalPolicy).where(
+                OperationalPolicy.policy_key == policy_data["policy_key"],
+                OperationalPolicy.version == policy_data["version"],
+            )
+        )
+        if existing is None:
+            db.add(OperationalPolicy(**policy_data))
 
 
 def main() -> None:

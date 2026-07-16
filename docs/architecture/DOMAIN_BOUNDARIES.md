@@ -190,3 +190,9 @@ The following concepts may remain useful for later phases, but they are not part
 
 They may be referenced as future candidates, but they should not be treated as current persistent commitments in the approved MVP scope.
 
+## Sprint 7.2 Boundary Note
+
+- Observation Engine is a cross-cutting operational memory capability between Evidence/Documents and Operational Core.
+- Policy evaluation consumes resolved operational facts and never executes dynamic user code.
+- Mission Control consumes attention outputs from policy evaluations and conflicts, not raw source payloads.
+

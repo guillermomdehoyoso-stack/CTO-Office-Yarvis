@@ -149,3 +149,34 @@ def test_multiple_recipients_are_preserved():
     assert response.status_code == 201
     service_case = response.json()["service_case"]
     assert set(service_case["recipient_addresses"]) >= {"a@cto.local", "b@cto.local", "c@cto.local", "d@cto.local"}
+
+
+def test_netpay_import_creates_observations_with_provenance():
+    response = client.post("/netpay/import-email", json=sample_email_payload("gmail-message-observations"))
+    assert response.status_code == 201, response.text
+    service_case = response.json()["service_case"]
+
+    observations = client.get("/observations", params={"domain": "netpay", "subject_reference": service_case["folio"]})
+    assert observations.status_code == 200
+    items = observations.json()
+    assert any(item["field_name"] == "folio" for item in items)
+    assert any(item["field_name"] == "tracking_number" for item in items)
+    assert all("processor" in item["provenance"] for item in items)
+
+
+def test_netpay_reimport_is_idempotent_for_observations():
+    first = client.post("/netpay/import-email", json=sample_email_payload("gmail-message-idempotent-obs"))
+    assert first.status_code == 201
+    folio = first.json()["service_case"]["folio"]
+
+    before = client.get("/observations", params={"domain": "netpay", "subject_reference": folio})
+    assert before.status_code == 200
+    before_count = len(before.json())
+
+    second = client.post("/netpay/import-email", json=sample_email_payload("gmail-message-idempotent-obs"))
+    assert second.status_code == 201
+    assert second.json()["created"] is False
+
+    after = client.get("/observations", params={"domain": "netpay", "subject_reference": folio})
+    assert after.status_code == 200
+    assert len(after.json()) == before_count

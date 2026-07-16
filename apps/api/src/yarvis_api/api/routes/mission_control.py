@@ -10,6 +10,7 @@ from yarvis_api.models.conversation import Conversation, ConversationMessage
 from yarvis_api.models.domain_event import DomainEvent, record_event
 from yarvis_api.models.intake import IntakeItem
 from yarvis_api.models.operational import NextActionSuggestion, OperationalAlert
+from yarvis_api.models.observation_engine import AttentionItem, DocumentRecord, Observation, PolicyEvaluation
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.person import Person
 from yarvis_api.schemas.conversation import (
@@ -31,12 +32,24 @@ def refs(db, org=None, person=None, case=None):
 @router.get("/mission-control/summary")
 def summary(db: Session = Depends(get_db)):
     alerts = db.scalars(select(OperationalAlert).where(OperationalAlert.status != "resolved")).all()
+    unresolved_observations = db.scalar(select(func.count()).select_from(Observation).where(Observation.confirmation_status != "confirmed")) or 0
+    identity_conflicts = db.scalar(select(func.count()).select_from(Observation).where(Observation.confirmation_status == "conflicted")) or 0
+    duplicate_documents = db.scalar(select(func.count()).select_from(DocumentRecord).where(DocumentRecord.processed_at.is_not(None))) or 0
+    policy_matches = db.scalar(select(func.count()).select_from(PolicyEvaluation).where(PolicyEvaluation.result_status == "matched")) or 0
+    insufficient_data = db.scalar(select(func.count()).select_from(PolicyEvaluation).where(PolicyEvaluation.result_status == "insufficient_data")) or 0
+    pending_human_approvals = db.scalar(select(func.count()).select_from(AttentionItem).where(AttentionItem.requires_human_approval.is_(True), AttentionItem.status == "open")) or 0
     return {
         "active_cases": db.scalar(select(func.count()).select_from(Case).where(Case.status == "open")) or 0,
         "open_alerts": len(alerts),
         "critical_alerts": sum(a.severity == "critical" for a in alerts),
         "proposed_next_actions": db.scalar(select(func.count()).select_from(NextActionSuggestion).where(NextActionSuggestion.status == "proposed")) or 0,
         "expiring_requirements": sum(a.alert_type == "expiring_requirement" for a in alerts),
+        "unresolved_observations": unresolved_observations,
+        "identity_conflicts": identity_conflicts,
+        "duplicate_documents": duplicate_documents,
+        "policy_matches": policy_matches,
+        "insufficient_data_evaluations": insufficient_data,
+        "pending_human_approvals": pending_human_approvals,
         "recent_events": db.scalars(select(DomainEvent).order_by(DomainEvent.occurred_at.desc()).limit(10)).all(),
     }
 
@@ -64,6 +77,25 @@ def attention_items(db: Session = Depends(get_db)):
                 "next_action_summary": action.summary if action else None,
                 "latest_event_at": latest.occurred_at if latest else None,
                 "_rank": min([ranks.get(a.alert_type, 6) for a in alerts] or [5]),
+            }
+        )
+    policy_items = db.scalars(select(AttentionItem).where(AttentionItem.status == "open").order_by(AttentionItem.created_at.desc()).limit(100)).all()
+    for item in policy_items:
+        result.append(
+            {
+                "case_id": None,
+                "case_number": None,
+                "title": f"{item.policy_key} - {item.subject_type}",
+                "organization": None,
+                "case_type": "policy",
+                "alert_count": 1,
+                "highest_severity": item.severity,
+                "next_action_summary": item.recommended_action,
+                "latest_event_at": item.created_at,
+                "policy_key": item.policy_key,
+                "subject_id": item.subject_id,
+                "requires_human_approval": item.requires_human_approval,
+                "_rank": 0 if item.severity == "critical" else 2,
             }
         )
     return sorted(result, key=lambda x: (x.pop("_rank"), x["latest_event_at"] is None))

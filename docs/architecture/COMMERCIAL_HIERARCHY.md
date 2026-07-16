@@ -218,6 +218,10 @@ Physical storage may use Google Drive or another repository later. Yarvis stores
 - rfc;
 - legal_representative;
 - bank_account;
+
+## Sprint 7.2 Note
+
+Hierarchy assignment decisions now consume confirmed observations and resolution decisions before policy-driven attention is generated.
 - fiscal_documentation.
 
 ### Branch Checklist

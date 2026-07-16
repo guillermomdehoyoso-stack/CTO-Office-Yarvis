@@ -6,6 +6,15 @@ from yarvis_api.models.conversation import Conversation, ConversationMessage
 from yarvis_api.models.evidence import Evidence
 from yarvis_api.models.intake import IntakeItem
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
+from yarvis_api.models.observation_engine import (
+	AttentionItem,
+	DocumentRecord,
+	Observation,
+	OperationalPolicy,
+	PolicyEvaluation,
+	ResolutionDecision,
+	SourceRecord,
+)
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.operational import NextActionSuggestion, OperationalAlert
 from yarvis_api.models.person import Person
@@ -17,6 +26,7 @@ __all__ = [
 	"CaseType",
 	"ChecklistRequirement",
 	"ChecklistTemplate",
+	"DocumentRecord",
 	"DocumentType",
 	"DomainEvent",
 	"Evidence",
@@ -25,7 +35,13 @@ __all__ = [
 	"NetpayDeviceAssignment",
 	"NetpayServiceCase",
 	"NetpayShipment",
+	"Observation",
+	"OperationalPolicy",
 	"Organization",
 	"Person",
+	"PolicyEvaluation",
+	"ResolutionDecision",
 	"RequirementFulfillment",
+	"SourceRecord",
+	"AttentionItem",
 ]

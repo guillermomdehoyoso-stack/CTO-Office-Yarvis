@@ -119,6 +119,21 @@ El frontend usa React, Vite, React Router y TanStack Query. La aplicación princ
 
 Pantallas principales:
 
+## Sprint 7.2 Highlights
+
+- Observation Engine foundation: SourceRecord, DocumentRecord, Observation, ResolutionDecision, OperationalPolicy, PolicyEvaluation, AttentionItem.
+- Deterministic operational policy endpoints and seed catalog for NetPay inactivity/churn/critical-sales/asset-recovery.
+- NetPay import adapter now emits observation records with provenance.
+- Mission Control summary now includes unresolved observations, identity conflicts, duplicates, policy matches, insufficient-data evaluations, and pending human approvals.
+
+## Sprint 7.2 Explicit Non-Scope
+
+- No Gmail activation.
+- No WhatsApp integration.
+- No Google Drive integration.
+- No Portal NetPay automation.
+- No tax calculations.
+
 - Mission Control
 - Cases
 - Case Detail

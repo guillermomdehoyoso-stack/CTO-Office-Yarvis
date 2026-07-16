@@ -10,6 +10,7 @@ from yarvis_api.database import get_db
 from yarvis_api.models.domain_event import DomainEvent, record_event
 from yarvis_api.models.intake import IntakeItem
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
+from yarvis_api.models.observation_engine import SourceRecord
 from yarvis_api.modules.document_intelligence import DocumentIntelligenceProvider
 from yarvis_api.modules.netpay_parser import parse_email
 from yarvis_api.schemas.netpay import (
@@ -25,6 +26,7 @@ from yarvis_api.schemas.netpay import (
     NetpayShipmentRead,
     NetpayTimelineItem,
 )
+from yarvis_api.services.observation_engine import create_observation, register_document, register_source
 
 router = APIRouter(prefix="/netpay", tags=["netpay"])
 doc_provider = DocumentIntelligenceProvider()
@@ -96,6 +98,72 @@ def import_email(payload: EmailImportPayload, db: Session = Depends(get_db)):
     )
     db.add(service_case)
     db.flush()
+
+    source = register_source(
+        db,
+        source_type="netpay_email",
+        external_source_id=payload.gmail_message_id,
+        source_name="NetPay Email Import",
+        received_at=payload.received_at or utc_now(),
+        metadata={"subject": payload.subject, "thread_id": payload.gmail_thread_id},
+        classification="confidential",
+    )
+
+    message_hash_source = f"{payload.gmail_message_id or ''}:{payload.subject}:{parsed['body_normalized']}"
+    document, _, _ = register_document(
+        db,
+        source_id=source.id,
+        filename=f"netpay-email-{service_case.folio}.eml",
+        media_type="message/rfc822",
+        file_hash=hashlib.sha256(message_hash_source.encode("utf-8")).hexdigest(),
+        file_content=None,
+        byte_size=len(parsed["body_normalized"].encode("utf-8")),
+        report_date=payload.received_at or utc_now(),
+        storage_reference=None,
+        extraction_status="extracted",
+        classification="netpay_operations",
+        metadata={"folio": service_case.folio, "source_intake_item_id": str(intake.id)},
+        allow_reprocess=False,
+    )
+
+    observation_fields = [
+        ("folio", parsed["extracted_fields"].get("folio"), "folio"),
+        ("tracking_number", parsed["extracted_fields"].get("tracking"), "tracking_number"),
+        ("client_id", parsed["extracted_fields"].get("client_id"), "client_id"),
+        ("company_name", parsed["extracted_fields"].get("merchant"), "company_name"),
+        ("branch_name", parsed["extracted_fields"].get("branch"), "branch_name"),
+        ("store_id", parsed["extracted_fields"].get("store_id"), "store_id"),
+        ("asset_serial", parsed["extracted_fields"].get("serial"), "serial_number"),
+        ("recipient", parsed["extracted_fields"].get("logistics_recipient"), "recipient"),
+        ("address", parsed["extracted_fields"].get("address"), "address"),
+    ]
+    for field_name, field_payload, identifier_type in observation_fields:
+        if not field_payload or field_payload.get("value") in (None, ""):
+            continue
+        create_observation(
+            db,
+            document_id=document.id,
+            source_id=source.id,
+            domain="netpay",
+            subject_type="netpay_service_case",
+            subject_reference=service_case.folio,
+            field_name=field_name,
+            observed_value={"value": field_payload.get("value")},
+            normalized_value={"value": field_payload.get("value")},
+            identifier_type=identifier_type,
+            extraction_method=field_payload.get("extraction_method", "regex"),
+            confidence=field_payload.get("confidence", 0.0),
+            confirmation_status=field_payload.get("confirmation_status", "candidate"),
+            source_reference=field_payload.get("source_reference"),
+            observed_at=payload.received_at or utc_now(),
+            provenance={
+                "source_type": "netpay_email",
+                "service_case_id": str(service_case.id),
+                "field_payload": field_payload,
+                "processor": "netpay_parser",
+                "processor_version": "7.2",
+            },
+        )
 
     record_event(
         db,
@@ -184,6 +252,39 @@ def import_document(payload: DocumentImportPayload, db: Session = Depends(get_db
     )
     db.add(intake)
     db.flush()
+
+    source = db.scalar(select(SourceRecord).where(SourceRecord.external_source_id == service_case.source_email_id))
+    if source is None:
+        source = register_source(
+            db,
+            source_type="netpay_document",
+            external_source_id=str(service_case.id),
+            source_name="NetPay Document Import",
+            received_at=utc_now(),
+            metadata={"service_case_id": str(service_case.id)},
+            classification="confidential",
+        )
+
+    register_document(
+        db,
+        source_id=source.id,
+        filename=payload.filename,
+        media_type=payload.mime_type,
+        file_hash=fingerprint,
+        file_content=None,
+        byte_size=len((payload.extracted_text or "").encode("utf-8")) if payload.extracted_text else None,
+        report_date=utc_now(),
+        storage_reference=payload.storage_reference,
+        extraction_status="extracted",
+        classification="netpay_document",
+        metadata={
+            "service_case_id": str(service_case.id),
+            "provider": intelligence.provider,
+            "method": intelligence.method,
+            "reprocessed": False,
+        },
+        allow_reprocess=False,
+    )
 
     summary = (intelligence.text[:240] + "...") if len(intelligence.text) > 240 else intelligence.text
     record_event(
