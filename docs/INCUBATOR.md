@@ -37,6 +37,19 @@ Yarvis defines three integration modes for all future adapters:
 - APsystems
 - OpenSolar
 
+## Future Domain Candidates
+
+- ClientAccount model
+- Company model
+- Branch model
+- Store model
+- Asset model
+- SalesSnapshot
+- churn engine
+- criticality engine
+- OperationalNode projection
+- document repository integration
+
 ## Activation Policy
 
 - Default mode for new integration: Observation Mode.

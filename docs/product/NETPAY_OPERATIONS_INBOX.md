@@ -87,6 +87,11 @@ Habilitar un flujo operativo inicial para detectar correos NetPay con folio y gu
 - Email recipient, operational recipient y physical delivery destination se resuelven por separado.
 - Cada campo extraido conserva value, confidence, provenance, source_reference y confirmation_status.
 - La conciliacion operativa sigue [IDENTITY_RESOLUTION.md](../architecture/IDENTITY_RESOLUTION.md) y ADR-008 para preservar evidencia, candidatos y conflictos.
+- Client ID may contain multiple Companies.
+- Company may contain multiple Branches.
+- Branch may contain multiple Stores.
+- Reports enrich the same hierarchy across ownership levels.
+- Sales and churn remain future phases and are not implemented in this sprint.
 
 ## API Backend 7.1A
 

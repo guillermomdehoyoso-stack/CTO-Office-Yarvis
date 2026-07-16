@@ -112,3 +112,85 @@ Each automation candidate must register:
 - Current mode: Observation
 - Guardrails: no write-back without approval
 - Failure handling: pending review queue
+
+## Commercial Hierarchy Data Operations (Documentation-Only)
+
+### Import Client Status Report
+- Trigger: Manual report import request
+- Input: client_status_report file
+- Output: client_account and company observation candidates
+- Approval requirement: human confirmation required
+- Source: operational reports
+- Future status: planned
+
+### Import Inventory Report
+- Trigger: Manual report import request
+- Input: inventory_report file
+- Output: store and asset observation candidates
+- Approval requirement: human confirmation required
+- Source: inventory operations reports
+- Future status: planned
+
+### Import Distributor Development Report
+- Trigger: Manual report import request
+- Input: distributor_development_report file
+- Output: client_account commercial relationship observations
+- Approval requirement: human confirmation required
+- Source: distributor development reports
+- Future status: planned
+
+### Import Operations Report
+- Trigger: Manual report import request
+- Input: operations_report file
+- Output: service_case, shipment, and ownership observations
+- Approval requirement: human confirmation required
+- Source: operations reports
+- Future status: planned
+
+### Import Weekly Sales Report
+- Trigger: Scheduled weekly import window
+- Input: weekly_sales_report file
+- Output: sales_snapshot candidates by store
+- Approval requirement: human confirmation required
+- Source: weekly sales reports
+- Future status: planned
+
+### Import Monthly Sales Report
+- Trigger: Scheduled monthly import window
+- Input: monthly_sales_report file
+- Output: sales_snapshot candidates by store and branch aggregate
+- Approval requirement: human confirmation required
+- Source: monthly sales reports
+- Future status: planned
+
+### Detect Inactive Stores
+- Trigger: Daily inactivity evaluation window
+- Input: sales_snapshot history and last_activity_at
+- Output: inactivity observations and watch recommendations
+- Approval requirement: human confirmation required
+- Source: consolidated sales snapshots
+- Future status: planned
+
+### Detect Critical Stores
+- Trigger: Daily criticality evaluation window
+- Input: sales trend, inactivity, open cases, asset cost, data confidence
+- Output: criticality recommendations
+- Approval requirement: human confirmation required
+- Source: hierarchy and operational telemetry
+- Future status: planned
+
+### Recommend Asset Recovery
+- Trigger: churn_candidate or cancellation_review recommendation
+- Input: store inactivity, asset assignment history, open shipments/cases
+- Output: asset_recovery recommendation
+- Approval requirement: human confirmation required
+- Source: hierarchy, shipments, and service cases
+- Future status: planned
+
+### Prepare Cancellation Review
+- Trigger: churn_candidate threshold reached
+- Input: inactivity window, revenue impact, exceptions, unresolved conflicts
+- Output: cancellation_review package
+- Approval requirement: human confirmation required
+- Source: sales snapshots, hierarchy, and policy rules
+- Future status: planned

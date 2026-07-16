@@ -19,6 +19,14 @@ Observations are evidence, not identity.
 
 An observation does not automatically become a confirmed identity.
 
+Approved commercial hierarchy reference:
+
+ClientAccount
+-> Company
+-> Branch
+-> Store
+-> Asset
+
 ## 3. Identity Layers
 
 ### Organization
@@ -69,6 +77,7 @@ Identificadores:
 - nombre comercial.
 
 No asumir que Client y Organization son siempre equivalentes.
+One Client ID may map to multiple Companies, and one Company may map to multiple Stores through different Branches.
 
 ### Branch
 
