@@ -1,5 +1,15 @@
 # CTO Office / Yarvis
 
+## YARVIS
+
+Operational Memory for Real Operations
+
+**Yarvis remembers what humans should not have to.**
+
+An Operational Evidence Consolidation and Operational Memory System designed to organize, connect, and preserve operational evidence, transforming operational chaos into actionable, explainable, and verifiable operational knowledge.
+
+**Elevator pitch:** Yarvis reduces operational entropy by transforming distributed evidence into trusted operational memory.
+
 ## Visión general de Yarvis
 
 Yarvis es la capa operativa de CTO Office para convertir el trabajo del fundador en un sistema de ejecución auditable: capturar intakes, organizar casos, revisar documentos, evaluar cumplimiento, generar alertas y coordinar conversaciones con contexto verificable. El producto combina una API FastAPI, PostgreSQL, migraciones Alembic y un frontend React/Vite para ofrecer una experiencia operativa mínima pero reproducible.

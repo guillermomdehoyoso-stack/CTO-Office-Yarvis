@@ -60,6 +60,16 @@ Mandatory architecture disclaimer:
 - tax policies must be versioned by effective date;
 - every filing/payment recommendation requires human/accountant approval.
 
+## Sprint 7.3B UI Backlog (Planned)
+
+- drag-and-drop upload
+- file queue
+- preview table
+- mapping confirmation
+- observation review
+- conflict review
+- document viewer
+
 ## Activation Policy
 
 - Default mode for new integration: Observation Mode.
