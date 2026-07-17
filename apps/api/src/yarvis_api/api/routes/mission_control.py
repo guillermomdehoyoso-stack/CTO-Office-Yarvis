@@ -34,11 +34,35 @@ def summary(db: Session = Depends(get_db)):
     alerts = db.scalars(select(OperationalAlert).where(OperationalAlert.status != "resolved")).all()
     unresolved_observations = db.scalar(select(func.count()).select_from(Observation).where(Observation.confirmation_status != "confirmed")) or 0
     identity_conflicts = db.scalar(select(func.count()).select_from(Observation).where(Observation.confirmation_status == "conflicted")) or 0
-    duplicate_documents = db.scalar(select(func.count()).select_from(DocumentRecord).where(DocumentRecord.processed_at.is_not(None))) or 0
+    duplicate_documents = db.scalar(select(func.count()).select_from(DocumentRecord).where(DocumentRecord.duplicate_of_document_id.is_not(None))) or 0
+    pending_documents = db.scalar(select(func.count()).select_from(DocumentRecord).where(DocumentRecord.review_status == "pending")) or 0
+    failed_documents = db.scalar(select(func.count()).select_from(DocumentRecord).where(DocumentRecord.review_status == "failed")) or 0
+    unknown_document_types = db.scalar(select(func.count()).select_from(DocumentRecord).where(DocumentRecord.detected_report_type == "unknown")) or 0
+    previews_awaiting_confirmation = db.scalar(select(func.count()).select_from(DocumentRecord).where(DocumentRecord.review_status == "preview_ready")) or 0
     policy_matches = db.scalar(select(func.count()).select_from(PolicyEvaluation).where(PolicyEvaluation.result_status == "matched")) or 0
     insufficient_data = db.scalar(select(func.count()).select_from(PolicyEvaluation).where(PolicyEvaluation.result_status == "insufficient_data")) or 0
     pending_human_approvals = db.scalar(select(func.count()).select_from(AttentionItem).where(AttentionItem.requires_human_approval.is_(True), AttentionItem.status == "open")) or 0
+    pending_reports = db.scalar(
+        select(func.count()).select_from(DocumentRecord).where(
+            DocumentRecord.detected_report_type == "netpay_weekly_sales_report",
+            DocumentRecord.review_status.in_(("pending", "preview_ready")),
+        )
+    ) or 0
+
+    def confirmed_finding_count(field_name: str) -> int:
+        return db.scalar(
+            select(func.count()).select_from(Observation).where(
+                Observation.confirmation_status == "confirmed",
+                Observation.field_name == field_name,
+            )
+        ) or 0
+
     return {
+        "pending_reports": pending_reports,
+        "critical_stores": confirmed_finding_count("finding.critical_store"),
+        "churn_candidates": confirmed_finding_count("finding.churn_candidate"),
+        "assets_without_store": confirmed_finding_count("finding.asset_without_store"),
+        "identity_conflicts": confirmed_finding_count("finding.identity_conflict"),
         "active_cases": db.scalar(select(func.count()).select_from(Case).where(Case.status == "open")) or 0,
         "open_alerts": len(alerts),
         "critical_alerts": sum(a.severity == "critical" for a in alerts),
@@ -47,6 +71,10 @@ def summary(db: Session = Depends(get_db)):
         "unresolved_observations": unresolved_observations,
         "identity_conflicts": identity_conflicts,
         "duplicate_documents": duplicate_documents,
+        "pending_documents": pending_documents,
+        "failed_documents": failed_documents,
+        "unknown_document_types": unknown_document_types,
+        "previews_awaiting_confirmation": previews_awaiting_confirmation,
         "policy_matches": policy_matches,
         "insufficient_data_evaluations": insufficient_data,
         "pending_human_approvals": pending_human_approvals,

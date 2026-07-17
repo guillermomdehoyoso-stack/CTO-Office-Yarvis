@@ -6,6 +6,7 @@ from yarvis_api.database import check_database_connection
 from yarvis_api.api.routes import (
     cases,
     checklists,
+    data_intake,
     evidence,
     intake,
     mission_control,
@@ -33,6 +34,7 @@ app.include_router(cases.router)
 app.include_router(intake.router)
 app.include_router(evidence.router)
 app.include_router(checklists.router)
+app.include_router(data_intake.router)
 app.include_router(mission_control.router)
 app.include_router(netpay.router)
 app.include_router(observations.router)

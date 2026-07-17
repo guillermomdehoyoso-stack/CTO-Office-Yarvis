@@ -149,3 +149,11 @@ Future Drive behavior:
 - No vendor-specific dependency in domain logic.
 - Files organized by Company, fiscal period, document type and UUID.
 - Yarvis stores metadata, hash, provenance and repository reference.
+
+## Sprint 7.3A Addendum
+
+Manual file intake is now the controlled first source and follows:
+
+Manual Upload -> SourceRecord -> DocumentRecord -> Classification -> Extraction -> Candidate Observations -> Preview -> Human Confirmation.
+
+This addendum keeps the same immutability and confirmation constraints from ADR-010.

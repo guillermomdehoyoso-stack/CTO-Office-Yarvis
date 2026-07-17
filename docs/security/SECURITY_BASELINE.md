@@ -157,3 +157,9 @@ All below must be true before deployment is allowed:
 - No data loss or operational damage was observed.
 - This was a process deviation, not a technical requirement.
 - The workflow in `docs/engineering/ENGINEERING_WORKFLOW.md` prevents recurrence by enforcing authority precedence, Class C/D execution gates, and explicit prohibition handling.
+
+## Sprint 7.3A Intake Baseline
+
+- Controlled local repository path for uploaded documents.
+- Uploaded binaries are ignored by Git and stored outside source tree contracts.
+- Intake events must never log full sensitive payload contents.

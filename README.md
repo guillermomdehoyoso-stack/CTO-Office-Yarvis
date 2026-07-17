@@ -144,6 +144,12 @@ Pantallas principales:
 - No Portal NetPay automation.
 - No tax calculations.
 
+## Sprint 7.3A Highlights
+
+- Controlled Data Intake backend endpoints for multipart upload, parsing, preview, and confirmation.
+- Local document repository adapter with safe storage references and SHA-256 duplicate detection.
+- Deterministic XLSX intake and NetPay mapping proposals.
+
 - Mission Control
 - Cases
 - Case Detail

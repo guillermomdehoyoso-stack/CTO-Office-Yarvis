@@ -129,6 +129,11 @@ Alias de compatibilidad para algunos endpoints siguen disponibles en rutas previ
 - La resolucion de identidad y ownership permanece separada de la extraccion parser.
 - Los datos confirmados no se sobreescriben silenciosamente.
 
+## Sprint 7.3A Controlled Intake Update
+
+- Los reportes XLSX de NetPay pueden ingresar por Data Intake con hash, clasificacion y preview.
+- La confirmacion humana sigue siendo obligatoria antes de promover cambios sensibles.
+
 ## Pasos futuros
 
 - Integrar Gmail read-only con permisos minimos.

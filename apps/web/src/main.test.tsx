@@ -15,8 +15,7 @@ describe('Yarvis web app', () => {
 
   it('renders mission control with real API data', async () => {
     fetchMock
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ active_cases: 2, open_alerts: 1, critical_alerts: 0, proposed_next_actions: 1, expiring_requirements: 0, recent_events: [] }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => [] });
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ pending_reports: 2, critical_stores: 1, churn_candidates: 3, assets_without_store: 0, identity_conflicts: 0 }) });
 
     render(
       <MemoryRouter initialEntries={[('/')]}>
@@ -25,7 +24,7 @@ describe('Yarvis web app', () => {
     );
 
     expect(await screen.findByRole('heading', { name: /mission control/i })).toBeTruthy();
-    expect(await screen.findByText(/active cases/i)).toBeTruthy();
+    expect(await screen.findByText(/pending reports/i)).toBeTruthy();
   });
 
   it('allows sending a message and confirming context', async () => {
@@ -61,5 +60,16 @@ describe('Yarvis web app', () => {
     );
 
     expect(await screen.findByText(/No se pudo conectar con la API/i)).toBeTruthy();
+  });
+
+  it('renders the confidential NetPay XLSX intake entry point', async () => {
+    render(
+      <MemoryRouter initialEntries={['/netpay-intake']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: /netpay xlsx intake/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /upload and preview/i })).toBeTruthy();
   });
 });

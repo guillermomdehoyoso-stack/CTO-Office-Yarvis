@@ -4,12 +4,14 @@ services:
     working_dir: /app
     volumes:
       - ./apps/api:/app
+      - ./data:/data
     command: sh -c "pip install -r requirements.txt && uvicorn yarvis_api.main:app --app-dir src --host 0.0.0.0 --port 8000"
     ports:
       - "127.0.0.1:8000:8000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-yarvis}:${POSTGRES_PASSWORD:-yarvis}@postgres:5432/${POSTGRES_DB:-yarvis}
       PYTHONPATH: /app/src
+      DOCUMENT_STORAGE_ROOT: /data/yarvis
     depends_on:
       postgres:
         condition: service_healthy

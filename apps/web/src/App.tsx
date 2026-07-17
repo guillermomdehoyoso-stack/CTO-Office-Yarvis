@@ -24,6 +24,17 @@ async function postJson(path: string, body?: unknown) {
   return response.json();
 }
 
+async function uploadXlsx(file: File) {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('source_type', 'manual_upload');
+  form.append('source_name', 'Manual XLSX Upload');
+  form.append('classification', 'confidential');
+  const response = await fetch(api + '/data-intake/documents', { method: 'POST', body: form });
+  if (!response.ok) throw new Error('Upload failed');
+  return response.json();
+}
+
 function Layout() {
   return (
     <main>
@@ -33,6 +44,7 @@ function Layout() {
         <Link to="/conversation">Conversación</Link>
         <Link to="/organizations">Organización</Link>
         <Link to="/people">Personas</Link>
+        <Link to="/netpay-intake">NetPay XLSX</Link>
       </nav>
       <Routes>
         <Route path="/" element={<MissionControlPage />} />
@@ -41,6 +53,7 @@ function Layout() {
         <Route path="/conversation" element={<ConversationPage />} />
         <Route path="/organizations" element={<OrganizationsPage />} />
         <Route path="/people" element={<PeoplePage />} />
+        <Route path="/netpay-intake" element={<NetPayIntakePage />} />
       </Routes>
     </main>
   );
@@ -48,23 +61,21 @@ function Layout() {
 
 function MissionControlPage() {
   const missionQuery = useQuery({ queryKey: ['mission'], queryFn: () => getJson('/mission-control/summary'), retry: false });
-  const attentionQuery = useQuery({ queryKey: ['attention'], queryFn: () => getJson('/mission-control/attention-items'), retry: false });
-  const items = Array.isArray(attentionQuery.data) ? attentionQuery.data : [];
-
-  if (missionQuery.error || attentionQuery.error) return <p className="error">No se pudo conectar con la API.</p>;
+  if (missionQuery.error) return <p className="error">No se pudo conectar con la API.</p>;
+  const operationalMetrics = ['pending_reports', 'critical_stores', 'churn_candidates', 'assets_without_store', 'identity_conflicts'];
+  const items: any[] = [];
 
   return (
     <>
       <h1>Mission Control</h1>
       <div className="cards">
-        {missionQuery.data && Object.entries(missionQuery.data).filter(([key]) => key !== 'recent_events').map(([key, value]) => (
+        {missionQuery.data && Object.entries(missionQuery.data).filter(([key]) => operationalMetrics.includes(key)).map(([key, value]) => (
           <div className="card" key={key}>
             <small>{key.replaceAll('_', ' ')}</small>
             <b>{String(value)}</b>
           </div>
         ))}
       </div>
-      <h2>Attention items</h2>
       {items.map((item: any) => (
         <Link className="item" to={'/cases/' + item.case_id} key={item.case_id}>
           <b>{item.case_number}</b>
@@ -232,6 +243,63 @@ function ConversationPage() {
       <button onClick={sendMessage}>Enviar</button>
     </>
   );
+}
+
+function NetPayIntakePage() {
+  const [file, setFile] = useState<File | null>(null);
+  const [documentId, setDocumentId] = useState('');
+  const [preview, setPreview] = useState<any>();
+  const [reviewer, setReviewer] = useState('');
+  const [message, setMessage] = useState('Select a confidential NetPay XLSX file.');
+
+  async function uploadAndPreview() {
+    if (!file || !file.name.toLowerCase().endsWith('.xlsx')) {
+      setMessage('Select an XLSX file.');
+      return;
+    }
+    try {
+      const uploaded = await uploadXlsx(file);
+      setDocumentId(uploaded.document_id);
+      await postJson(`/data-intake/documents/${uploaded.document_id}/process`);
+      setPreview(await getJson(`/data-intake/documents/${uploaded.document_id}/preview`));
+      setMessage(uploaded.duplicate ? 'Duplicate detected. No second binary was stored.' : 'Preview ready. Confirm to enrich Operational Memory.');
+    } catch {
+      setMessage('The XLSX could not be processed.');
+    }
+  }
+
+  async function confirm() {
+    if (!documentId || !reviewer.trim()) {
+      setMessage('Enter the confirming reviewer.');
+      return;
+    }
+    try {
+      await postJson(`/data-intake/documents/${documentId}/confirm`, { reviewer });
+      setMessage('Confirmed. Mission Control and Operational Memory are updated.');
+    } catch {
+      setMessage('The report could not be confirmed.');
+    }
+  }
+
+  return <>
+    <h1>NetPay XLSX Intake</h1>
+    <p>{message}</p>
+    <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+    <button onClick={uploadAndPreview}>Upload and preview</button>
+    {preview && <section className="intake-preview">
+      <h2>{preview.detected_report_type === 'netpay_weekly_sales_report' ? 'Weekly Sales Report' : 'Unknown Report'}</h2>
+      <p>Worksheet: {preview.worksheets[0]} | Rows: {preview.total_rows} | Candidate observations: {preview.candidate_observation_count}</p>
+      <h3>Operational summary</h3>
+      <div className="cards">
+        {Object.entries(preview.operational_summary || {}).filter(([, value]) => typeof value === 'number').map(([key, value]) => <div className="card" key={key}><small>{key.replaceAll('_', ' ')}</small><b>{String(value)}</b></div>)}
+      </div>
+      <h3>Column mappings</h3>
+      {preview.proposed_canonical_mappings.map((mapping: any) => <p className="mapping" key={mapping.source_header}><code>{mapping.source_header}</code> to {mapping.canonical_field || 'unresolved'}</p>)}
+      <p>Unavailable: {(preview.operational_summary?.unavailable_fields || []).join(', ') || 'none'}.</p>
+      <label>Confirmed by<input value={reviewer} onChange={(event) => setReviewer(event.target.value)} /></label>
+      <button onClick={confirm}>Confirm operational summary</button>
+    </section>}
+  </>;
 }
 
 function OrganizationsPage() {

@@ -202,3 +202,11 @@ Each automation candidate must register:
 - Approval requirement: human/accountant confirmation required
 - Source: accounting evidence inputs
 - Future status: planned
+
+### Controlled Data Intake Upload
+- Trigger: User uploads operational evidence file
+- Input: XLSX file metadata and bytes
+- Output: DocumentRecord + preview + candidate observations
+- Approval requirement: human confirmation required
+- Source: manual upload
+- Current status: active (manual controlled intake)

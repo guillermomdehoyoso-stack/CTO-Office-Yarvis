@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import psycopg
 import pytest
@@ -7,6 +8,7 @@ from alembic.config import Config
 
 TEST_URL = "postgresql://yarvis:yarvis@postgres:5432/yarvis_test"
 os.environ["DATABASE_URL"] = TEST_URL
+os.environ["DOCUMENT_STORAGE_ROOT"] = "/tmp/yarvis_test_data"
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -27,3 +29,4 @@ def clean_database(test_database):
         session.commit()
         load_catalogs(session)
         session.commit()
+    shutil.rmtree(os.environ["DOCUMENT_STORAGE_ROOT"], ignore_errors=True)

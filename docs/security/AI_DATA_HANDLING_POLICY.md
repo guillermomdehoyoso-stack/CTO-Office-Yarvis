@@ -104,3 +104,8 @@ This policy must be reviewed before:
 - first external AI provider integration;
 - first processing of customer sensitive documents;
 - any production deployment.
+
+## Sprint 7.3A Intake Note
+
+- Controlled data intake processing is local-only in this sprint.
+- Uploaded files and extracted text from intake must not be sent to external AI providers.

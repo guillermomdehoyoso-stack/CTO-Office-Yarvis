@@ -26,3 +26,8 @@ Phase II — Operational Intelligence will focus on turning the current operatio
 - Observation Engine and operational policy foundation delivered.
 - NetPay now demonstrates Source -> Document -> Observation -> Policy -> Attention flow.
 - Accounting is registered as the next priority domain as documentation/schemas contract only.
+
+## Sprint 7.3A Addendum
+
+- Controlled Data Intake backend delivered for manual evidence ingestion.
+- Next increment: Sprint 7.3B Data Intake Workspace UI.

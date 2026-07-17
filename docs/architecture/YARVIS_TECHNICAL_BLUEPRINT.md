@@ -231,3 +231,9 @@ Solo si aparecen cuellos de botella reales o necesidad de escalabilidad demostra
 - Se incorpora una capa de Observation Engine con persistencia de Source, Document, Observation y ResolutionDecision.
 - Las políticas operativas se ejecutan de forma determinista sobre estado resuelto.
 - Mission Control consume resultados de políticas y conflictos como atención accionable.
+
+## 32. Sprint 7.3A Addendum
+
+- Se incorpora Data Intake backend controlado para carga manual de evidencia.
+- El almacenamiento binario usa adaptador de repositorio documental configurable.
+- La clasificación, extracción y mapeo son deterministas y locales.

@@ -12,6 +12,9 @@ class Settings:
             "postgresql://yarvis:yarvis@localhost:5432/yarvis",
         )
     )
+    document_storage_root: str = field(default_factory=lambda: getenv("DOCUMENT_STORAGE_ROOT", "/data/yarvis"))
+    max_upload_size_bytes: int = field(default_factory=lambda: int(getenv("MAX_UPLOAD_SIZE_BYTES", "5242880")))
+    preview_row_limit: int = field(default_factory=lambda: int(getenv("PREVIEW_ROW_LIMIT", "200")))
 
 
 def get_settings() -> Settings:
