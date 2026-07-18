@@ -15,6 +15,7 @@ from yarvis_api.api.routes import (
     operational_policies,
     organizations,
     people,
+    recovery_queue,
 )
 
 settings = get_settings()
@@ -39,6 +40,7 @@ app.include_router(mission_control.router)
 app.include_router(netpay.router)
 app.include_router(observations.router)
 app.include_router(operational_policies.router)
+app.include_router(recovery_queue.router)
 
 
 @app.get("/health")
