@@ -1,6 +1,10 @@
 import { Link, Route, Routes, useParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
+import { getRecoveryQueue, getStoreSummary } from './api/storeIntelligence';
+import type { RecoveryQueueResult, StoreOperationalProfile } from './types/storeIntelligence';
+import {RecoveryQueueWorkspace} from './components/store-intelligence/RecoveryQueueWorkspace';
+import {MissionControlStoreIntelligenceCard} from './components/store-intelligence/MissionControlStoreIntelligenceCard';
 
 const api = 'http://localhost:8000';
 
@@ -45,6 +49,7 @@ function Layout() {
         <Link to="/organizations">Organización</Link>
         <Link to="/people">Personas</Link>
         <Link to="/netpay-intake">NetPay XLSX</Link>
+        <Link to="/recovery-queue">Cola de recuperación</Link>
       </nav>
       <Routes>
         <Route path="/" element={<MissionControlPage />} />
@@ -54,6 +59,7 @@ function Layout() {
         <Route path="/organizations" element={<OrganizationsPage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/netpay-intake" element={<NetPayIntakePage />} />
+        <Route path="/recovery-queue" element={<RecoveryQueuePage />} />
       </Routes>
     </main>
   );
@@ -61,6 +67,7 @@ function Layout() {
 
 function MissionControlPage() {
   const missionQuery = useQuery({ queryKey: ['mission'], queryFn: () => getJson('/mission-control/summary'), retry: false });
+  const storeQuery = useQuery({ queryKey: ['store-intelligence-summary'], queryFn: getStoreSummary, retry: false });
   if (missionQuery.error) return <p className="error">No se pudo conectar con la API.</p>;
   const operationalMetrics = ['pending_reports', 'critical_stores', 'churn_candidates', 'assets_without_store', 'identity_conflicts'];
   const items: any[] = [];
@@ -293,6 +300,7 @@ function NetPayIntakePage() {
       <div className="cards">
         {Object.entries(preview.operational_summary || {}).filter(([, value]) => typeof value === 'number').map(([key, value]) => <div className="card" key={key}><small>{key.replaceAll('_', ' ')}</small><b>{String(value)}</b></div>)}
       </div>
+      <MissionControlStoreIntelligenceCard data={storeQuery.data} error={Boolean(storeQuery.error)} />
       <h3>Column mappings</h3>
       {preview.proposed_canonical_mappings.map((mapping: any) => <p className="mapping" key={mapping.source_header}><code>{mapping.source_header}</code> to {mapping.canonical_field || 'unresolved'}</p>)}
       <p>Unavailable: {(preview.operational_summary?.unavailable_fields || []).join(', ') || 'none'}.</p>
@@ -301,6 +309,8 @@ function NetPayIntakePage() {
     </section>}
   </>;
 }
+
+function RecoveryQueuePage() { return <RecoveryQueueWorkspace />; }
 
 function OrganizationsPage() {
   const { data } = useQuery({ queryKey: ['organizations-list'], queryFn: () => getJson('/organizations') });

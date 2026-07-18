@@ -72,4 +72,11 @@ describe('Yarvis web app', () => {
     expect(await screen.findByRole('heading', { name: /netpay xlsx intake/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /upload and preview/i })).toBeTruthy();
   });
+
+  it('renders the recovery queue empty state without deriving actions', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ profiles: [], pending_profiles: 0 }) }).mockResolvedValueOnce({ ok: true, json: async () => ({ pending_profiles: 0, historical_only_profiles: 2, incomplete_profiles: 1 }) });
+    render(<MemoryRouter initialEntries={['/recovery-queue']}><App /></MemoryRouter>);
+    expect(await screen.findByRole('heading', { name: /cola de recuperación/i })).toBeTruthy();
+    expect(await screen.findByText(/Ningún comercio califica actualmente/i)).toBeTruthy();
+  });
 });
