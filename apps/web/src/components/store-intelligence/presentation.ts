@@ -1,0 +1,2 @@
+export const decisionLabels: Record<string,string>={pending:'Pendiente',contact_customer:'Contactar comercio',investigate_terminal:'Investigar terminal',request_terminal_return:'Solicitar devolución',attempt_reactivation:'Intentar reactivación',review_rent:'Revisar renta',review_cancellation:'Revisar cancelación',no_action:'Sin acción',resolved:'Resuelto'};
+export const decisionValues=Object.keys(decisionLabels);
