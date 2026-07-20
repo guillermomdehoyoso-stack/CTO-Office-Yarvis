@@ -127,7 +127,9 @@ The pillars operate over the Yarvis Reality Graph (YRG). They do not create comp
 
 | Document | Role | Authority status |
 | --- | --- | --- |
-| `BOUNDED_CONTEXTS.md` | Defines bounded contexts and their responsibilities over the shared platform. | Planned — not yet created or authoritative |
+| `PLATFORM_ENGINEERING_OVERVIEW.md` | Defines ownership and contract rules for Platform Engineering. | Draft for ratification |
+| `BOUNDED_CONTEXTS.md` | Defines the proposed bounded-context map and canonical ownership assignments. | Draft for ratification |
+| `CONTEXT_INTERACTION_MODEL.md` | Defines governed interaction contracts among bounded contexts. | Draft for ratification |
 
 ## 5.6 Application and Technical Architecture
 
@@ -209,11 +211,22 @@ Ratification proceeds through explicit architectural review. Until then, contrib
 
 # 9. Planned Artifacts
 
+## Phase IV — Platform Engineering
+
+| Document | Role | Authority status |
+| --- | --- | --- |
+| `PLATFORM_ENGINEERING_OVERVIEW.md` | Defines the ownership and contract rules used to discover bounded contexts. | Draft for ratification |
+| `BOUNDED_CONTEXTS.md` | Assigns canonical ownership, context boundaries, contracts, and dependencies. | Draft for ratification |
+| `CONTEXT_INTERACTION_MODEL.md` | Defines interaction contracts, flows, and boundaries among proposed contexts. | Draft for ratification — active Phase IV artifact |
+| `PLATFORM_ENGINEERING_REVIEW.md` | Records the coherence review of Phase IV ownership and interaction artifacts. | Draft for ratification — review artifact |
+
 The following artifacts are planned and not yet authoritative:
 
-1. `BOUNDED_CONTEXTS.md`
-2. `APPLICATION_ARCHITECTURE.md`
-3. `TECHNICAL_BLUEPRINT.md`
+1. `APPLICATION_ARCHITECTURE.md` — next planned artifact
+2. `EVENT_CATALOG.md`
+3. `COMMAND_CATALOG.md`
+4. `QUERY_MODEL.md`
+5. `TECHNICAL_BLUEPRINT.md`
 
 Their future scope must conform to the Foundation, Operating Memory, and Operating Reasoning documents already identified here.
 
