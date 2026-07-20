@@ -118,8 +118,10 @@ The pillars operate over the Yarvis Reality Graph (YRG). They do not create comp
 
 | Document | Role | Authority status |
 | --- | --- | --- |
-| `AUTOMATION_ENGINE.md` | Defines authorized execution of Decisions. | Planned — not yet created or authoritative |
-| `MISSION_CONTROL_ARCHITECTURE.md` | Defines the operational decision surface over the YRG. | Planned — not yet created or authoritative |
+| `EXECUTION_MODEL.md` | Defines authorized execution, execution evidence, outcomes, and feedback to Operating Memory. | Draft for ratification |
+| `AUTOMATION_ENGINE.md` | Defines policy-constrained automation of authorized Execution Plans. | Draft for ratification |
+| `MISSION_CONTROL_ARCHITECTURE.md` | Defines the human situational-awareness and authorized-intervention layer. | Draft for ratification |
+| `OPERATING_EXECUTION_REVIEW.md` | Records the RC2 consistency review of Operating Execution. | Architecture review for RC2 |
 
 ## 5.5 Platform Structure
 
@@ -209,11 +211,9 @@ Ratification proceeds through explicit architectural review. Until then, contrib
 
 The following artifacts are planned and not yet authoritative:
 
-1. `AUTOMATION_ENGINE.md`
-2. `MISSION_CONTROL_ARCHITECTURE.md`
-3. `BOUNDED_CONTEXTS.md`
-4. `APPLICATION_ARCHITECTURE.md`
-5. `TECHNICAL_BLUEPRINT.md`
+1. `BOUNDED_CONTEXTS.md`
+2. `APPLICATION_ARCHITECTURE.md`
+3. `TECHNICAL_BLUEPRINT.md`
 
 Their future scope must conform to the Foundation, Operating Memory, and Operating Reasoning documents already identified here.
 
