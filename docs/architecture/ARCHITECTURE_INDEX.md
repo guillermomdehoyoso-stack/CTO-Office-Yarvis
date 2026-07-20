@@ -219,14 +219,13 @@ Ratification proceeds through explicit architectural review. Until then, contrib
 | `BOUNDED_CONTEXTS.md` | Assigns canonical ownership, context boundaries, contracts, and dependencies. | Draft for ratification |
 | `CONTEXT_INTERACTION_MODEL.md` | Defines interaction contracts, flows, and boundaries among proposed contexts. | Draft for ratification — active Phase IV artifact |
 | `PLATFORM_ENGINEERING_REVIEW.md` | Records the coherence review of Phase IV ownership and interaction artifacts. | Draft for ratification — review artifact |
+| `APPLICATION_ARCHITECTURE.md` | Defines modular-monolith application organization over bounded-context contracts. | Draft for ratification — active Phase IV artifact |
+| `APPLICATION_ARCHITECTURE_REVIEW.md` | Records the joint coherence review of the application-structure baseline. | Draft for ratification — review artifact |
 
 The following artifacts are planned and not yet authoritative:
 
-1. `APPLICATION_ARCHITECTURE.md` — next planned artifact
-2. `EVENT_CATALOG.md`
-3. `COMMAND_CATALOG.md`
-4. `QUERY_MODEL.md`
-5. `TECHNICAL_BLUEPRINT.md`
+1. `INTERACTION_CONTRACT_CATALOG.md` — next planned artifact; may publish `COMMAND_CATALOG.md`, `QUERY_MODEL.md`, and `EVENT_CATALOG.md` as governed derived views.
+2. `TECHNICAL_BLUEPRINT.md`
 
 Their future scope must conform to the Foundation, Operating Memory, and Operating Reasoning documents already identified here.
 
