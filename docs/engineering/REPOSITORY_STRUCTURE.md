@@ -14,6 +14,7 @@ This document records the minimum normalized repository structure implemented by
 | Python source root | `apps/api/src` |
 | Python package root | `apps/api/src/yarvis_api` |
 | Application entry point | `apps/api/src/yarvis_api/main.py` |
+| API composition root | `apps/api/src/yarvis_api/bootstrap.py` |
 | Python package metadata | `apps/api/pyproject.toml` |
 | Runtime dependencies | `apps/api/requirements.txt` |
 | Development/test dependencies | `apps/api/requirements-dev.txt`, extending runtime requirements |
@@ -25,7 +26,7 @@ This document records the minimum normalized repository structure implemented by
 | Architecture documentation | `docs/architecture` |
 | Engineering documentation | `docs/engineering` |
 
-The `src` layout is the only backend import root. `yarvis_api.main:app` is the only API application entry point. Existing route, model, schema, service, storage, and module files remain in place until a subsequent approved work package moves a file for a concrete boundary reason.
+The `src` layout is the only backend import root. `yarvis_api.bootstrap.create_app` is the sole API composition authority; `yarvis_api.main:app` is the only ASGI application entry point and a convenience adapter. Existing route, model, schema, service, storage, and module files remain in place until a subsequent approved work package moves a file for a concrete boundary reason.
 
 ## 3. Configuration, Environment, and Generated Files
 

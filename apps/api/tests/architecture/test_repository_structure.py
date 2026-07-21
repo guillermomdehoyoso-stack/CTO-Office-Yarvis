@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -10,6 +11,7 @@ API_ROOT = Path(__file__).resolve().parents[2]
 def test_canonical_python_package_root_exists() -> None:
     assert (API_ROOT / "src" / "yarvis_api" / "__init__.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "main.py").is_file()
+    assert (API_ROOT / "src" / "yarvis_api" / "bootstrap.py").is_file()
 
 
 def test_package_metadata_declares_python_312() -> None:
@@ -40,3 +42,31 @@ def test_domain_models_do_not_read_process_environment_directly() -> None:
         content = path.read_text(encoding="utf-8")
         assert "os.getenv" not in content
         assert "os.environ" not in content
+        assert "app.state" not in content
+
+
+def test_domain_models_do_not_depend_on_fastapi_or_bootstrap() -> None:
+    for path in (API_ROOT / "src" / "yarvis_api" / "models").glob("*.py"):
+        imports = {
+            alias.name
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+            if isinstance(node, ast.Import)
+            for alias in node.names
+        }
+        imports.update(
+            node.module or ""
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8")))
+            if isinstance(node, ast.ImportFrom)
+        )
+        assert all(not module.startswith("fastapi") for module in imports)
+        assert all(not module.startswith("yarvis_api.bootstrap") for module in imports)
+
+
+def test_main_is_a_thin_asgi_adapter_with_one_canonical_factory() -> None:
+    main_tree = ast.parse((API_ROOT / "src" / "yarvis_api" / "main.py").read_text(encoding="utf-8"))
+    assignments = [node for node in main_tree.body if isinstance(node, ast.Assign)]
+
+    assert len(assignments) == 1
+    assert isinstance(assignments[0].value, ast.Call)
+    assert isinstance(assignments[0].value.func, ast.Name)
+    assert assignments[0].value.func.id == "create_app"

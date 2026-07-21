@@ -17,7 +17,14 @@ where = ["src"]
 [tool.ruff]
 target-version = "py312"
 line-length = 120
-include = ["src/yarvis_api/config.py", "tests/architecture/**/*.py", "tests/test_config.py"]
+include = [
+    "src/yarvis_api/bootstrap.py",
+    "src/yarvis_api/config.py",
+    "src/yarvis_api/main.py",
+    "tests/architecture/**/*.py",
+    "tests/test_bootstrap.py",
+    "tests/test_config.py",
+]
 extend-exclude = ["migrations"]
 
 [tool.ruff.lint]
@@ -31,7 +38,7 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.pyright]
-include = ["src/yarvis_api/config.py", "tests/architecture", "tests/test_config.py"]
+include = ["src/yarvis_api/bootstrap.py", "src/yarvis_api/config.py", "src/yarvis_api/main.py", "tests/architecture", "tests/test_bootstrap.py", "tests/test_config.py"]
 exclude = ["migrations"]
 typeCheckingMode = "basic"
 pythonVersion = "3.12"
