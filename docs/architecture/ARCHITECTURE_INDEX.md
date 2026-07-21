@@ -224,6 +224,8 @@ Ratification proceeds through explicit architectural review. Until then, contrib
 | `INTERACTION_CONTRACT_CATALOG.md` | Canonical governed registry of Command, Query, Event, and Notification semantics. | Ratification recommended by Interaction Contract Review |
 | `INTERACTION_CONTRACT_REVIEW.md` | Records review and ratification recommendation for the Interaction Contract Baseline v1.0. | Draft for ratification — review artifact |
 | `ARCHITECTURAL_DECISION_TRACE.md` | Traces ratified architectural decisions to required technical controls and conformance evidence. | Draft for ratification — active architecture artifact |
+| `TECHNICAL_BLUEPRINT.md` | Concrete engineering mechanisms subordinate to ratified architecture, contracts, and decision trace. | Draft for Engineering Review |
+| `TECHNICAL_BLUEPRINT_REVIEW.md` | Formal Engineering Review of the Technical Blueprint. | Technical Blueprint v1.0 — Ratified with Accepted MINOR Findings |
 
 The following artifacts are planned and not yet authoritative:
 
