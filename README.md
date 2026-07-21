@@ -8,6 +8,10 @@ Operational Memory for Real Operations
 
 An Operational Evidence Consolidation and Operational Memory System designed to organize, connect, and preserve operational evidence, transforming operational chaos into actionable, explainable, and verifiable operational knowledge.
 
+Current implementation phase: **E-001 Engineering Foundation — F-001 Repository Normalization**. Architecture is in [docs/architecture](docs/architecture); engineering guidance is in [docs/engineering](docs/engineering).
+
+Backend requirement: **Python 3.12**. Canonical local setup and run command: `docker compose up -d`. Canonical backend test command: `docker compose exec api sh -lc "pip install -q -r requirements-dev.txt && pytest -ra"`.
+
 **Elevator pitch:** Yarvis reduces operational entropy by transforming distributed evidence into trusted operational memory.
 
 ## Visión general de Yarvis
