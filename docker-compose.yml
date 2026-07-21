@@ -1,6 +1,7 @@
 services:
   api:
-    image: python:3.12-slim
+    build:
+      context: ./apps/api
     working_dir: /app
     volumes:
       - ./apps/api:/app

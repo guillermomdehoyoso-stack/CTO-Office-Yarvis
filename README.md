@@ -10,7 +10,9 @@ An Operational Evidence Consolidation and Operational Memory System designed to 
 
 Current implementation phase: **E-001 Engineering Foundation — F-001 Repository Normalization**. Architecture is in [docs/architecture](docs/architecture); engineering guidance is in [docs/engineering](docs/engineering).
 
-Backend requirement: **Python 3.12**. Canonical local setup and run command: `docker compose up -d`. Canonical backend test command: `docker compose exec api sh -lc "pip install -q -r requirements-dev.txt && pytest -ra"`.
+Backend requirement: **Python 3.12**. Canonical local setup and run command: `docker compose up -d --build`. For an editable backend environment, run from `apps/api`: `python -m pip install -r requirements-dev.txt` followed by `python -m pip install -e .`. Canonical backend test command: `docker compose exec api sh -lc "pip install -q -r requirements-dev.txt && pytest -ra"`.
+
+From `apps/api`, the baseline quality commands are `ruff check`, `ruff format --check`, and `pyright`. Their initial scope is the new architecture-conformance code; legacy remediation is deferred to a later approved conformance work package.
 
 **Elevator pitch:** Yarvis reduces operational entropy by transforming distributed evidence into trusted operational memory.
 

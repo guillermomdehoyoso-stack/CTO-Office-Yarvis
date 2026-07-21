@@ -29,7 +29,7 @@ The `src` layout is the only backend import root. `yarvis_api.main:app` is the o
 
 ## 3. Configuration, Environment, and Generated Files
 
-`apps/api/requirements.txt` is the canonical runtime dependency manifest. `requirements-dev.txt` may extend it only for development/test tools. `pyproject.toml` is the canonical package metadata and build configuration; it must not duplicate runtime dependency authority.
+`apps/api/requirements.txt` is the canonical runtime dependency manifest. `requirements-dev.txt` extends it only for development, test, lint, and type-check tools. `pyproject.toml` is the canonical package metadata, build, lint, format, and type-check configuration; it must not duplicate runtime dependency authority. The editable development installation is `python -m pip install -r requirements-dev.txt` followed by `python -m pip install -e .` from `apps/api`.
 
 `.env.example` documents local examples only. `.env` files, credentials, keys, document uploads, databases, backups, caches, logs, virtual environments, test/build outputs, and editor-local files are not committed. `docker-compose.yml` is the canonical local service topology.
 
@@ -54,7 +54,7 @@ No existing files were moved or deleted in F-001. Existing backend tests remain 
 Canonical local commands:
 
 ```text
-docker compose up -d
+docker compose up -d --build
 docker compose exec api sh -lc "pip install -q -r requirements-dev.txt && pytest -ra"
 ```
 
