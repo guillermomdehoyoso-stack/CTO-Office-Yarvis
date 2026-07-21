@@ -6,3 +6,4 @@ email-validator==2.2.0
 uvicorn[standard]==0.35.0
 openpyxl==3.1.5
 python-multipart==0.0.20
+pydantic-settings==2.10.1

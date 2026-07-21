@@ -32,3 +32,11 @@ def test_runtime_dependency_and_quality_authorities_are_declared() -> None:
 
 def test_canonical_fastapi_application_remains_importable() -> None:
     assert isinstance(app, FastAPI)
+
+
+def test_domain_models_do_not_read_process_environment_directly() -> None:
+    domain_files = (API_ROOT / "src" / "yarvis_api" / "models").glob("*.py")
+    for path in domain_files:
+        content = path.read_text(encoding="utf-8")
+        assert "os.getenv" not in content
+        assert "os.environ" not in content

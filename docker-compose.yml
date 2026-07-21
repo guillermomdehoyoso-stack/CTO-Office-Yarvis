@@ -10,9 +10,10 @@ services:
     ports:
       - "127.0.0.1:8000:8000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-yarvis}:${POSTGRES_PASSWORD:-yarvis}@postgres:5432/${POSTGRES_DB:-yarvis}
+      YARVIS_ENVIRONMENT: local
+      YARVIS_DATABASE_URL: postgresql://${POSTGRES_USER:-yarvis}:${POSTGRES_PASSWORD:-yarvis}@postgres:5432/${POSTGRES_DB:-yarvis}
       PYTHONPATH: /app/src
-      DOCUMENT_STORAGE_ROOT: /data/yarvis
+      YARVIS_DOCUMENT_STORAGE_ROOT: /data/yarvis
     depends_on:
       postgres:
         condition: service_healthy
