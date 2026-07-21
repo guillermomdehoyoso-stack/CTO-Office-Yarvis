@@ -15,6 +15,7 @@ This document records the minimum normalized repository structure implemented by
 | Python package root | `apps/api/src/yarvis_api` |
 | Application entry point | `apps/api/src/yarvis_api/main.py` |
 | API composition root | `apps/api/src/yarvis_api/bootstrap.py` |
+| Application module registry | `apps/api/src/yarvis_api/module_registry.py` |
 | Python package metadata | `apps/api/pyproject.toml` |
 | Runtime dependencies | `apps/api/requirements.txt` |
 | Development/test dependencies | `apps/api/requirements-dev.txt`, extending runtime requirements |

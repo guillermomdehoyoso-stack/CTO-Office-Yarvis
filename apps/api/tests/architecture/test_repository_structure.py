@@ -12,6 +12,7 @@ def test_canonical_python_package_root_exists() -> None:
     assert (API_ROOT / "src" / "yarvis_api" / "__init__.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "main.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "bootstrap.py").is_file()
+    assert (API_ROOT / "src" / "yarvis_api" / "module_registry.py").is_file()
 
 
 def test_package_metadata_declares_python_312() -> None:
@@ -43,6 +44,7 @@ def test_domain_models_do_not_read_process_environment_directly() -> None:
         assert "os.getenv" not in content
         assert "os.environ" not in content
         assert "app.state" not in content
+        assert "yarvis_api.module_registry" not in content
 
 
 def test_domain_models_do_not_depend_on_fastapi_or_bootstrap() -> None:
@@ -70,3 +72,13 @@ def test_main_is_a_thin_asgi_adapter_with_one_canonical_factory() -> None:
     assert isinstance(assignments[0].value, ast.Call)
     assert isinstance(assignments[0].value.func, ast.Name)
     assert assignments[0].value.func.id == "create_app"
+
+
+def test_registry_uses_no_discovery_or_global_registration_mechanism() -> None:
+    registry_tree = ast.parse((API_ROOT / "src" / "yarvis_api" / "module_registry.py").read_text(encoding="utf-8"))
+    imports = {alias.name for node in ast.walk(registry_tree) if isinstance(node, ast.Import) for alias in node.names}
+    imports.update(node.module or "" for node in ast.walk(registry_tree) if isinstance(node, ast.ImportFrom))
+
+    assert all(not module.startswith("importlib") for module in imports)
+    assert all(not module.startswith("pkgutil") for module in imports)
+    assert all(not module.startswith("pathlib") for module in imports)

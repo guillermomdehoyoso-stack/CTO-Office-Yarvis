@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import AsyncIterator
@@ -10,6 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from yarvis_api.config import Settings, get_settings
+from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
 
 
 @dataclass(slots=True)
@@ -22,6 +24,7 @@ class ApplicationState:
     """
 
     settings: Settings
+    module_registry: ModuleRegistry
     lifecycle_active: bool = False
 
 
@@ -53,7 +56,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     """Reserve the explicit handler boundary; typed error handling belongs to F-012."""
 
 
-def register_routes(app: FastAPI) -> None:
+def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     """Register technical routes and the retained incremental interface baseline."""
     from yarvis_api.api.routes import (
         cases,
@@ -86,12 +89,19 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(observations.router)
     app.include_router(operational_policies.router)
     app.include_router(recovery_queue.router)
+    for module in module_registry.modules:
+        if module.register_routes is not None:
+            module.register_routes(app)
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    modules: Iterable[ApplicationModule] | None = None,
+) -> FastAPI:
     """Create one isolated FastAPI application from validated typed settings."""
 
     composed_settings = settings if settings is not None else get_settings()
+    module_registry = build_module_registry(() if modules is None else modules)
     documentation_enabled = composed_settings.api_docs_enabled
     app = FastAPI(
         title=composed_settings.app_name,
@@ -102,8 +112,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/openapi.json" if documentation_enabled else None,
         lifespan=application_lifespan,
     )
-    app.state.yarvis = ApplicationState(settings=composed_settings)
+    app.state.yarvis = ApplicationState(settings=composed_settings, module_registry=module_registry)
     register_middleware(app, composed_settings)
     register_exception_handlers(app)
-    register_routes(app)
+    register_routes(app, module_registry)
     return app

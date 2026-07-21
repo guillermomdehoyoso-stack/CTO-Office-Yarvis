@@ -17,9 +17,9 @@ The factory uses explicitly supplied settings when present and otherwise calls t
 
 The factory uses FastAPI lifespan. It owns deterministic startup and shutdown boundaries only; it opens no database connection, runs no migration, starts no worker or scheduler, dispatches no contract, and contacts no external system.
 
-Each application has one `ApplicationState` under `app.state.yarvis`. It contains only the application settings and lifecycle marker. It is per-instance technical state, not a mutable service locator, and must not contain domain state or concrete infrastructure services.
+Each application has one `ApplicationState` under `app.state.yarvis`. It contains application settings, lifecycle marker, and the per-instance sealed F-005 `ModuleRegistry`. It is typed technical state, not a mutable service locator, and must not contain domain state or concrete infrastructure services.
 
-`register_routes`, `register_middleware`, and `register_exception_handlers` are explicit composition boundaries. Existing incremental interface routes are retained through the single route-registration function. CORS remains the only required middleware. Exception-handler registration is intentionally empty until F-012 establishes typed error handling.
+`register_routes`, `register_middleware`, and `register_exception_handlers` are explicit composition boundaries. Existing incremental interface routes are retained through the single route-registration function; supplied F-005 module route hooks run once in resolved registry order. CORS remains the only required middleware. Exception-handler registration is intentionally empty until F-012 establishes typed error handling.
 
 ## 4. Documentation, Health, Imports, and Tests
 
