@@ -221,11 +221,15 @@ Ratification proceeds through explicit architectural review. Until then, contrib
 | `PLATFORM_ENGINEERING_REVIEW.md` | Records the coherence review of Phase IV ownership and interaction artifacts. | Draft for ratification — review artifact |
 | `APPLICATION_ARCHITECTURE.md` | Defines modular-monolith application organization over bounded-context contracts. | Draft for ratification — active Phase IV artifact |
 | `APPLICATION_ARCHITECTURE_REVIEW.md` | Records the joint coherence review of the application-structure baseline. | Draft for ratification — review artifact |
+| `INTERACTION_CONTRACT_CATALOG.md` | Canonical governed registry of Command, Query, Event, and Notification semantics. | Ratification recommended by Interaction Contract Review |
+| `INTERACTION_CONTRACT_REVIEW.md` | Records review and ratification recommendation for the Interaction Contract Baseline v1.0. | Draft for ratification — review artifact |
 
 The following artifacts are planned and not yet authoritative:
 
-1. `INTERACTION_CONTRACT_CATALOG.md` — next planned artifact; may publish `COMMAND_CATALOG.md`, `QUERY_MODEL.md`, and `EVENT_CATALOG.md` as governed derived views.
-2. `TECHNICAL_BLUEPRINT.md`
+1. `INTERACTION_CONTRACT_REVIEW.md` — next formal artifact
+2. `ARCHITECTURAL_DECISION_TRACE.md` — follows contract review
+3. `TECHNICAL_BLUEPRINT.md` — follows decision trace
+4. `REFERENCE_IMPLEMENTATION_GUIDE.md` — follows the Technical Blueprint
 
 Their future scope must conform to the Foundation, Operating Memory, and Operating Reasoning documents already identified here.
 
