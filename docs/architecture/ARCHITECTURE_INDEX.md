@@ -223,13 +223,12 @@ Ratification proceeds through explicit architectural review. Until then, contrib
 | `APPLICATION_ARCHITECTURE_REVIEW.md` | Records the joint coherence review of the application-structure baseline. | Draft for ratification — review artifact |
 | `INTERACTION_CONTRACT_CATALOG.md` | Canonical governed registry of Command, Query, Event, and Notification semantics. | Ratification recommended by Interaction Contract Review |
 | `INTERACTION_CONTRACT_REVIEW.md` | Records review and ratification recommendation for the Interaction Contract Baseline v1.0. | Draft for ratification — review artifact |
+| `ARCHITECTURAL_DECISION_TRACE.md` | Traces ratified architectural decisions to required technical controls and conformance evidence. | Draft for ratification — active architecture artifact |
 
 The following artifacts are planned and not yet authoritative:
 
-1. `INTERACTION_CONTRACT_REVIEW.md` — next formal artifact
-2. `ARCHITECTURAL_DECISION_TRACE.md` — follows contract review
-3. `TECHNICAL_BLUEPRINT.md` — follows decision trace
-4. `REFERENCE_IMPLEMENTATION_GUIDE.md` — follows the Technical Blueprint
+1. `TECHNICAL_BLUEPRINT.md` — next artifact; subordinate to ratified architecture, Interaction Contracts, and the Decision Trace
+2. `REFERENCE_IMPLEMENTATION_GUIDE.md` — follows the Technical Blueprint
 
 Their future scope must conform to the Foundation, Operating Memory, and Operating Reasoning documents already identified here.
 
