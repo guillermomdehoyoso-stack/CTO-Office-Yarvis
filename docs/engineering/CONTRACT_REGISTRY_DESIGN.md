@@ -3,6 +3,12 @@
 
 ## Status: Ratified Engineering Design
 
+## Amendment History
+
+| Amendment | Status | Summary |
+| --- | --- | --- |
+| `CONTRACT-REGISTRY-AMENDMENT-001` | Ratified engineering-design alignment | Aligns F-006 projection metadata with the Tier 1 catalog without changing architectural authority, contract identity, ownership, or runtime scope. |
+
 ## 1. Work-Package Identity and Name
 
 **Work package:** F-006 — Contract Registry  
@@ -121,14 +127,19 @@ the following fields and no binding fields in F-006:
 | `lifecycle` | Architectural governance state. |
 | `operational_status` | Independently governed operational availability state. |
 | `criticality` | Architectural and operational impact classification. |
-| `architectural_steward` | Nonblank accountable architectural steward. |
-| `permitted_consumers` | Immutable nonempty collection of declared consumers. |
-| `use_case_references` | Immutable nonempty collection of governed use-case references. |
-| `traceability_references` | Immutable nonempty collection of catalog/decision-trace/conformance references. |
+| `primary_consumer_or_use_case` | Nonblank catalog-faithful text from the Tier 1 “Primary consumer/use case” column. It is not an authorization rule. |
+| `architectural_steward` | Optional governance metadata. It may be `None`; when present, it is nonblank and uses ratified terminology. |
+| `traceability_references` | Optional immutable collection. It defaults to `()`; every supplied entry is nonblank. |
 
-`permitted_consumers` and `use_case_references` retain the catalog's canonical
-terms rather than collapsing them into an ambiguous combined field. They are
-metadata only: consumers gain no ownership through registration.
+The Tier 1 catalog provides a single “Primary consumer/use case” value. F-006
+therefore preserves it as one governed text field and does not parse it into
+consumers, use-case identifiers, authorization subjects, or policy bindings.
+It grants no ownership or access authority.
+
+The catalog requires architectural stewardship and traceability at the
+architectural level but does not provide a per-contract mapping for the Tier 1
+projection. F-006 preserves both fields as optional enrichment metadata and
+does not infer or fabricate their values.
 
 The complete semantic fields specified by the Markdown catalog remain
 architectural authority. Fields such as input/output semantics, temporal
@@ -183,8 +194,9 @@ Before sealing, F-006 validates:
 1. `interaction_contract_id` is nonblank, unique, and conforms to the catalog
    identifier convention.
 2. `version` conforms to the F-006 semantic-version format.
-3. All required metadata fields are present and nonblank, and declared
-   collections are immutable and nonempty where required.
+3. All required text metadata fields are present and nonblank. The optional
+   `architectural_steward`, when present, is nonblank. The optional immutable
+   `traceability_references` collection contains only nonblank entries.
 4. `contract_type`, `lifecycle`, `operational_status`, and `criticality` use
    their governed vocabularies.
 5. `owner_module_id` exists in the Module Registry belonging to the same
@@ -195,9 +207,9 @@ Before sealing, F-006 validates:
 7. Mutation is rejected after sealing.
 
 F-006 does not validate contract dependency graphs, compatibility matrices,
-payload schemas, handler drift, consumer availability, or runtime
-implementation readiness. Those controls require later contract bindings and
-must not be implied by metadata registration.
+payload schemas, handler drift, consumer availability, runtime implementation
+readiness, or a separation of consumers from use cases. Those controls require
+later ratified work and must not be implied by metadata registration.
 
 ## 12. Lifecycle, Sealing, and Isolation
 
@@ -267,9 +279,9 @@ architectural authority; the Python tuple is its bounded technical projection.
 
 The projection must retain each contract's stable identifier, `1.0.0` version,
 `Proposed` lifecycle, `Planned` operational status, owner module/context/
-capability, criticality, steward, consumers/use cases, and traceability
-references. No contract dependency is encoded unless later ratified scope
-requires it.
+capability, criticality, and catalog-faithful primary consumer/use-case text.
+It may leave optional stewardship and traceability enrichment absent. No
+contract dependency is encoded unless later ratified scope requires it.
 
 ## 16. Typed Error Model
 
@@ -300,6 +312,8 @@ F-006 does not implement or authorize:
 - dynamic discovery, import-time registration, package scanning, or global
   registry state;
 - detailed compatibility enforcement or contract dependency graph enforcement;
+- steward-assignment governance, detailed traceability mapping, separation of
+  consumers from use cases, authorization subjects, or policy bindings;
 - domain behavior, canonical-state mutation, or runtime source-of-truth
   semantics.
 
@@ -310,7 +324,8 @@ F-006 implementation is complete only when:
 1. one typed, per-application Contract Registry exists;
 2. the 37 explicit Tier 1 metadata definitions load through composition;
 3. IDs, versions, kind, ownership, lifecycle, operational status, criticality,
-   steward, consumers/use cases, and traceability references validate;
+   and catalog-faithful primary consumer/use-case text validate; optional
+   stewardship and traceability enrichment validate when supplied;
 4. owner-module validation uses the per-application sealed Module Registry;
 5. lifecycle and operational status remain independently represented;
 6. duplicate, invalid, unknown-owner, and post-seal mutation failures are
@@ -340,11 +355,13 @@ during composition.
 
 There are no F-006 design blockers or required architecture amendments.
 
-The following are intentionally deferred rather than unresolved: payload and
-response schemas, bindings and handler drift, detailed compatibility and
-dependency enforcement, privacy classes by consumer, freshness thresholds,
-and transport/API representation. They require a later ratified work package
-and must not be inferred by F-006.
+The following are intentionally deferred rather than unresolved: steward
+assignment governance, detailed traceability mapping, separation of consumers
+from use cases, authorization subjects, policy bindings, payload and response
+schemas, bindings and handler drift, detailed compatibility and dependency
+enforcement, privacy classes by consumer, freshness thresholds, and
+transport/API representation. They require a later ratified work package and
+must not be inferred by F-006.
 
 ## 21. Closing Statement
 
