@@ -11,7 +11,7 @@ F-004 establishes the deterministic API composition root required by the Technic
 
 `apps/api/src/yarvis_api/bootstrap.py` is the sole API composition root. Its public factory is `create_app(settings: Settings | None = None) -> FastAPI`; every call creates a distinct application. `apps/api/src/yarvis_api/main.py` is only the Uvicorn-compatible adapter: `app = create_app()`.
 
-The factory uses explicitly supplied settings when present and otherwise calls the canonical F-003 cached `get_settings()` provider. Application title, version, debug state, CORS configuration, and documentation routes derive from that typed settings object. `Settings.app_version` remains the current version authority; package-metadata integration is deferred rather than duplicated.
+The factory uses explicitly supplied settings when present and otherwise calls the canonical F-003 cached `get_settings()` provider. Application title, version, debug state, CORS configuration, and documentation routes derive from that typed settings object. With `modules=None`, it composes the F-005A canonical context-module baseline; an explicit iterable, including `()`, overrides that baseline for isolated composition. `Settings.app_version` remains the current version authority; package-metadata integration is deferred rather than duplicated.
 
 ## 3. Lifecycle, State, and Composition Boundaries
 

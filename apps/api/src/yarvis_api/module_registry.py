@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from fastapi import FastAPI
 
 ModuleRouteHook = Callable[[FastAPI], None]
-MODULE_ID_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$")
+MODULE_ID_PATTERN = re.compile(r"^[a-z][a-z0-9_]*(?:[.-][a-z0-9_]+)*$")
 
 
 class ModuleRegistryError(ValueError):

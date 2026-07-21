@@ -5,17 +5,17 @@
 
 ## 1. Work-Package Identity and Purpose
 
-F-005 establishes the one explicit, deterministic technical registry through which an API application instance receives declared Yarvis application modules. It is a composition mechanism, not a domain authority, plugin system, service locator, command bus, or discovery framework.
+F-005 establishes the one explicit, deterministic technical registry through which an API application instance receives declared Yarvis application modules. F-005A supplies the explicit canonical context-module baseline used when no module iterable is provided. The registry is a composition mechanism, not a domain authority, plugin system, service locator, command bus, or discovery framework.
 
 ## 2. Registry Authority and Module Contract
 
 `apps/api/src/yarvis_api/module_registry.py` is the single registry authority. `ApplicationModule` is an immutable declaration containing only a stable `module_id`, a nonblank `display_name`, immutable declared dependencies, and an optional composition-time `register_routes` hook. Versions, capability metadata, enablement, lifecycle hooks, feature flags, and tenant-specific module sets are deferred.
 
-Module identifiers use lower-case dotted or hyphenated segments: `^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$`. They are semantic deployment-stable identifiers, not import paths, display names, or runtime state.
+Module identifiers use lower-case segments with dots, hyphens, or underscores: `^[a-z][a-z0-9_]*(?:[.-][a-z0-9_]+)*$`. They are semantic deployment-stable identifiers, not import paths, display names, or runtime state.
 
 ## 3. Registration, Ordering, and Validation
 
-Modules are supplied explicitly to `build_module_registry()` or the composition root; modules never self-register. `ModuleRegistry` registers declarations in supplied order, validates duplicate identifiers and missing dependencies, then seals into a deterministic topological order. Dependencies always precede dependents; otherwise independent modules preserve supplied registration order.
+Modules are supplied explicitly to `build_module_registry()` or the composition root; modules never self-register. `create_app(modules=None)` receives the F-005A canonical baseline, while an explicit iterable — including `()` — is composed exactly as supplied. `ModuleRegistry` registers declarations in supplied order, validates duplicate identifiers and missing dependencies, then seals into a deterministic topological order. Dependencies always precede dependents; otherwise independent modules preserve supplied registration order.
 
 The registry reports typed, safe errors for invalid declarations, duplicates, missing dependencies, dependency cycles, and mutation after sealing. An empty sealed registry is valid. Sealing produces an immutable module ordering; it does not execute module behavior.
 

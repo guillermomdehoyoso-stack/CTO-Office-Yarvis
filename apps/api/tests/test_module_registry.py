@@ -58,6 +58,8 @@ def test_dependency_order_precedes_dependents_and_preserves_independent_order() 
 
 
 def test_invalid_duplicate_missing_and_cyclic_declarations_fail_safely() -> None:
+    assert module("core_valid").module_id == "core_valid"
+
     with pytest.raises(InvalidModuleDefinitionError):
         module(" ")
 
@@ -105,7 +107,7 @@ def test_applications_receive_isolated_registries_and_register_route_hooks_once(
 
     assert first.state.yarvis.module_registry is not second.state.yarvis.module_registry
     assert [module.module_id for module in first.state.yarvis.module_registry.modules] == ["core.test-route"]
-    assert second.state.yarvis.module_registry.modules == ()
+    assert "identity" in [module.module_id for module in second.state.yarvis.module_registry.modules]
     assert calls == ["core.test-route"]
     with TestClient(first) as client:
         assert client.get("/_test/module").json() == {"module": "core.test-route"}

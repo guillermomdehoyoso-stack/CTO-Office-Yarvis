@@ -19,11 +19,13 @@ target-version = "py312"
 line-length = 120
 include = [
     "src/yarvis_api/bootstrap.py",
+    "src/yarvis_api/canonical_modules.py",
     "src/yarvis_api/config.py",
     "src/yarvis_api/main.py",
     "src/yarvis_api/module_registry.py",
     "tests/architecture/**/*.py",
     "tests/test_bootstrap.py",
+    "tests/test_canonical_modules.py",
     "tests/test_config.py",
     "tests/test_module_registry.py",
 ]
@@ -40,7 +42,7 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.pyright]
-include = ["src/yarvis_api/bootstrap.py", "src/yarvis_api/config.py", "src/yarvis_api/main.py", "src/yarvis_api/module_registry.py", "tests/architecture", "tests/test_bootstrap.py", "tests/test_config.py", "tests/test_module_registry.py"]
+include = ["src/yarvis_api/bootstrap.py", "src/yarvis_api/canonical_modules.py", "src/yarvis_api/config.py", "src/yarvis_api/main.py", "src/yarvis_api/module_registry.py", "tests/architecture", "tests/test_bootstrap.py", "tests/test_canonical_modules.py", "tests/test_config.py", "tests/test_module_registry.py"]
 exclude = ["migrations"]
 typeCheckingMode = "basic"
 pythonVersion = "3.12"

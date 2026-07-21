@@ -13,6 +13,7 @@ def test_canonical_python_package_root_exists() -> None:
     assert (API_ROOT / "src" / "yarvis_api" / "main.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "bootstrap.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "module_registry.py").is_file()
+    assert (API_ROOT / "src" / "yarvis_api" / "canonical_modules.py").is_file()
 
 
 def test_package_metadata_declares_python_312() -> None:
@@ -82,3 +83,10 @@ def test_registry_uses_no_discovery_or_global_registration_mechanism() -> None:
     assert all(not module.startswith("importlib") for module in imports)
     assert all(not module.startswith("pkgutil") for module in imports)
     assert all(not module.startswith("pathlib") for module in imports)
+
+
+def test_canonical_module_baseline_remains_an_explicit_technical_declaration() -> None:
+    baseline_tree = ast.parse((API_ROOT / "src" / "yarvis_api" / "canonical_modules.py").read_text(encoding="utf-8"))
+    imports = {node.module or "" for node in ast.walk(baseline_tree) if isinstance(node, ast.ImportFrom)}
+
+    assert imports == {"yarvis_api.module_registry"}

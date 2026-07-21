@@ -10,6 +10,7 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from yarvis_api.canonical_modules import canonical_modules
 from yarvis_api.config import Settings, get_settings
 from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
 
@@ -101,7 +102,7 @@ def create_app(
     """Create one isolated FastAPI application from validated typed settings."""
 
     composed_settings = settings if settings is not None else get_settings()
-    module_registry = build_module_registry(() if modules is None else modules)
+    module_registry = build_module_registry(canonical_modules() if modules is None else modules)
     documentation_enabled = composed_settings.api_docs_enabled
     app = FastAPI(
         title=composed_settings.app_name,
