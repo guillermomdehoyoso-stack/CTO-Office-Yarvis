@@ -15,6 +15,7 @@ from yarvis_api.canonical_modules import canonical_modules
 from yarvis_api.config import Settings, get_settings
 from yarvis_api.contract_registry import ContractDefinition, ContractRegistry, build_contract_registry
 from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
+from yarvis_api.persistence import PersistenceRuntime, build_persistence_runtime
 
 
 @dataclass(slots=True)
@@ -29,6 +30,8 @@ class ApplicationState:
     settings: Settings
     module_registry: ModuleRegistry
     contract_registry: ContractRegistry
+    persistence: PersistenceRuntime
+    persistence_owner_token: object
     lifecycle_active: bool = False
 
 
@@ -41,6 +44,7 @@ async def application_lifespan(app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
+        state.persistence.dispose(state.persistence_owner_token)
         state.lifecycle_active = False
 
 
@@ -102,6 +106,7 @@ def create_app(
     settings: Settings | None = None,
     modules: Iterable[ApplicationModule] | None = None,
     contracts: Iterable[ContractDefinition] | None = None,
+    persistence: PersistenceRuntime | None = None,
 ) -> FastAPI:
     """Create one isolated FastAPI application from validated typed settings."""
 
@@ -111,6 +116,11 @@ def create_app(
         module_registry,
         canonical_contracts() if contracts is None else contracts,
     )
+    persistence_runtime = persistence if persistence is not None else build_persistence_runtime(composed_settings)
+    if not persistence_runtime.is_compatible_with(composed_settings):
+        raise ValueError("persistence runtime is incompatible with application settings")
+    persistence_owner_token = object()
+    persistence_runtime.transfer_ownership(persistence_owner_token)
     documentation_enabled = composed_settings.api_docs_enabled
     app = FastAPI(
         title=composed_settings.app_name,
@@ -125,6 +135,8 @@ def create_app(
         settings=composed_settings,
         module_registry=module_registry,
         contract_registry=contract_registry,
+        persistence=persistence_runtime,
+        persistence_owner_token=persistence_owner_token,
     )
     register_middleware(app, composed_settings)
     register_exception_handlers(app)

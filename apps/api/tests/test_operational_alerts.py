@@ -3,7 +3,6 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
-from yarvis_api.database import SessionLocal
 from yarvis_api.main import app
 from yarvis_api.models.checklist import DocumentType, RequirementFulfillment
 
@@ -47,7 +46,7 @@ def test_validity_date_sources_persist_and_catalog_changes_do_not_rewrite(monkey
     case, checklist, intake = setup_case()
     first = fulfill(case, checklist, intake)
     assert client.post(f"/requirement-fulfillments/{first['id']}/validate", json={"valid_from": fixed.isoformat()}).json()["valid_until"].startswith("2026-04-01")
-    with SessionLocal() as db:
+    with app.state.yarvis.persistence.create_session() as db:
         persisted = db.get(RequirementFulfillment, first["id"])
         assert persisted.valid_until == fixed + timedelta(days=90)
         document_type = db.scalar(__import__("sqlalchemy").select(DocumentType).where(DocumentType.code == "cfe_bill"))

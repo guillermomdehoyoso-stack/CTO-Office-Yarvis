@@ -80,7 +80,7 @@ class Settings(BaseSettings):
     @field_validator("database_url_secret")
     @classmethod
     def validate_database_url(cls, value: SecretStr) -> SecretStr:
-        if not value.get_secret_value().startswith(("postgresql://", "postgres://")):
+        if not value.get_secret_value().startswith(("postgresql://", "postgres://", "postgresql+psycopg://")):
             raise ValueError("database URL must use a PostgreSQL scheme")
         return value
 

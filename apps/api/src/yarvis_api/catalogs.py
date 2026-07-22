@@ -138,10 +138,18 @@ def load_catalogs(db: Session) -> None:
 
 
 def main() -> None:
-    from yarvis_api.database import SessionLocal
-    with SessionLocal() as db:
-        load_catalogs(db)
-        db.commit()
+    from yarvis_api.config import get_settings
+    from yarvis_api.persistence import build_persistence_runtime
+
+    runtime = build_persistence_runtime(get_settings())
+    owner_token = object()
+    runtime.transfer_ownership(owner_token)
+    try:
+        with runtime.create_session() as db:
+            load_catalogs(db)
+            db.commit()
+    finally:
+        runtime.dispose(owner_token)
     print("Catalogs loaded")
 
 

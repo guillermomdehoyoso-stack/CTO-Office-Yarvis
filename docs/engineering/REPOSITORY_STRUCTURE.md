@@ -19,6 +19,8 @@ This document records the minimum normalized repository structure implemented by
 | Canonical module composition baseline | `apps/api/src/yarvis_api/canonical_modules.py` |
 | Application contract registry | `apps/api/src/yarvis_api/contract_registry.py` |
 | Canonical Tier 1 contract projection | `apps/api/src/yarvis_api/canonical_contracts.py` |
+| Application persistence runtime | `apps/api/src/yarvis_api/persistence/runtime.py` |
+| Legacy route-session adapter | `apps/api/src/yarvis_api/database.py` (transitional; no global Engine or session factory) |
 | Python package metadata | `apps/api/pyproject.toml` |
 | Runtime dependencies | `apps/api/requirements.txt` |
 | Development/test dependencies | `apps/api/requirements-dev.txt`, extending runtime requirements |

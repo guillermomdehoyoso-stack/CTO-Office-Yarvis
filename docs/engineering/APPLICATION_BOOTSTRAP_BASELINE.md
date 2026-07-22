@@ -15,12 +15,12 @@ The factory uses explicitly supplied settings when present and otherwise calls t
 
 ## 3. Lifecycle, State, and Composition Boundaries
 
-The factory uses FastAPI lifespan. It owns deterministic startup and shutdown boundaries only; it opens no database connection, runs no migration, starts no worker or scheduler, dispatches no contract, and contacts no external system.
+The factory uses FastAPI lifespan. It owns deterministic startup and shutdown boundaries only; it constructs and later disposes its owned F-007 persistence runtime, but opens no database connection, runs no migration, starts no worker or scheduler, dispatches no contract, and contacts no external system.
 
-Each application has one `ApplicationState` under `app.state.yarvis`. It contains application settings, lifecycle marker, the per-instance sealed F-005 `ModuleRegistry`, and the per-instance sealed F-006 `ContractRegistry`. It is typed technical state, not a mutable service locator, and must not contain domain state or concrete infrastructure services.
+Each application has one `ApplicationState` under `app.state.yarvis`. It contains application settings, lifecycle marker, the per-instance sealed F-005 `ModuleRegistry`, the per-instance sealed F-006 `ContractRegistry`, and the application-owned F-007 `PersistenceRuntime`. It is typed technical state, not a mutable service locator, and must not contain domain state, repositories, or active sessions.
 
-`create_app(settings=None, modules=None, contracts=None)` composes settings,
-then modules, then contracts, then application state, then routes. With
+`create_app(settings=None, modules=None, contracts=None, persistence=None)` composes settings,
+then modules, then contracts, then persistence, then application state, then routes. With
 `contracts=None`, it composes the explicit F-006 canonical Tier 1 baseline;
 an explicit iterable, including `()`, replaces that baseline for isolated
 composition. Contract registration remains technical metadata and does not
@@ -32,7 +32,7 @@ dispatch, authorize, or execute interactions.
 
 Documentation and OpenAPI routes are enabled only when `api_docs_enabled` is true. The setting is explicit for local, test, and production profiles; production can disable the routes. The neutral `/health` endpoint proves only API-process availability and does not claim database, worker, scheduler, or external dependency readiness.
 
-Importing `bootstrap` starts no external resource. Constructing applications is isolated and testable without Docker or PostgreSQL connections. Importing `main.app` may validate default configuration through F-003, but composition itself does not establish external connections.
+Importing `bootstrap` starts no external resource. Constructing applications is isolated and testable without Docker or PostgreSQL connections: F-007 Engine construction is lazy. A supplied runtime transfers exclusive ownership to its application and reuse by another application fails deterministically. Importing `main.app` may validate default configuration through F-003, but composition itself does not establish external connections.
 
 Focused tests cover factory isolation, explicit/default settings, metadata, documentation behavior, lifespan, `main.app`, neutral health, retained interface routes, and absence of bootstrap database/worker/scheduler activity. Architecture tests enforce the single factory, thin ASGI adapter, and current model-layer framework/bootstrap independence.
 

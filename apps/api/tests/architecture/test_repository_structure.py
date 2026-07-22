@@ -16,6 +16,7 @@ def test_canonical_python_package_root_exists() -> None:
     assert (API_ROOT / "src" / "yarvis_api" / "canonical_modules.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "contract_registry.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "canonical_contracts.py").is_file()
+    assert (API_ROOT / "src" / "yarvis_api" / "persistence" / "runtime.py").is_file()
 
 
 def test_package_metadata_declares_python_312() -> None:
@@ -65,6 +66,21 @@ def test_domain_models_do_not_depend_on_fastapi_or_bootstrap() -> None:
         )
         assert all(not module.startswith("fastapi") for module in imports)
         assert all(not module.startswith("yarvis_api.bootstrap") for module in imports)
+        assert all(not module.startswith("yarvis_api.persistence") for module in imports)
+
+
+def test_legacy_database_adapter_has_no_global_engine_or_session_factory() -> None:
+    database_tree = ast.parse((API_ROOT / "src" / "yarvis_api" / "database.py").read_text(encoding="utf-8"))
+    assigned_names = {
+        target.id
+        for node in database_tree.body
+        if isinstance(node, (ast.Assign, ast.AnnAssign))
+        for target in ([node.target] if isinstance(node, ast.AnnAssign) else node.targets)
+        if isinstance(target, ast.Name)
+    }
+
+    assert "engine" not in assigned_names
+    assert "SessionLocal" not in assigned_names
 
 
 def test_main_is_a_thin_asgi_adapter_with_one_canonical_factory() -> None:

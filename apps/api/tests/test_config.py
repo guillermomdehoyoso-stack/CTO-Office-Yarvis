@@ -52,6 +52,13 @@ def test_secret_is_not_in_settings_representation() -> None:
     assert "secret-value" not in repr(settings)
 
 
+def test_psycopg_sqlalchemy_url_is_accepted_without_exposing_secrets() -> None:
+    settings = Settings.model_validate({"database_url": "postgresql+psycopg://user:secret-value@localhost/yarvis"})
+
+    assert settings.database_url.startswith("postgresql+psycopg://")
+    assert "secret-value" not in repr(settings)
+
+
 def test_cached_settings_can_be_reset_deterministically(monkeypatch) -> None:
     reset_settings_cache()
     monkeypatch.setenv("YARVIS_API_PORT", "9001")

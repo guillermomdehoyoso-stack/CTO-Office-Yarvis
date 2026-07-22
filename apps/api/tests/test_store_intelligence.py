@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from yarvis_api.schemas.historical_evidence import ProfitabilitySummary, TransactionHistoricalAggregate
-from yarvis_api.database import SessionLocal
+from yarvis_api.main import app
 from yarvis_api.schemas.store_intelligence import HumanDecisionEvent, HumanDecisionInput, RecoveryQueueFilters
 from yarvis_api.services.recovery_queue_service import append_human_decision, apply_recommendation, build_recovery_queue, is_pending, load_human_decisions
 from yarvis_api.services.store_profile_builder import build_store_profiles
@@ -92,7 +92,7 @@ def test_no_current_name_fallback_and_completeness_reasons_are_explicit():
 
 
 def test_human_decisions_are_append_only_and_invalid_or_unknown_are_rejected():
-    with SessionLocal() as db:
+    with app.state.yarvis.persistence.create_session() as db:
         first = append_human_decision(db, HumanDecisionInput("S1", "contact_for_reactivation", "contact_customer", "first", None, "actor"), {"S1"})
         second = append_human_decision(db, HumanDecisionInput("S1", "contact_for_reactivation", "resolved", "second", None, "actor"), {"S1"})
         db.commit()

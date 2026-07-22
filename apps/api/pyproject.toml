@@ -22,9 +22,11 @@ include = [
     "src/yarvis_api/canonical_contracts.py",
     "src/yarvis_api/canonical_modules.py",
     "src/yarvis_api/config.py",
+    "src/yarvis_api/database.py",
     "src/yarvis_api/contract_registry.py",
     "src/yarvis_api/main.py",
     "src/yarvis_api/module_registry.py",
+    "src/yarvis_api/persistence/**/*.py",
     "tests/architecture/**/*.py",
     "tests/test_bootstrap.py",
     "tests/test_canonical_contracts.py",
@@ -32,6 +34,7 @@ include = [
     "tests/test_config.py",
     "tests/test_contract_registry.py",
     "tests/test_module_registry.py",
+    "tests/test_persistence_runtime.py",
 ]
 extend-exclude = ["migrations"]
 
@@ -46,7 +49,7 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.pyright]
-include = ["src/yarvis_api/bootstrap.py", "src/yarvis_api/canonical_contracts.py", "src/yarvis_api/canonical_modules.py", "src/yarvis_api/config.py", "src/yarvis_api/contract_registry.py", "src/yarvis_api/main.py", "src/yarvis_api/module_registry.py", "tests/architecture", "tests/test_bootstrap.py", "tests/test_canonical_contracts.py", "tests/test_canonical_modules.py", "tests/test_config.py", "tests/test_contract_registry.py", "tests/test_module_registry.py"]
+include = ["src/yarvis_api/bootstrap.py", "src/yarvis_api/canonical_contracts.py", "src/yarvis_api/canonical_modules.py", "src/yarvis_api/config.py", "src/yarvis_api/contract_registry.py", "src/yarvis_api/database.py", "src/yarvis_api/main.py", "src/yarvis_api/module_registry.py", "src/yarvis_api/persistence", "tests/architecture", "tests/conftest.py", "tests/test_bootstrap.py", "tests/test_canonical_contracts.py", "tests/test_canonical_modules.py", "tests/test_config.py", "tests/test_contract_registry.py", "tests/test_module_registry.py", "tests/test_persistence_runtime.py"]
 exclude = ["migrations"]
 typeCheckingMode = "basic"
 pythonVersion = "3.12"

@@ -3,7 +3,6 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from yarvis_api.catalogs import load_catalogs
-from yarvis_api.database import SessionLocal
 from yarvis_api.main import app
 
 client = TestClient(app)
@@ -28,7 +27,7 @@ def intake_for(case):
 
 
 def test_catalogs_are_idempotent_and_listed():
-    with SessionLocal() as session:
+    with app.state.yarvis.persistence.create_session() as session:
         load_catalogs(session); session.commit()
     assert len(client.get("/case-types").json()) == 2
     assert {item["code"] for item in client.get("/document-types").json()} >= {"cfe_bill", "government_id"}

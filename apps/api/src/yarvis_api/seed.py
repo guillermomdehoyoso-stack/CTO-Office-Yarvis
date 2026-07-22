@@ -1,7 +1,7 @@
 """Optional development seed; run with `python -m yarvis_api.seed`."""
 from sqlalchemy import select
 
-from yarvis_api.database import SessionLocal
+from yarvis_api.database import legacy_session
 from yarvis_api.models.case import Case
 from yarvis_api.models.domain_event import DomainEvent, record_event
 from yarvis_api.models.evidence import Evidence
@@ -11,7 +11,7 @@ from yarvis_api.models.person import Person
 
 
 def main() -> None:
-    with SessionLocal() as db:
+    with legacy_session() as db:
         organization = db.scalar(select(Organization).where(Organization.legal_name == "Energía Fotónica"))
         if organization is None:
             organization = Organization(legal_name="Energía Fotónica", display_name="Energía Fotónica", organization_type="business")

@@ -1,21 +1,18 @@
+"""Legacy FastAPI dependency adapter over the application-owned runtime.
+
+New infrastructure must import :mod:`yarvis_api.persistence`, not this module.
+"""
+
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 import psycopg
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from fastapi import Request
+from sqlalchemy.orm import Session
 
-from yarvis_api.config import get_settings
+from yarvis_api.persistence import sqlalchemy_url
 
-settings = get_settings()
-
-
-def sqlalchemy_url(database_url: str) -> str:
-    """Use psycopg 3 for SQLAlchemy while retaining the standard DATABASE_URL."""
-    if database_url.startswith("postgresql://"):
-        return database_url.replace("postgresql://", "postgresql+psycopg://", 1)
-    return database_url
-
-
-engine = create_engine(sqlalchemy_url(settings.database_url), pool_pre_ping=True)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+__all__ = ["check_database_connection", "get_db", "legacy_session", "sqlalchemy_url"]
 
 
 def check_database_connection(database_url: str) -> None:
@@ -25,6 +22,25 @@ def check_database_connection(database_url: str) -> None:
             cursor.fetchone()
 
 
-def get_db():
-    with SessionLocal() as session:
+@contextmanager
+def legacy_session() -> Iterator[Session]:
+    """Support retained command-line utilities without a process-global session factory."""
+
+    from yarvis_api.config import get_settings
+    from yarvis_api.persistence import build_persistence_runtime
+
+    runtime = build_persistence_runtime(get_settings())
+    owner_token = object()
+    runtime.transfer_ownership(owner_token)
+    try:
+        with runtime.create_session() as session:
+            yield session
+    finally:
+        runtime.dispose(owner_token)
+
+
+def get_db(request: Request) -> Iterator[Session]:
+    """Provide a short-lived legacy route session without transaction policy."""
+
+    with request.app.state.yarvis.persistence.create_session() as session:
         yield session

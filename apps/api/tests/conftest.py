@@ -5,26 +5,37 @@ import psycopg
 import pytest
 from alembic import command
 from alembic.config import Config
+from psycopg import sql
 
 TEST_URL = "postgresql://yarvis:yarvis@postgres:5432/yarvis_test"
+TEST_DATABASE_NAME = "yarvis_test"
+ADMIN_URL = "postgresql://yarvis:yarvis@postgres:5432/postgres"
 os.environ["DATABASE_URL"] = TEST_URL
 os.environ["DOCUMENT_STORAGE_ROOT"] = "/tmp/yarvis_test_data"
 
 
 @pytest.fixture(scope="session", autouse=True)
 def test_database():
-    with psycopg.connect("postgresql://yarvis:yarvis@postgres:5432/postgres", autocommit=True) as connection:
-        cursor = connection.execute("SELECT 1 FROM pg_database WHERE datname = 'yarvis_test'")
-        if cursor.fetchone() is None:
-            connection.execute("CREATE DATABASE yarvis_test")
-    command.upgrade(Config("alembic.ini"), "head")
+    assert TEST_DATABASE_NAME.startswith("yarvis_test")
+    with psycopg.connect(ADMIN_URL, autocommit=True) as connection:
+        connection.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(TEST_DATABASE_NAME)))
+        connection.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(TEST_DATABASE_NAME)))
+    try:
+        alembic_config = Config("alembic.ini")
+        command.upgrade(alembic_config, "head")
+        command.upgrade(alembic_config, "head")
+        yield
+    finally:
+        with psycopg.connect(ADMIN_URL, autocommit=True) as connection:
+            connection.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(TEST_DATABASE_NAME)))
 
 
 @pytest.fixture(autouse=True)
 def clean_database(test_database):
-    from yarvis_api.database import SessionLocal
     from yarvis_api.catalogs import load_catalogs
-    with SessionLocal() as session:
+    from yarvis_api.main import app
+
+    with app.state.yarvis.persistence.create_session() as session:
         session.connection().exec_driver_sql("TRUNCATE TABLE domain_events, attention_items, policy_evaluations, operational_policies, resolution_decisions, observations, document_records, source_records, netpay_device_assignments, netpay_shipments, netpay_service_cases, next_action_suggestions, operational_alerts, requirement_fulfillments, intake_classifications, case_checklists, evidence, intake_items, checklist_requirements, checklist_templates, cases, people, organizations, document_types, case_types RESTART IDENTITY CASCADE")
         session.commit()
         load_catalogs(session)
