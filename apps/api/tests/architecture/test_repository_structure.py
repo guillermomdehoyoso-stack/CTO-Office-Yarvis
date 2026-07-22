@@ -83,6 +83,19 @@ def test_legacy_database_adapter_has_no_global_engine_or_session_factory() -> No
     assert "SessionLocal" not in assigned_names
 
 
+def test_unit_of_work_is_persistence_infrastructure_without_legacy_adapter_dependency() -> None:
+    unit_of_work_tree = ast.parse(
+        (API_ROOT / "src" / "yarvis_api" / "persistence" / "unit_of_work.py").read_text(encoding="utf-8")
+    )
+    imports = {
+        alias.name for node in ast.walk(unit_of_work_tree) if isinstance(node, ast.Import) for alias in node.names
+    }
+    imports.update(node.module or "" for node in ast.walk(unit_of_work_tree) if isinstance(node, ast.ImportFrom))
+
+    assert "yarvis_api.database" not in imports
+    assert "fastapi" not in imports
+
+
 def test_main_is_a_thin_asgi_adapter_with_one_canonical_factory() -> None:
     main_tree = ast.parse((API_ROOT / "src" / "yarvis_api" / "main.py").read_text(encoding="utf-8"))
     assignments = [node for node in main_tree.body if isinstance(node, ast.Assign)]
