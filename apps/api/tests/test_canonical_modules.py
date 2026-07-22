@@ -35,8 +35,8 @@ def test_default_application_composes_the_canonical_module_baseline() -> None:
 
 def test_explicit_modules_and_explicit_empty_modules_override_the_default_baseline() -> None:
     synthetic_module = ApplicationModule(module_id="test.synthetic", display_name="Synthetic")
-    synthetic_app = create_app(Settings(environment="test"), modules=(synthetic_module,))
-    empty_app = create_app(Settings(environment="test"), modules=())
+    synthetic_app = create_app(Settings(environment="test"), modules=(synthetic_module,), contracts=())
+    empty_app = create_app(Settings(environment="test"), modules=(), contracts=())
     later_default_app = create_app(Settings(environment="test"))
 
     assert tuple(module.module_id for module in synthetic_app.state.yarvis.module_registry.modules) == (

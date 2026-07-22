@@ -102,7 +102,7 @@ def test_applications_receive_isolated_registries_and_register_route_hooks_once(
         display_name="Test Route",
         register_routes=register_test_route,
     )
-    first = create_app(Settings(environment="test"), modules=(test_module,))
+    first = create_app(Settings(environment="test"), modules=(test_module,), contracts=())
     second = create_app(Settings(environment="test"))
 
     assert first.state.yarvis.module_registry is not second.state.yarvis.module_registry

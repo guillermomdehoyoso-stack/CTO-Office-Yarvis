@@ -10,8 +10,10 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from yarvis_api.canonical_contracts import canonical_contracts
 from yarvis_api.canonical_modules import canonical_modules
 from yarvis_api.config import Settings, get_settings
+from yarvis_api.contract_registry import ContractDefinition, ContractRegistry, build_contract_registry
 from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
 
 
@@ -26,6 +28,7 @@ class ApplicationState:
 
     settings: Settings
     module_registry: ModuleRegistry
+    contract_registry: ContractRegistry
     lifecycle_active: bool = False
 
 
@@ -98,11 +101,16 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
 def create_app(
     settings: Settings | None = None,
     modules: Iterable[ApplicationModule] | None = None,
+    contracts: Iterable[ContractDefinition] | None = None,
 ) -> FastAPI:
     """Create one isolated FastAPI application from validated typed settings."""
 
     composed_settings = settings if settings is not None else get_settings()
     module_registry = build_module_registry(canonical_modules() if modules is None else modules)
+    contract_registry = build_contract_registry(
+        module_registry,
+        canonical_contracts() if contracts is None else contracts,
+    )
     documentation_enabled = composed_settings.api_docs_enabled
     app = FastAPI(
         title=composed_settings.app_name,
@@ -113,7 +121,11 @@ def create_app(
         openapi_url="/openapi.json" if documentation_enabled else None,
         lifespan=application_lifespan,
     )
-    app.state.yarvis = ApplicationState(settings=composed_settings, module_registry=module_registry)
+    app.state.yarvis = ApplicationState(
+        settings=composed_settings,
+        module_registry=module_registry,
+        contract_registry=contract_registry,
+    )
     register_middleware(app, composed_settings)
     register_exception_handlers(app)
     register_routes(app, module_registry)

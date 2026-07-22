@@ -17,6 +17,8 @@ This document records the minimum normalized repository structure implemented by
 | API composition root | `apps/api/src/yarvis_api/bootstrap.py` |
 | Application module registry | `apps/api/src/yarvis_api/module_registry.py` |
 | Canonical module composition baseline | `apps/api/src/yarvis_api/canonical_modules.py` |
+| Application contract registry | `apps/api/src/yarvis_api/contract_registry.py` |
+| Canonical Tier 1 contract projection | `apps/api/src/yarvis_api/canonical_contracts.py` |
 | Python package metadata | `apps/api/pyproject.toml` |
 | Runtime dependencies | `apps/api/requirements.txt` |
 | Development/test dependencies | `apps/api/requirements-dev.txt`, extending runtime requirements |

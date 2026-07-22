@@ -13,6 +13,7 @@ def test_factory_returns_distinct_applications_with_isolated_state() -> None:
     assert first is not second
     assert isinstance(first.state.yarvis, ApplicationState)
     assert first.state.yarvis is not second.state.yarvis
+    assert first.state.yarvis.contract_registry is not second.state.yarvis.contract_registry
     assert first.state.yarvis.settings.app_name == "First API"
     assert second.state.yarvis.settings.app_name == "Second API"
 
@@ -90,3 +91,13 @@ def test_existing_interface_routes_are_preserved_without_new_business_routes() -
     assert "/health" in paths
     assert "/inbox" not in paths
     assert "/automation" not in paths
+
+
+def test_default_and_explicit_empty_contract_composition_are_isolated() -> None:
+    default_app = create_app(Settings(environment="test"))
+    empty_app = create_app(Settings(environment="test"), contracts=())
+
+    assert default_app.state.yarvis.contract_registry.is_sealed is True
+    assert len(default_app.state.yarvis.contract_registry.list()) == 37
+    assert empty_app.state.yarvis.contract_registry.is_sealed is True
+    assert empty_app.state.yarvis.contract_registry.list() == ()
