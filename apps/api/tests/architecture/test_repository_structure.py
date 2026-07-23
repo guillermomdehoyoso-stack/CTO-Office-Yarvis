@@ -16,6 +16,7 @@ def test_canonical_python_package_root_exists() -> None:
     assert (API_ROOT / "src" / "yarvis_api" / "canonical_modules.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "contract_registry.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "canonical_contracts.py").is_file()
+    assert (API_ROOT / "src" / "yarvis_api" / "dispatch" / "dispatcher.py").is_file()
     assert (API_ROOT / "src" / "yarvis_api" / "persistence" / "runtime.py").is_file()
 
 
@@ -132,6 +133,24 @@ def test_contract_registry_uses_no_discovery_or_global_registration_mechanism() 
     assert all(not module.startswith("pkgutil") for module in imports)
     assert all(not module.startswith("pathlib") for module in imports)
     assert all(not module.startswith("fastapi") for module in imports)
+
+
+def test_dispatch_remains_transport_independent_and_without_ambient_tracking() -> None:
+    dispatch_root = API_ROOT / "src" / "yarvis_api" / "dispatch"
+    imports: set[str] = set()
+    source_text = ""
+    for path in dispatch_root.glob("*.py"):
+        source_text += path.read_text(encoding="utf-8")
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        imports.update(alias.name for node in ast.walk(tree) if isinstance(node, ast.Import) for alias in node.names)
+        imports.update(node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom))
+
+    assert all(not module.startswith("fastapi") for module in imports)
+    assert "yarvis_api.database" not in imports
+    assert "ContextVar" not in source_text
+    assert "threading.local" not in source_text
+    assert "importlib" not in source_text
+    assert "pkgutil" not in source_text
 
 
 def test_canonical_contract_projection_remains_explicit_technical_metadata() -> None:

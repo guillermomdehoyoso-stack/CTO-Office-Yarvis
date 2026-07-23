@@ -14,6 +14,8 @@ def test_factory_returns_distinct_applications_with_isolated_state() -> None:
     assert isinstance(first.state.yarvis, ApplicationState)
     assert first.state.yarvis is not second.state.yarvis
     assert first.state.yarvis.contract_registry is not second.state.yarvis.contract_registry
+    assert first.state.yarvis.handler_registry is not second.state.yarvis.handler_registry
+    assert first.state.yarvis.dispatcher is not second.state.yarvis.dispatcher
     assert first.state.yarvis.settings.app_name == "First API"
     assert second.state.yarvis.settings.app_name == "Second API"
 
@@ -101,3 +103,5 @@ def test_default_and_explicit_empty_contract_composition_are_isolated() -> None:
     assert len(default_app.state.yarvis.contract_registry.list()) == 37
     assert empty_app.state.yarvis.contract_registry.is_sealed is True
     assert empty_app.state.yarvis.contract_registry.list() == ()
+    assert default_app.state.yarvis.handler_registry.is_sealed is True
+    assert default_app.state.yarvis.handler_registry.list() == ()

@@ -14,6 +14,7 @@ from yarvis_api.canonical_contracts import canonical_contracts
 from yarvis_api.canonical_modules import canonical_modules
 from yarvis_api.config import Settings, get_settings
 from yarvis_api.contract_registry import ContractDefinition, ContractRegistry, build_contract_registry
+from yarvis_api.dispatch import Dispatcher, HandlerDefinition, HandlerRegistry, build_handler_registry
 from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
 from yarvis_api.persistence import PersistenceRuntime, build_persistence_runtime
 
@@ -30,6 +31,8 @@ class ApplicationState:
     settings: Settings
     module_registry: ModuleRegistry
     contract_registry: ContractRegistry
+    handler_registry: HandlerRegistry
+    dispatcher: Dispatcher
     persistence: PersistenceRuntime
     persistence_owner_token: object
     lifecycle_active: bool = False
@@ -106,6 +109,7 @@ def create_app(
     settings: Settings | None = None,
     modules: Iterable[ApplicationModule] | None = None,
     contracts: Iterable[ContractDefinition] | None = None,
+    handlers: Iterable[HandlerDefinition] | None = None,
     persistence: PersistenceRuntime | None = None,
 ) -> FastAPI:
     """Create one isolated FastAPI application from validated typed settings."""
@@ -119,6 +123,12 @@ def create_app(
     persistence_runtime = persistence if persistence is not None else build_persistence_runtime(composed_settings)
     if not persistence_runtime.is_compatible_with(composed_settings):
         raise ValueError("persistence runtime is incompatible with application settings")
+    handler_registry = build_handler_registry(
+        module_registry,
+        contract_registry,
+        () if handlers is None else handlers,
+    )
+    dispatcher = Dispatcher(contract_registry, handler_registry, persistence_runtime)
     persistence_owner_token = object()
     persistence_runtime.transfer_ownership(persistence_owner_token)
     documentation_enabled = composed_settings.api_docs_enabled
@@ -135,6 +145,8 @@ def create_app(
         settings=composed_settings,
         module_registry=module_registry,
         contract_registry=contract_registry,
+        handler_registry=handler_registry,
+        dispatcher=dispatcher,
         persistence=persistence_runtime,
         persistence_owner_token=persistence_owner_token,
     )
