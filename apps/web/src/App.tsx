@@ -5,6 +5,7 @@ import { getRecoveryQueue, getStoreSummary } from './api/storeIntelligence';
 import type { RecoveryQueueResult, StoreOperationalProfile } from './types/storeIntelligence';
 import {RecoveryQueueWorkspace} from './components/store-intelligence/RecoveryQueueWorkspace';
 import {MissionControlStoreIntelligenceCard} from './components/store-intelligence/MissionControlStoreIntelligenceCard';
+import { WorkspaceShell } from './workspace-shell/WorkspaceShell';
 
 const api = 'http://localhost:8000';
 
@@ -50,6 +51,7 @@ function Layout() {
         <Link to="/people">Personas</Link>
         <Link to="/netpay-intake">NetPay XLSX</Link>
         <Link to="/recovery-queue">Cola de recuperación</Link>
+        <Link to="/workspace">Development Workspace</Link>
       </nav>
       <Routes>
         <Route path="/" element={<MissionControlPage />} />
@@ -60,6 +62,7 @@ function Layout() {
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/netpay-intake" element={<NetPayIntakePage />} />
         <Route path="/recovery-queue" element={<RecoveryQueuePage />} />
+        <Route path="/workspace/*" element={<WorkspaceShell />} />
       </Routes>
     </main>
   );
