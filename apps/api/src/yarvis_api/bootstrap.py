@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from pathlib import Path
 from typing import AsyncIterator
 
 from fastapi import FastAPI
@@ -17,6 +18,8 @@ from yarvis_api.contract_registry import ContractDefinition, ContractRegistry, b
 from yarvis_api.dispatch import Dispatcher, HandlerDefinition, HandlerRegistry, build_handler_registry
 from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
 from yarvis_api.persistence import PersistenceRuntime, build_persistence_runtime
+from yarvis_api.services.workspace.io import resolve_workspace_repository_root
+from yarvis_api.services.workspace.platform import WorkspacePlatform
 
 
 @dataclass(slots=True)
@@ -33,6 +36,7 @@ class ApplicationState:
     contract_registry: ContractRegistry
     handler_registry: HandlerRegistry
     dispatcher: Dispatcher
+    workspace_platform: WorkspacePlatform
     persistence: PersistenceRuntime
     persistence_owner_token: object
     lifecycle_active: bool = False
@@ -82,6 +86,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         organizations,
         people,
         recovery_queue,
+        workspace_api,
     )
 
     @app.get("/health", tags=["technical"])
@@ -100,6 +105,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     app.include_router(observations.router)
     app.include_router(operational_policies.router)
     app.include_router(recovery_queue.router)
+    app.include_router(workspace_api.router)
     for module in module_registry.modules:
         if module.register_routes is not None:
             module.register_routes(app)
@@ -115,6 +121,7 @@ def create_app(
     """Create one isolated FastAPI application from validated typed settings."""
 
     composed_settings = settings if settings is not None else get_settings()
+    workspace_root = resolve_workspace_repository_root(composed_settings.workspace_repository_root, Path(__file__).resolve())
     module_registry = build_module_registry(canonical_modules() if modules is None else modules)
     contract_registry = build_contract_registry(
         module_registry,
@@ -129,6 +136,7 @@ def create_app(
         () if handlers is None else handlers,
     )
     dispatcher = Dispatcher(contract_registry, handler_registry, persistence_runtime)
+    workspace_platform = WorkspacePlatform(workspace_root)
     persistence_owner_token = object()
     persistence_runtime.transfer_ownership(persistence_owner_token)
     documentation_enabled = composed_settings.api_docs_enabled
@@ -147,6 +155,7 @@ def create_app(
         contract_registry=contract_registry,
         handler_registry=handler_registry,
         dispatcher=dispatcher,
+        workspace_platform=workspace_platform,
         persistence=persistence_runtime,
         persistence_owner_token=persistence_owner_token,
     )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
@@ -46,10 +47,25 @@ class Settings(BaseSettings):
     worker_lease_seconds: int = 30
     scheduler_enabled: bool = False
     scheduler_poll_interval_seconds: int = 30
+    workspace_access_token_secret: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("workspace_access_token", "YARVIS_WORKSPACE_ACCESS_TOKEN"),
+        repr=False,
+    )
+    workspace_repository_root: Path | None = Field(
+        default=None,
+        validation_alias=AliasChoices("workspace_repository_root", "YARVIS_WORKSPACE_REPOSITORY_ROOT"),
+    )
 
     @property
     def database_url(self) -> str:
         return self.database_url_secret.get_secret_value()
+
+    @property
+    def workspace_access_token(self) -> str | None:
+        if self.workspace_access_token_secret is None:
+            return None
+        return self.workspace_access_token_secret.get_secret_value()
 
     @property
     def cors_origin_list(self) -> list[str]:

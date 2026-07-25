@@ -1,0 +1,21 @@
+{
+  "workspace_id": "ws000",
+  "name": "Development Workspace",
+  "description": "WS-000 first workspace built on the reusable Yarvis Workspace Platform.",
+  "status": "active",
+  "default": true,
+  "capabilities": [
+    "dashboard",
+    "repository_health",
+    "current_sprint",
+    "current_gate",
+    "timeline",
+    "roadmap",
+    "reviews",
+    "amendments",
+    "decisions",
+    "prompt_registry",
+    "repository_search",
+    "ai_observations"
+  ]
+}
