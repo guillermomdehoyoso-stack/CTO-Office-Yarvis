@@ -17,3 +17,4 @@ class DomainEventRead(BaseModel):
     occurred_at: datetime
     recorded_at: datetime
     correlation_id: UUID | None
+    causation_id: UUID | None

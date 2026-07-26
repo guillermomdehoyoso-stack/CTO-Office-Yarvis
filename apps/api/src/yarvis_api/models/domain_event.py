@@ -22,6 +22,7 @@ class DomainEvent(Base):
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     correlation_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True, index=True)
+    causation_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True, index=True)
 
 
 def record_event(
@@ -32,6 +33,8 @@ def record_event(
     aggregate_id: UUID,
     organization_id: UUID | None = None,
     case_id: UUID | None = None,
+    correlation_id: UUID | None = None,
+    causation_id: UUID | None = None,
     payload: dict | None = None,
 ) -> DomainEvent:
     event = DomainEvent(
@@ -40,6 +43,8 @@ def record_event(
         aggregate_id=aggregate_id,
         organization_id=organization_id,
         case_id=case_id,
+        correlation_id=correlation_id,
+        causation_id=causation_id,
         payload=payload or {},
     )
     db.add(event)

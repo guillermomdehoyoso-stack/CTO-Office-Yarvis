@@ -1,8 +1,8 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from yarvis_api.models.base import Base
@@ -14,6 +14,13 @@ def generate_intake_number() -> str:
 
 class IntakeItem(Base):
     __tablename__ = "intake_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "idempotency_key",
+            name="uq_intake_items_organization_id_idempotency_key",
+        ),
+    )
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
     intake_number: Mapped[str] = mapped_column(String(32), nullable=False, unique=True, index=True, default=generate_intake_number)
@@ -23,6 +30,10 @@ class IntakeItem(Base):
     text_content: Mapped[str | None] = mapped_column(Text, nullable=True)
     original_filename: Mapped[str | None] = mapped_column(String(500), nullable=True)
     mime_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    source_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    trace_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    idempotency_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    idempotency_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
     organization_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)
     person_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("people.id"), nullable=True, index=True)
     case_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("cases.id"), nullable=True, index=True)

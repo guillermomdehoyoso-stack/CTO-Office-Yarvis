@@ -5,6 +5,7 @@ from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.conversation import Conversation, ConversationMessage
 from yarvis_api.models.evidence import Evidence
 from yarvis_api.models.intake import IntakeItem
+from yarvis_api.models.message import Message
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
 from yarvis_api.models.observation_engine import (
 	AttentionItem,
@@ -32,6 +33,7 @@ __all__ = [
 	"Evidence",
 	"IntakeClassification",
 	"IntakeItem",
+	"Message",
 	"NetpayDeviceAssignment",
 	"NetpayServiceCase",
 	"NetpayShipment",

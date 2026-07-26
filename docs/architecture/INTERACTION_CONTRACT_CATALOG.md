@@ -99,6 +99,8 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-EVIDENCE-CMD-002 | CMD | Observation & Evidence / artifact/evidence | RegisterSourceArtifact | C | document or attachment |
 | IC-EVIDENCE-CMD-003 | CMD | Observation & Evidence / validation | ValidateEvidence | C | checklist evidence |
 | IC-EVIDENCE-QRY-001 | QRY | Observation & Evidence / lineage | RetrieveEvidenceStatus | Co | checklist/case view |
+| IC-INBOX-CMD-001 | CMD | Intake / receive | ReceiveIntake: authenticated, organization-owned deterministic inbound intake with idempotent replay | C | governed Inbox intake |
+| IC-INBOX-QRY-001 | QRY | Intake / detail retrieval | RetrieveDeterministicIntakeDetail: organization-scoped, authenticated Inbox detail retrieval; cross-organization targets are concealed as not found | C | Inbox operator detail view |
 | IC-EVIDENCE-EVT-001 | EVT | Observation & Evidence / observation | ObservationCaptured | C | identity and Netpay intake |
 | IC-EVIDENCE-EVT-002 | EVT | Observation & Evidence / evidence | EvidenceValidated | C | Knowledge, Netpay |
 | IC-KNOWLEDGE-CMD-001 | CMD | Knowledge / promotion | ActivateCaseKnowledge | Co | governed case facts |
@@ -124,7 +126,15 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 totals:** 37 contracts — 14 Commands, 10 Queries, 11 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+**Tier 1 totals:** 39 contracts — 15 Commands, 11 Queries, 11 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+
+### 7.1 Verified WS-001 Inbox Binding
+
+`IC-INBOX-CMD-001` is the mutating `ReceiveIntake` command at `POST /intake/deterministic`. It requires an authenticated actor, `inbound.intake` authority, a trusted `principal.organization_id`, and an idempotency key. The trusted principal is the only ownership source: the command persists that value to `IntakeItem.organization_id`; request-body data cannot supply or override it.
+
+Its idempotency identity is `(organization_id, idempotency_key)`. An equivalent retry replays the original intake result; conflicting content for the same organization/key is rejected; the same key in another organization creates a separate intake. Intake, message, and the `intake.received` and `message.registered` events persist atomically. Correlation and optional causation are recorded in the created events and trace metadata.
+
+On success the boundary returns the deterministic intake detail (`201`). Missing or insufficient authenticated authority, absent or unrecognized trusted organization, and invalid input are rejected; conflicting idempotency reuse returns a conflict. The companion `IC-INBOX-QRY-001` is non-mutating and separately requires `inbound.read`; it returns only same-organization governed details and conceals cross-organization, legacy, and nonexistent targets as not found.
 
 ## 8. Coverage and Ownership Matrices
 

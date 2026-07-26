@@ -2,12 +2,14 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from yarvis_api.config import Settings
 from yarvis_api.models import Base
-from yarvis_api.persistence import sqlalchemy_url
+from yarvis_api.persistence.alembic import resolve_migration_database_url
 
 config = context.config
-config.set_main_option("sqlalchemy.url", sqlalchemy_url(Settings().database_url))
+config.set_main_option(
+    "sqlalchemy.url",
+    resolve_migration_database_url(config.get_main_option("sqlalchemy.url")),
+)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

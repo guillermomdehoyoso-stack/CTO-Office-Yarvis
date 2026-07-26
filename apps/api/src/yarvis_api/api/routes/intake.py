@@ -1,9 +1,13 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from yarvis_api.api.authentication import transport_authentication_request
+from yarvis_api.application.inbound_intake import InboundIntakeSubmission
+from yarvis_api.application.metadata import RequestMetadata
+from yarvis_api.clock import utc_now
 from yarvis_api.database import get_db
 from yarvis_api.models.case import Case
 from yarvis_api.models.domain_event import record_event
@@ -11,7 +15,12 @@ from yarvis_api.models.intake import IntakeItem
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.person import Person
 from yarvis_api.models.evidence import Evidence
-from yarvis_api.schemas.intake import IntakeCreate, IntakeRead
+from yarvis_api.schemas.intake import (
+    DeterministicInboundIntakeCreate,
+    IntakeCreate,
+    IntakeDetailRead,
+    IntakeRead,
+)
 
 router = APIRouter(prefix="/intake", tags=["intake"])
 
@@ -58,14 +67,64 @@ def create_intake(payload: IntakeCreate, db: Session = Depends(get_db)):
     return item
 
 
+@router.post("/deterministic", response_model=IntakeDetailRead, status_code=status.HTTP_201_CREATED)
+def create_deterministic_intake(
+    payload: DeterministicInboundIntakeCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    adapter = request.app.state.yarvis.deterministic_inbound_adapter
+    fixture = adapter.adapt(payload)
+    service = request.app.state.yarvis.inbound_intake_service
+    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    intake_id = service.submit(
+        InboundIntakeSubmission(
+            fixture=fixture,
+            metadata=RequestMetadata(
+                requested_at=payload.received_timestamp,
+                correlation_id=str(payload.correlation_id),
+                command_id="receive_intake",
+                causation_id=str(payload.causation_id) if payload.causation_id is not None else None,
+                idempotency_key=payload.idempotency_key,
+            ),
+            principal=principal,
+        )
+    )
+    return service.load_detail(db, intake_id)
+
+
 @router.get("", response_model=list[IntakeRead])
 def list_intake(db: Session = Depends(get_db)):
-    return db.scalars(select(IntakeItem).order_by(IntakeItem.received_at, IntakeItem.created_at)).all()
+    return db.scalars(
+        select(IntakeItem)
+        .where(IntakeItem.organization_id.is_(None))
+        .order_by(IntakeItem.received_at, IntakeItem.created_at)
+    ).all()
+
+
+@router.get("/deterministic/{intake_id}", response_model=IntakeDetailRead)
+def get_deterministic_intake_detail(intake_id: UUID, request: Request, db: Session = Depends(get_db)):
+    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    return request.app.state.yarvis.inbound_intake_query_service.load_detail(
+        db,
+        intake_id,
+        principal,
+        RequestMetadata(
+            requested_at=utc_now(),
+            correlation_id=principal.correlation_id or str(uuid4()),
+            query_id="retrieve_deterministic_intake_detail",
+        ),
+    )
 
 
 @router.get("/{intake_id}", response_model=IntakeRead)
 def get_intake(intake_id: UUID, db: Session = Depends(get_db)):
-    item = db.get(IntakeItem, intake_id)
+    item = db.scalar(
+        select(IntakeItem).where(
+            IntakeItem.id == intake_id,
+            IntakeItem.organization_id.is_(None),
+        )
+    )
     if item is None:
         raise HTTPException(status_code=404, detail="IntakeItem not found")
     return item

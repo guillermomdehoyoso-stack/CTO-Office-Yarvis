@@ -11,13 +11,19 @@ from typing import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from yarvis_api.api.authentication import DeterministicAuthenticationProvider
+from yarvis_api.api.errors import application_error_handler
+from yarvis_api.application.errors import ApplicationError
+from yarvis_api.application.ports import AuthenticationPort
 from yarvis_api.canonical_contracts import canonical_contracts
 from yarvis_api.canonical_modules import canonical_modules
 from yarvis_api.config import Settings, get_settings
 from yarvis_api.contract_registry import ContractDefinition, ContractRegistry, build_contract_registry
 from yarvis_api.dispatch import Dispatcher, HandlerDefinition, HandlerRegistry, build_handler_registry
 from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
+from yarvis_api.modules.deterministic_inbound import DeterministicInboundInboxAdapter
 from yarvis_api.persistence import PersistenceRuntime, build_persistence_runtime
+from yarvis_api.services.inbound_intake import InboundIntakeQueryService, InboundIntakeService
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
 
@@ -37,6 +43,10 @@ class ApplicationState:
     handler_registry: HandlerRegistry
     dispatcher: Dispatcher
     workspace_platform: WorkspacePlatform
+    authentication: AuthenticationPort
+    deterministic_inbound_adapter: DeterministicInboundInboxAdapter
+    inbound_intake_service: InboundIntakeService
+    inbound_intake_query_service: InboundIntakeQueryService
     persistence: PersistenceRuntime
     persistence_owner_token: object
     lifecycle_active: bool = False
@@ -68,7 +78,9 @@ def register_middleware(app: FastAPI, settings: Settings) -> None:
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    """Reserve the explicit handler boundary; typed error handling belongs to F-012."""
+    """Register central application-layer error translation."""
+
+    app.add_exception_handler(ApplicationError, application_error_handler)
 
 
 def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
@@ -121,6 +133,7 @@ def create_app(
     """Create one isolated FastAPI application from validated typed settings."""
 
     composed_settings = settings if settings is not None else get_settings()
+    authentication = DeterministicAuthenticationProvider(composed_settings)
     workspace_root = resolve_workspace_repository_root(composed_settings.workspace_repository_root, Path(__file__).resolve())
     module_registry = build_module_registry(canonical_modules() if modules is None else modules)
     contract_registry = build_contract_registry(
@@ -136,6 +149,9 @@ def create_app(
         () if handlers is None else handlers,
     )
     dispatcher = Dispatcher(contract_registry, handler_registry, persistence_runtime)
+    deterministic_inbound_adapter = DeterministicInboundInboxAdapter()
+    inbound_intake_service = InboundIntakeService(persistence_runtime)
+    inbound_intake_query_service = InboundIntakeQueryService(inbound_intake_service)
     workspace_platform = WorkspacePlatform(workspace_root)
     persistence_owner_token = object()
     persistence_runtime.transfer_ownership(persistence_owner_token)
@@ -156,6 +172,10 @@ def create_app(
         handler_registry=handler_registry,
         dispatcher=dispatcher,
         workspace_platform=workspace_platform,
+        authentication=authentication,
+        deterministic_inbound_adapter=deterministic_inbound_adapter,
+        inbound_intake_service=inbound_intake_service,
+        inbound_intake_query_service=inbound_intake_query_service,
         persistence=persistence_runtime,
         persistence_owner_token=persistence_owner_token,
     )
