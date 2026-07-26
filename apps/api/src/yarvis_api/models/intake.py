@@ -7,6 +7,9 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from yarvis_api.models.base import Base
 
+DETERMINISTIC_INTAKE_MODE = "deterministic"
+LEGACY_INTAKE_MODE = "legacy"
+
 
 def generate_intake_number() -> str:
     return f"INT-{uuid4().hex[:12].upper()}"
@@ -19,6 +22,11 @@ class IntakeItem(Base):
             "organization_id",
             "idempotency_key",
             name="uq_intake_items_organization_id_idempotency_key",
+        ),
+        UniqueConstraint(
+            "id",
+            "organization_id",
+            name="uq_intake_items_id_organization_id",
         ),
     )
 
@@ -34,6 +42,7 @@ class IntakeItem(Base):
     trace_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     idempotency_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
     idempotency_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    intake_mode: Mapped[str] = mapped_column(String(50), nullable=False, server_default=LEGACY_INTAKE_MODE)
     organization_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)
     person_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("people.id"), nullable=True, index=True)
     case_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("cases.id"), nullable=True, index=True)

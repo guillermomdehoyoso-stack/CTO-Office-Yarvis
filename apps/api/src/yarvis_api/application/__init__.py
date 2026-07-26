@@ -8,6 +8,8 @@ from yarvis_api.application.contracts import (
     WS001CommandName,
     WS001EventName,
     WS001QueryName,
+    WS002CommandName,
+    WS002QueryName,
     command_contracts,
     event_contracts,
     query_contracts,
@@ -33,6 +35,7 @@ from yarvis_api.application.metadata import (
     AuthorityContext,
     RequestMetadata,
 )
+from yarvis_api.application.operational_context import AssociateIntakeOperationalContextCommand
 
 __all__ = [
     "AuthenticatedPrincipal",
@@ -51,6 +54,9 @@ __all__ = [
     "WS001CommandName",
     "WS001EventName",
     "WS001QueryName",
+    "WS002CommandName",
+    "WS002QueryName",
+    "AssociateIntakeOperationalContextCommand",
     "command_contracts",
     "event_contracts",
     "query_contracts",

@@ -101,6 +101,9 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-EVIDENCE-QRY-001 | QRY | Observation & Evidence / lineage | RetrieveEvidenceStatus | Co | checklist/case view |
 | IC-INBOX-CMD-001 | CMD | Intake / receive | ReceiveIntake: authenticated, organization-owned deterministic inbound intake with idempotent replay | C | governed Inbox intake |
 | IC-INBOX-QRY-001 | QRY | Intake / detail retrieval | RetrieveDeterministicIntakeDetail: organization-scoped, authenticated Inbox detail retrieval; cross-organization targets are concealed as not found | C | Inbox operator detail view |
+| IC-INBOX-CMD-003 | CMD | Intake / operational context association | AssociateIntakeOperationalContext: immutable, tenant-owned association of a deterministic Intake to a Site, Project, and optional ConnectorMapping | C | governed Inbox context association |
+| IC-INBOX-QRY-002 | QRY | Intake / operational context association | RetrieveIntakeOperationalContext: authenticated, organization-scoped association retrieval; absent, legacy, and cross-organization targets are concealed as not found | C | Inbox operator context view |
+| IC-INBOX-EVT-001 | EVT | Intake / operational context association | IntakeOperationalContextAssociated: asserted immutable association occurrence with correlation, optional causation, and actor provenance | C | Inbox, projections, and automation |
 | IC-EVIDENCE-EVT-001 | EVT | Observation & Evidence / observation | ObservationCaptured | C | identity and Netpay intake |
 | IC-EVIDENCE-EVT-002 | EVT | Observation & Evidence / evidence | EvidenceValidated | C | Knowledge, Netpay |
 | IC-KNOWLEDGE-CMD-001 | CMD | Knowledge / promotion | ActivateCaseKnowledge | Co | governed case facts |
@@ -126,7 +129,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 totals:** 39 contracts — 15 Commands, 11 Queries, 11 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+**Tier 1 totals:** 42 contracts — 16 Commands, 12 Queries, 12 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
 
 ### 7.1 Verified WS-001 Inbox Binding
 
@@ -135,6 +138,14 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 Its idempotency identity is `(organization_id, idempotency_key)`. An equivalent retry replays the original intake result; conflicting content for the same organization/key is rejected; the same key in another organization creates a separate intake. Intake, message, and the `intake.received` and `message.registered` events persist atomically. Correlation and optional causation are recorded in the created events and trace metadata.
 
 On success the boundary returns the deterministic intake detail (`201`). Missing or insufficient authenticated authority, absent or unrecognized trusted organization, and invalid input are rejected; conflicting idempotency reuse returns a conflict. The companion `IC-INBOX-QRY-001` is non-mutating and separately requires `inbound.read`; it returns only same-organization governed details and conceals cross-organization, legacy, and nonexistent targets as not found.
+
+### 7.2 WS-002A Intake Operational Context Association Binding
+
+`IC-INBOX-CMD-003` associates a deterministic Intake to the canonical hierarchy `Organization -> Site -> Project -> ConnectorMapping (optional)`. Deterministic eligibility is the persisted `IntakeItem.intake_mode = deterministic` invariant; it is not inferred from incidental request, source, trace, or idempotency metadata. The authenticated principal's `organization_id` remains the exclusive tenant ownership source; the request never supplies or overrides it. Site, Project, and ConnectorMapping are minimal canonical references: a Site belongs to its Organization, a Project belongs to its Site and Organization, and a ConnectorMapping belongs to its Project and Organization. PostgreSQL composite foreign keys enforce those ownership and hierarchy relationships in addition to application validation.
+
+The association is a separate, immutable Inbox aggregate. One association is permitted per Intake. No reassociation, clearing, deletion, update, or supersession is defined in WS-002A. Missing, legacy-null, cross-tenant, or hierarchy-inconsistent Intake and reference targets are all concealed as `RESOURCE_NOT_FOUND`.
+
+The idempotency namespace is `(organization_id, idempotency_key)`. Its command fingerprint includes Intake, Site, Project, optional ConnectorMapping, and correlation. An equivalent retry returns the original association without a duplicate event; a conflicting reuse, or an existing association under a different idempotency key, returns `CONFLICT`. `IC-INBOX-EVT-001` records the association atomically with its command and contains only identifiers, correlation, optional causation, and actor provenance. `IC-INBOX-QRY-002` requires `inbound.read` and returns only the same-organization association.
 
 ## 8. Coverage and Ownership Matrices
 

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from yarvis_api.api.authentication import transport_authentication_request
 from yarvis_api.application.inbound_intake import InboundIntakeSubmission
+from yarvis_api.application.operational_context import AssociateIntakeOperationalContextCommand
 from yarvis_api.application.metadata import RequestMetadata
 from yarvis_api.clock import utc_now
 from yarvis_api.database import get_db
@@ -20,6 +21,10 @@ from yarvis_api.schemas.intake import (
     IntakeCreate,
     IntakeDetailRead,
     IntakeRead,
+)
+from yarvis_api.schemas.operational_context import (
+    AssociateIntakeOperationalContextCreate,
+    IntakeOperationalContextAssociationRead,
 )
 
 router = APIRouter(prefix="/intake", tags=["intake"])
@@ -113,6 +118,53 @@ def get_deterministic_intake_detail(intake_id: UUID, request: Request, db: Sessi
             requested_at=utc_now(),
             correlation_id=principal.correlation_id or str(uuid4()),
             query_id="retrieve_deterministic_intake_detail",
+        ),
+    )
+
+
+@router.post(
+    "/deterministic/{intake_id}/operational-context",
+    response_model=IntakeOperationalContextAssociationRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def associate_deterministic_intake_operational_context(
+    intake_id: UUID,
+    payload: AssociateIntakeOperationalContextCreate,
+    request: Request,
+):
+    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    return request.app.state.yarvis.intake_operational_context_association_service.associate(
+        AssociateIntakeOperationalContextCommand(
+            intake_item_id=intake_id,
+            site_id=payload.site_id,
+            project_id=payload.project_id,
+            connector_mapping_id=payload.connector_mapping_id,
+        ),
+        RequestMetadata(
+            requested_at=utc_now(),
+            correlation_id=str(payload.correlation_id),
+            command_id="associate_intake_operational_context",
+            causation_id=str(payload.causation_id) if payload.causation_id is not None else None,
+            idempotency_key=payload.idempotency_key,
+        ),
+        principal,
+    )
+
+
+@router.get(
+    "/deterministic/{intake_id}/operational-context",
+    response_model=IntakeOperationalContextAssociationRead,
+)
+def get_deterministic_intake_operational_context(intake_id: UUID, request: Request, db: Session = Depends(get_db)):
+    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    return request.app.state.yarvis.intake_operational_context_query_service.retrieve(
+        db,
+        intake_id,
+        principal,
+        RequestMetadata(
+            requested_at=utc_now(),
+            correlation_id=principal.correlation_id or str(uuid4()),
+            query_id="retrieve_intake_operational_context",
         ),
     )
 

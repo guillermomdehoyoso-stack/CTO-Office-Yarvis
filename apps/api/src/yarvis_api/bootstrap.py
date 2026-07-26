@@ -24,6 +24,7 @@ from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_
 from yarvis_api.modules.deterministic_inbound import DeterministicInboundInboxAdapter
 from yarvis_api.persistence import PersistenceRuntime, build_persistence_runtime
 from yarvis_api.services.inbound_intake import InboundIntakeQueryService, InboundIntakeService
+from yarvis_api.services.operational_context import IntakeOperationalContextAssociationService, IntakeOperationalContextQueryService
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
 
@@ -47,6 +48,8 @@ class ApplicationState:
     deterministic_inbound_adapter: DeterministicInboundInboxAdapter
     inbound_intake_service: InboundIntakeService
     inbound_intake_query_service: InboundIntakeQueryService
+    intake_operational_context_association_service: IntakeOperationalContextAssociationService
+    intake_operational_context_query_service: IntakeOperationalContextQueryService
     persistence: PersistenceRuntime
     persistence_owner_token: object
     lifecycle_active: bool = False
@@ -152,6 +155,8 @@ def create_app(
     deterministic_inbound_adapter = DeterministicInboundInboxAdapter()
     inbound_intake_service = InboundIntakeService(persistence_runtime)
     inbound_intake_query_service = InboundIntakeQueryService(inbound_intake_service)
+    intake_operational_context_association_service = IntakeOperationalContextAssociationService(persistence_runtime)
+    intake_operational_context_query_service = IntakeOperationalContextQueryService()
     workspace_platform = WorkspacePlatform(workspace_root)
     persistence_owner_token = object()
     persistence_runtime.transfer_ownership(persistence_owner_token)
@@ -176,6 +181,8 @@ def create_app(
         deterministic_inbound_adapter=deterministic_inbound_adapter,
         inbound_intake_service=inbound_intake_service,
         inbound_intake_query_service=inbound_intake_query_service,
+        intake_operational_context_association_service=intake_operational_context_association_service,
+        intake_operational_context_query_service=intake_operational_context_query_service,
         persistence=persistence_runtime,
         persistence_owner_token=persistence_owner_token,
     )

@@ -22,12 +22,20 @@ class WS001CommandName(StrEnum):
     ACKNOWLEDGE_ATTENTION_ITEM = "acknowledge_attention_item"
 
 
+class WS002CommandName(StrEnum):
+    ASSOCIATE_INTAKE_OPERATIONAL_CONTEXT = "associate_intake_operational_context"
+
+
 class WS001QueryName(StrEnum):
     RETRIEVE_DETERMINISTIC_INTAKE_DETAIL = "retrieve_deterministic_intake_detail"
     RETRIEVE_MERCHANT_CASE = "retrieve_merchant_case"
     RETRIEVE_CHECKLIST_AND_PENDING_ACTIONS = "retrieve_checklist_and_pending_actions"
     RETRIEVE_PENDING_ACTION_STATUS = "retrieve_pending_action_status"
     RETRIEVE_CASE_ATTENTION = "retrieve_case_attention"
+
+
+class WS002QueryName(StrEnum):
+    RETRIEVE_INTAKE_OPERATIONAL_CONTEXT = "retrieve_intake_operational_context"
 
 
 class WS001EventName(StrEnum):
@@ -52,7 +60,7 @@ class ApplicationContract:
     requires_idempotency_key: bool = False
 
 
-command_contracts: dict[WS001CommandName, ApplicationContract] = {
+command_contracts: dict[WS001CommandName | WS002CommandName, ApplicationContract] = {
     WS001CommandName.RECEIVE_INTAKE: ApplicationContract(
         interaction_contract_id="IC-INBOX-CMD-001",
         owning_context="intake",
@@ -165,8 +173,19 @@ command_contracts: dict[WS001CommandName, ApplicationContract] = {
     ),
 }
 
+command_contracts[WS002CommandName.ASSOCIATE_INTAKE_OPERATIONAL_CONTEXT] = ApplicationContract(
+    interaction_contract_id="IC-INBOX-CMD-003",
+    owning_context="intake",
+    owning_capability="operational_context_association",
+    mutating=True,
+    requires_actor=True,
+    requires_authority=True,
+    required_authority_scope="inbound.context.associate",
+    requires_idempotency_key=True,
+)
 
-query_contracts: dict[WS001QueryName, ApplicationContract] = {
+
+query_contracts: dict[WS001QueryName | WS002QueryName, ApplicationContract] = {
     WS001QueryName.RETRIEVE_DETERMINISTIC_INTAKE_DETAIL: ApplicationContract(
         interaction_contract_id="IC-INBOX-QRY-001",
         owning_context="intake",
@@ -205,6 +224,16 @@ query_contracts: dict[WS001QueryName, ApplicationContract] = {
         requires_actor=False,
     ),
 }
+
+query_contracts[WS002QueryName.RETRIEVE_INTAKE_OPERATIONAL_CONTEXT] = ApplicationContract(
+    interaction_contract_id="IC-INBOX-QRY-002",
+    owning_context="intake",
+    owning_capability="operational_context_association",
+    mutating=False,
+    requires_actor=True,
+    requires_authority=True,
+    required_authority_scope="inbound.read",
+)
 
 
 event_contracts: dict[WS001EventName, ApplicationContract] = {

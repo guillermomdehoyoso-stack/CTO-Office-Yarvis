@@ -18,7 +18,7 @@ from yarvis_api.application.inbound_intake import InboundMessageFixture, Inbound
 from yarvis_api.application.metadata import RequestMetadata
 from yarvis_api.application.service_boundary import enforce_command_boundary, enforce_query_boundary
 from yarvis_api.models.domain_event import DomainEvent, record_event
-from yarvis_api.models.intake import IntakeItem
+from yarvis_api.models.intake import DETERMINISTIC_INTAKE_MODE, IntakeItem
 from yarvis_api.models.message import Message
 from yarvis_api.models.organization import Organization
 from yarvis_api.persistence import OperationScope, PersistenceRuntime, UnitOfWork
@@ -189,6 +189,7 @@ class InboundIntakeService:
             organization_id=organization_id,
             idempotency_key=idempotency_key,
             idempotency_fingerprint=idempotency_fingerprint,
+            intake_mode=DETERMINISTIC_INTAKE_MODE,
         )
         session.add(intake)
         session.flush()

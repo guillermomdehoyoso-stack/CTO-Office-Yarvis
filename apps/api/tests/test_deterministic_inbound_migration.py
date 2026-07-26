@@ -78,10 +78,29 @@ def test_deterministic_inbound_migration_round_trip() -> None:
                 },
             )
 
+        command.upgrade(config, "20260716_11")
+        deterministic_organization_id = str(uuid4())
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "INSERT INTO organizations (id, legal_name, display_name, organization_type, status) "
+                    "VALUES (:id, 'Backfill tenant', 'Backfill tenant', 'organization', 'active')"
+                ),
+                {"id": deterministic_organization_id},
+            )
+            connection.execute(
+                text(
+                    "INSERT INTO intake_items "
+                    "(id, intake_number, source_type, content_type, text_content, organization_id, idempotency_key, idempotency_fingerprint) "
+                    "VALUES (:id, 'INT-DETERMINISTIC-BACKFILL', 'email', 'message/rfc822', 'content', :organization_id, 'backfill-key', :fingerprint)"
+                ),
+                {"id": str(uuid4()), "organization_id": deterministic_organization_id, "fingerprint": "a" * 64},
+            )
+
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260716_11"
+            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260726_12"
             assert "messages" in inspector.get_table_names()
             message_columns = {column["name"] for column in inspector.get_columns("messages")}
             assert {
@@ -112,15 +131,47 @@ def test_deterministic_inbound_migration_round_trip() -> None:
             message_fks = inspector.get_foreign_keys("messages")
             assert any(fk["referred_table"] == "intake_items" for fk in message_fks)
             intake_row = connection.execute(
-                text("select source_metadata, trace_metadata from intake_items where intake_number = 'INT-LEGACY-001'")
+                text("select source_metadata, trace_metadata, intake_mode from intake_items where intake_number = 'INT-LEGACY-001'")
             ).mappings().one()
             assert intake_row["source_metadata"] == {}
             assert intake_row["trace_metadata"] == {}
+            assert intake_row["intake_mode"] == "legacy"
+            assert connection.execute(
+                text("select intake_mode from intake_items where intake_number = 'INT-DETERMINISTIC-BACKFILL'")
+            ).scalar_one() == "deterministic"
             intake_columns = {column["name"] for column in inspector.get_columns("intake_items")}
-            assert {"idempotency_key", "idempotency_fingerprint"}.issubset(intake_columns)
+            assert {"idempotency_key", "idempotency_fingerprint", "intake_mode"}.issubset(intake_columns)
             intake_constraints = {constraint["name"] for constraint in inspector.get_unique_constraints("intake_items")}
             assert "uq_intake_items_organization_id_idempotency_key" in intake_constraints
+            assert "uq_intake_items_id_organization_id" in intake_constraints
             assert "uq_intake_items_idempotency_key" not in intake_constraints
+            assert {"sites", "projects", "connector_mappings", "intake_operational_context_associations"}.issubset(
+                inspector.get_table_names()
+            )
+            association_columns = {
+                column["name"] for column in inspector.get_columns("intake_operational_context_associations")
+            }
+            assert {
+                "intake_item_id",
+                "organization_id",
+                "site_id",
+                "project_id",
+                "connector_mapping_id",
+                "idempotency_key",
+                "idempotency_fingerprint",
+                "actor_id",
+                "correlation_id",
+                "causation_id",
+                "associated_at",
+            }.issubset(association_columns)
+            association_constraints = {
+                constraint["name"]
+                for constraint in inspector.get_unique_constraints("intake_operational_context_associations")
+            }
+            assert {
+                "uq_intake_operational_context_associations_intake_item_id",
+                "uq_ioca_org_idempotency_key",
+            }.issubset(association_constraints)
 
             first_organization_id = str(uuid4())
             second_organization_id = str(uuid4())
@@ -162,6 +213,7 @@ def test_deterministic_inbound_migration_round_trip() -> None:
         with engine.connect() as connection:
             inspector = inspect(connection)
             assert "messages" not in inspector.get_table_names()
+            assert "intake_operational_context_associations" not in inspector.get_table_names()
             assert "causation_id" not in {column["name"] for column in inspector.get_columns("domain_events")}
 
         command.upgrade(config, "head")
@@ -172,6 +224,7 @@ def test_deterministic_inbound_migration_round_trip() -> None:
             assert {"idempotency_key", "idempotency_fingerprint"}.issubset(
                 {column["name"] for column in inspector.get_columns("intake_items")}
             )
+            assert "intake_operational_context_associations" in inspector.get_table_names()
     finally:
         engine.dispose()
         _drop_temp_database(database_name)

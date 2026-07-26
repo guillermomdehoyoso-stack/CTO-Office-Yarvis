@@ -17,6 +17,7 @@ from yarvis_api.models.observation_engine import (
 	SourceRecord,
 )
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.operational_context import ConnectorMapping, IntakeOperationalContextAssociation, Project, Site
 from yarvis_api.models.operational import NextActionSuggestion, OperationalAlert
 from yarvis_api.models.person import Person
 
@@ -40,6 +41,10 @@ __all__ = [
 	"Observation",
 	"OperationalPolicy",
 	"Organization",
+	"ConnectorMapping",
+	"IntakeOperationalContextAssociation",
+	"Project",
+	"Site",
 	"Person",
 	"PolicyEvaluation",
 	"ResolutionDecision",
