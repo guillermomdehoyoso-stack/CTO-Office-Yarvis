@@ -36,6 +36,7 @@ from yarvis_api.application.metadata import (
     RequestMetadata,
 )
 from yarvis_api.application.operational_context import AssociateIntakeOperationalContextCommand
+from yarvis_api.application.mission_inbox import MissionInboxFilters
 
 __all__ = [
     "AuthenticatedPrincipal",
@@ -57,6 +58,7 @@ __all__ = [
     "WS002CommandName",
     "WS002QueryName",
     "AssociateIntakeOperationalContextCommand",
+    "MissionInboxFilters",
     "command_contracts",
     "event_contracts",
     "query_contracts",

@@ -104,6 +104,8 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-INBOX-CMD-003 | CMD | Intake / operational context association | AssociateIntakeOperationalContext: immutable, tenant-owned association of a deterministic Intake to a Site, Project, and optional ConnectorMapping | C | governed Inbox context association |
 | IC-INBOX-QRY-002 | QRY | Intake / operational context association | RetrieveIntakeOperationalContext: authenticated, organization-scoped association retrieval; absent, legacy, and cross-organization targets are concealed as not found | C | Inbox operator context view |
 | IC-INBOX-EVT-001 | EVT | Intake / operational context association | IntakeOperationalContextAssociated: asserted immutable association occurrence with correlation, optional causation, and actor provenance | C | Inbox, projections, and automation |
+| IC-MISSION-QRY-002 | QRY | Mission Control / Inbox | ListMissionInbox: tenant-scoped Mission Inbox read model list | C | Mission Inbox operator view |
+| IC-MISSION-QRY-003 | QRY | Mission Control / Inbox | RetrieveMissionInboxItem: tenant-scoped Mission Inbox item retrieval with concealed absence | C | Mission Inbox operator view |
 | IC-EVIDENCE-EVT-001 | EVT | Observation & Evidence / observation | ObservationCaptured | C | identity and Netpay intake |
 | IC-EVIDENCE-EVT-002 | EVT | Observation & Evidence / evidence | EvidenceValidated | C | Knowledge, Netpay |
 | IC-KNOWLEDGE-CMD-001 | CMD | Knowledge / promotion | ActivateCaseKnowledge | Co | governed case facts |
@@ -129,7 +131,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 totals:** 42 contracts — 16 Commands, 12 Queries, 12 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+**Tier 1 totals:** 44 contracts — 16 Commands, 14 Queries, 12 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
 
 ### 7.1 Verified WS-001 Inbox Binding
 

@@ -6,7 +6,9 @@ from yarvis_api.application.authentication import AuthenticatedPrincipal
 from yarvis_api.application.contracts import (
     WS001CommandName,
     WS001QueryName,
+    WS003QueryName,
     command_contracts,
+    event_contracts,
     query_contracts,
 )
 from yarvis_api.application.errors import (
@@ -166,3 +168,13 @@ def test_query_boundary_requires_query_id_and_non_mutating_contract() -> None:
         enforce_query_boundary(query_contract, metadata=_command_metadata())
 
     assert exc.value.code == ApplicationErrorCode.VALIDATION_FAILED
+
+
+def test_application_contract_ids_are_unique_and_mission_inbox_bindings_are_canonical() -> None:
+    contracts = (*command_contracts.values(), *query_contracts.values(), *event_contracts.values())
+    contract_ids = [contract.interaction_contract_id for contract in contracts]
+
+    assert len(contract_ids) == len(set(contract_ids))
+    assert query_contracts[WS001QueryName.RETRIEVE_CASE_ATTENTION].interaction_contract_id == "IC-MISSION-QRY-001"
+    assert query_contracts[WS003QueryName.LIST_MISSION_INBOX].interaction_contract_id == "IC-MISSION-QRY-002"
+    assert query_contracts[WS003QueryName.RETRIEVE_MISSION_INBOX_ITEM].interaction_contract_id == "IC-MISSION-QRY-003"

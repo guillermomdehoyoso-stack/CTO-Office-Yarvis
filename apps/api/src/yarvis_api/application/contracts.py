@@ -38,6 +38,11 @@ class WS002QueryName(StrEnum):
     RETRIEVE_INTAKE_OPERATIONAL_CONTEXT = "retrieve_intake_operational_context"
 
 
+class WS003QueryName(StrEnum):
+    LIST_MISSION_INBOX = "list_mission_inbox"
+    RETRIEVE_MISSION_INBOX_ITEM = "retrieve_mission_inbox_item"
+
+
 class WS001EventName(StrEnum):
     OBSERVATION_CAPTURED = "observation_captured"
     EVIDENCE_VALIDATED = "evidence_validated"
@@ -185,7 +190,7 @@ command_contracts[WS002CommandName.ASSOCIATE_INTAKE_OPERATIONAL_CONTEXT] = Appli
 )
 
 
-query_contracts: dict[WS001QueryName | WS002QueryName, ApplicationContract] = {
+query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName, ApplicationContract] = {
     WS001QueryName.RETRIEVE_DETERMINISTIC_INTAKE_DETAIL: ApplicationContract(
         interaction_contract_id="IC-INBOX-QRY-001",
         owning_context="intake",
@@ -233,6 +238,26 @@ query_contracts[WS002QueryName.RETRIEVE_INTAKE_OPERATIONAL_CONTEXT] = Applicatio
     requires_actor=True,
     requires_authority=True,
     required_authority_scope="inbound.read",
+)
+
+query_contracts[WS003QueryName.LIST_MISSION_INBOX] = ApplicationContract(
+    interaction_contract_id="IC-MISSION-QRY-002",
+    owning_context="mission_control",
+    owning_capability="mission_inbox",
+    mutating=False,
+    requires_actor=True,
+    requires_authority=True,
+    required_authority_scope="mission.inbox.read",
+)
+
+query_contracts[WS003QueryName.RETRIEVE_MISSION_INBOX_ITEM] = ApplicationContract(
+    interaction_contract_id="IC-MISSION-QRY-003",
+    owning_context="mission_control",
+    owning_capability="mission_inbox",
+    mutating=False,
+    requires_actor=True,
+    requires_authority=True,
+    required_authority_scope="mission.inbox.read",
 )
 
 

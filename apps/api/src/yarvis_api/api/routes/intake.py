@@ -95,6 +95,7 @@ def create_deterministic_intake(
             principal=principal,
         )
     )
+    request.app.state.yarvis.mission_inbox_projection_service.project_pending_events()
     return service.load_detail(db, intake_id)
 
 
@@ -133,7 +134,7 @@ def associate_deterministic_intake_operational_context(
     request: Request,
 ):
     principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
-    return request.app.state.yarvis.intake_operational_context_association_service.associate(
+    result = request.app.state.yarvis.intake_operational_context_association_service.associate(
         AssociateIntakeOperationalContextCommand(
             intake_item_id=intake_id,
             site_id=payload.site_id,
@@ -149,6 +150,8 @@ def associate_deterministic_intake_operational_context(
         ),
         principal,
     )
+    request.app.state.yarvis.mission_inbox_projection_service.project_pending_events()
+    return result
 
 
 @router.get(

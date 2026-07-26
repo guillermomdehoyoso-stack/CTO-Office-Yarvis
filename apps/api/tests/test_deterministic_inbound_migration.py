@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -80,6 +81,7 @@ def test_deterministic_inbound_migration_round_trip() -> None:
 
         command.upgrade(config, "20260716_11")
         deterministic_organization_id = str(uuid4())
+        deterministic_intake_id = str(uuid4())
         with engine.begin() as connection:
             connection.execute(
                 text(
@@ -94,13 +96,35 @@ def test_deterministic_inbound_migration_round_trip() -> None:
                     "(id, intake_number, source_type, content_type, text_content, organization_id, idempotency_key, idempotency_fingerprint) "
                     "VALUES (:id, 'INT-DETERMINISTIC-BACKFILL', 'email', 'message/rfc822', 'content', :organization_id, 'backfill-key', :fingerprint)"
                 ),
-                {"id": str(uuid4()), "organization_id": deterministic_organization_id, "fingerprint": "a" * 64},
+                {"id": deterministic_intake_id, "organization_id": deterministic_organization_id, "fingerprint": "a" * 64},
             )
+
+        command.upgrade(config, "20260726_12")
+        tied_event_ids = sorted((uuid4(), uuid4()), key=str)
+        tied_timestamp = datetime(2026, 7, 26, tzinfo=timezone.utc)
+        with engine.begin() as connection:
+            for event_id in tied_event_ids:
+                connection.execute(
+                    text(
+                        "INSERT INTO domain_events "
+                        "(id, event_type, aggregate_type, aggregate_id, organization_id, payload, occurred_at, recorded_at) "
+                        "VALUES (:id, 'intake.received', 'intake_item', :aggregate_id, :organization_id, "
+                        "CAST(:payload AS jsonb), :occurred_at, :recorded_at)"
+                    ),
+                    {
+                        "id": str(event_id),
+                        "aggregate_id": deterministic_intake_id,
+                        "organization_id": deterministic_organization_id,
+                        "payload": "{}",
+                        "occurred_at": tied_timestamp,
+                        "recorded_at": tied_timestamp,
+                    },
+                )
 
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260726_12"
+            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260726_13"
             assert "messages" in inspector.get_table_names()
             message_columns = {column["name"] for column in inspector.get_columns("messages")}
             assert {
@@ -148,6 +172,52 @@ def test_deterministic_inbound_migration_round_trip() -> None:
             assert {"sites", "projects", "connector_mappings", "intake_operational_context_associations"}.issubset(
                 inspector.get_table_names()
             )
+            assert {"mission_inbox_items", "projection_checkpoints"}.issubset(inspector.get_table_names())
+            mission_inbox_constraints = {
+                constraint["name"] for constraint in inspector.get_unique_constraints("mission_inbox_items")
+            }
+            assert "uq_mission_inbox_items_source_identity" in mission_inbox_constraints
+            checkpoint_constraints = {
+                constraint["name"] for constraint in inspector.get_unique_constraints("projection_checkpoints")
+            }
+            assert "uq_projection_checkpoints_projection_name" in checkpoint_constraints
+            mission_inbox_indexes = {index["name"] for index in inspector.get_indexes("mission_inbox_items")}
+            assert {
+                "ix_mission_inbox_items_status",
+                "ix_mission_inbox_items_priority",
+                "ix_mission_inbox_items_received_at",
+                "ix_mission_inbox_items_last_activity_at",
+                "ix_mission_inbox_items_project_id",
+                "ix_mission_inbox_items_site_id",
+            }.issubset(mission_inbox_indexes)
+            mission_inbox_fks = {fk["referred_table"] for fk in inspector.get_foreign_keys("mission_inbox_items")}
+            assert {"organizations", "intake_items", "sites", "projects", "connector_mappings", "domain_events"}.issubset(
+                mission_inbox_fks
+            )
+            assert "event_sequence" in {column["name"] for column in inspector.get_columns("domain_events")}
+            event_sequences = connection.execute(
+                text("SELECT id, event_sequence FROM domain_events ORDER BY event_sequence")
+            ).mappings().all()
+            assert [str(row["id"]) for row in event_sequences] == [str(event_id) for event_id in tied_event_ids]
+            assert [row["event_sequence"] for row in event_sequences] == [1, 2]
+            next_event_sequence = connection.execute(
+                text(
+                    "INSERT INTO domain_events "
+                    "(id, event_type, aggregate_type, aggregate_id, organization_id, payload, occurred_at) "
+                    "VALUES (:id, 'intake.received', 'intake_item', :aggregate_id, :organization_id, "
+                    "CAST(:payload AS jsonb), :occurred_at) RETURNING event_sequence"
+                ),
+                {
+                    "id": str(uuid4()),
+                    "aggregate_id": deterministic_intake_id,
+                    "organization_id": deterministic_organization_id,
+                    "payload": "{}",
+                    "occurred_at": tied_timestamp,
+                },
+            ).scalar_one()
+            assert next_event_sequence == 3
+            event_constraints = {constraint["name"] for constraint in inspector.get_unique_constraints("domain_events")}
+            assert "uq_domain_events_event_sequence" in event_constraints
             association_columns = {
                 column["name"] for column in inspector.get_columns("intake_operational_context_associations")
             }
@@ -209,11 +279,26 @@ def test_deterministic_inbound_migration_round_trip() -> None:
             except IntegrityError:
                 pass
 
+        command.downgrade(config, "20260726_12")
+        with engine.connect() as connection:
+            inspector = inspect(connection)
+            assert "mission_inbox_items" not in inspector.get_table_names()
+            assert "projection_checkpoints" not in inspector.get_table_names()
+            assert "event_sequence" not in {column["name"] for column in inspector.get_columns("domain_events")}
+
+        command.upgrade(config, "head")
+        with engine.connect() as connection:
+            inspector = inspect(connection)
+            assert {"mission_inbox_items", "projection_checkpoints"}.issubset(inspector.get_table_names())
+            assert "event_sequence" in {column["name"] for column in inspector.get_columns("domain_events")}
+
         command.downgrade(config, "20260716_09")
         with engine.connect() as connection:
             inspector = inspect(connection)
             assert "messages" not in inspector.get_table_names()
             assert "intake_operational_context_associations" not in inspector.get_table_names()
+            assert "mission_inbox_items" not in inspector.get_table_names()
+            assert "event_sequence" not in {column["name"] for column in inspector.get_columns("domain_events")}
             assert "causation_id" not in {column["name"] for column in inspector.get_columns("domain_events")}
 
         command.upgrade(config, "head")
@@ -225,6 +310,8 @@ def test_deterministic_inbound_migration_round_trip() -> None:
                 {column["name"] for column in inspector.get_columns("intake_items")}
             )
             assert "intake_operational_context_associations" in inspector.get_table_names()
+            assert "mission_inbox_items" in inspector.get_table_names()
+            assert "event_sequence" in {column["name"] for column in inspector.get_columns("domain_events")}
     finally:
         engine.dispose()
         _drop_temp_database(database_name)

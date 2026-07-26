@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Identity, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
@@ -13,6 +13,7 @@ class DomainEvent(Base):
     __tablename__ = "domain_events"
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    event_sequence: Mapped[int] = mapped_column(BigInteger, Identity(), nullable=False, unique=True)
     event_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     aggregate_type: Mapped[str] = mapped_column(String(100), nullable=False)
     aggregate_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
