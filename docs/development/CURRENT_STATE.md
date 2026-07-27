@@ -1,51 +1,41 @@
 # Current Engineering State
 
-**Last updated:** 2026-07-23
+**Last updated:** 2026-07-27
 
 | Field | Current value |
 | --- | --- |
-| Current branch | TO BE VERIFIED at session start |
-| Current HEAD | TO BE VERIFIED at session start |
-| Current sprint | WS-000 - Development Workspace Bootstrap |
-| Current engineering gate | Ratified scoped EOS Foundation Documentation Gate (Type: Constitutional; Scope: EOS Foundation Documentation). It blocks EOS ratification/baseline/modification only within scope and does not globally block WS-000. |
-| Current work package | WS-000 entry under ratified scoped EOS gate and Governance Baseline V1 |
-| Current blocker count | 0 (Amendment 004 independent re-review) |
-| Current major findings | 0 (Amendment 004 independent re-review) |
-| Next mandatory action | Prepare and execute the WS-000 bootstrap implementation prompt under scope protections |
-| Current repository health | TO BE VERIFIED at session start; no runtime or quality validation is performed by DOS documentation work |
+| Current branch | `main` at the WS-004A closure baseline; verify at session start. |
+| Current HEAD | `c139f74` — WS-004A backend closure baseline. |
+| Current sprint | WS-004B — Mission Work Queue Frontend. |
+| Current engineering gate | WS-004B implementation planning and governed frontend delivery. |
+| Current work package | WS-004B Mission Work Queue Frontend. |
+| Current blocker count | 0 at WS-004A closure. |
+| Current major findings | 0 at WS-004A closure. |
+| Next mandatory action | Define and execute the approved WS-004B frontend scope. |
+| Current repository health | Backend closure evidence: 267 passed; verify working tree and runtime at session start. |
 
-## Implemented Foundation Evidence
+## Closed Workstreams
 
-The roadmap documents record completed implementation through F-009 Command
-Dispatch: repository normalization, runtime/dependency baseline, configuration,
-bootstrap, module registry, contract registry, persistence infrastructure, Unit
-of Work, and synchronous owner Command Dispatch.
+- **WS-003 — Mission Inbox Projection Foundation:** closed. Mission Inbox is a
+  rebuildable, tenant-scoped projection.
+- **WS-004A — Mission Work Queue Backend:** closed at commit `c139f74`, tagged
+  `ws004a-backend-complete`.
 
-F-009 does not include Query Dispatch, Event Dispatch, Notification Dispatch,
-worker/scheduler runtime, authorization envelopes, or full observability.
+`MissionWorkItem` is the transactional source of truth for explicit creation,
+assignment, status changes, priority changes, and governed events. It preserves
+tenant isolation and survives Mission Inbox rebuilds. Stable duplicate prevention
+uses `(organization_id, source_type, source_id)`; `inbox_item_id` remains the
+historical reference to the projection row that originated creation.
 
-## Current Documentary State
+## Current Runtime Evidence
 
-- Amendment 001: proposed; review result was Amendment Required.
-- Amendment 002: review complete with Amendment Required and one MAJOR finding.
-- Amendment 003: proposed; created to correct the outstanding Amendment 002 dependency-path finding.
-- Development Kernel foundation: proposed in `docs/development/DEVELOPMENT_KERNEL_FOUNDATION.md`; not ratified authority.
-- EOS Constitution: proposed in `docs/eos/EOS_CONSTITUTION.md`; not ratified authority.
-- EOS Glossary: proposed in `docs/eos/EOS_GLOSSARY.md`; not ratified authority.
-- EOS Glossary is the final planned foundational documentary artifact before returning to the Yarvis implementation path.
-- Amendment 004: ratified; defines scoped Gate behavior as the final planned governance refinement before WS-000.
-- Governance baseline: `docs/engineering/GOVERNANCE_BASELINE_V1.md` created as the minimum reproducible governance freeze before WS-000.
-- DK-000 documentary consolidation is in progress.
-- The EOS review Gate is ratified as a Constitutional Gate scoped to EOS Foundation Documentation. It blocks EOS ratification, baseline creation, and constitutional modification within scope only; it does not globally block WS-000 or unrelated workspaces that do not modify EOS Foundation artifacts.
-- WS-000 is authorized to proceed outside EOS Foundation Documentation scope. Modifying EOS Foundation artifacts remains prohibited while that gate remains active.
-- Governance operating mode is Maintenance Mode as an operational baseline rule (not a constitutional amendment).
+- Alembic head: `20260726_14`.
+- Backend suite at WS-004A closure: **267 passed**.
 
 ## Current Authoritative Inputs
 
 - Constitution and ratified architecture.
-- Interaction Contract baseline and Architectural Decision Trace.
-- Technical Blueprint and Technical Blueprint Review.
-- F-001 through F-009 component baselines.
-- Implementation Epics.
-- Ratified roadmap amendments only. Proposed amendments are review inputs, not
-  ratified authority.
+- Interaction Contract Catalog and Architectural Decision Trace.
+- Technical Blueprint and its review.
+- Relevant implementation baseline and engineering documentation for WS-003,
+  WS-004A, and the forthcoming WS-004B scope.

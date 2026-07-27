@@ -2,61 +2,71 @@
 
 ## Identity
 
-**Work package:** WS-000 - Development Workspace Bootstrap
+**Work package:** WS-004B — Mission Work Queue Frontend
 
 ## Goal
 
-Establish repository-resident engineering context so a new human or AI session
-can determine the current gate, allowed action, relevant authority, and active
-work without relying on chat history.
+Deliver the governed operator surface for Mission Work Items without changing
+their backend contracts, ownership, lifecycle, or tenant boundaries.
 
-Complete the final planned governance refinement required to scope Gates without turning documentary review into a repository-wide implementation stop.
+## Scope
 
-## Packages
-
-- WS-000 Development Workspace bootstrap under ratified scoped gate controls.
-- EOS Foundation Documentation gate enforcement for in-scope artifacts.
-- Governance baseline freeze: `docs/engineering/GOVERNANCE_BASELINE_V1.md`.
+- List Mission Work Items.
+- Open a Work Item detail.
+- Filter the queue.
+- Assign and unassign a Work Item.
+- Change status.
+- Change priority.
+- Navigate from Mission Inbox to related Mission Work.
+- Handle governed `404`, `409`, and authorization responses.
 
 ## Dependencies
 
-- Amendment 001 through Amendment 003 and their reviews.
-- Amendment 004 ratified scoped Gate authority.
-- EOS Constitution and EOS Glossary proposals.
-- Technical Blueprint, review, Implementation Epics, and F-001 through F-009 baselines.
-- Repository documentation as the authoritative context source.
+- WS-003 Mission Inbox Projection Foundation.
+- WS-004A Mission Work Queue Backend at `c139f74` / `ws004a-backend-complete`.
+- Alembic head `20260726_14`.
+- Existing interaction contracts and backend authorization boundaries.
 
 ## Current Gate
 
-Ratified scoped EOS Foundation Documentation Gate (per `docs/engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_004.md`), with WS-000 authorized outside EOS Foundation Documentation scope.
+WS-004B may consume the public Mission Work and Mission Inbox interfaces only.
+Frontend work must preserve tenant concealment, authorization handling, and the
+backend-owned Work Item lifecycle.
 
 ## Entry Criteria
 
-- Current documentary state is available in the repository.
-- Governance Baseline V1 is recorded.
-- Unknown facts are recorded as `UNKNOWN` or `TO BE VERIFIED`.
+- Repository state is verified at session start.
+- WS-004A closure baseline is available.
+- Backend contracts, authorities, and error semantics are read before UI work.
 
 ## Exit Criteria
 
-- WS-000 bootstrap prompt is prepared and executed under the scoped EOS gate.
-- The EOS Gate remains scoped to EOS Foundation Documentation.
-- WS-000 implementation proceeds without modifying EOS Foundation artifacts.
-- No governance redesign is introduced by WS-000 startup activities.
+- Operators can list, filter, open, assign/unassign, reprioritize, and change
+  Work Item status through the governed interface.
+- Mission Inbox navigation reaches the related Work Item context.
+- `404`, `409`, and authorization responses are represented truthfully.
+- No excluded capability is introduced.
 
 ## Definition of Done
 
-A new engineering session can reconstruct the project identity, authority chain,
-current gate, active work, roadmap location, and next allowed action in under
-five minutes.
+The WS-004B frontend uses the existing governed backend contracts, passes its
+applicable tests, and does not redefine Work Item semantics.
 
 ## Open Risks
 
-- Branch, HEAD, working-tree state, and runtime health must be verified at each
-  new session start.
-- EOS Constitution is proposed, not ratified.
-- EOS Glossary is proposed, not ratified.
-- Baseline creation must remain scope-conformant to ratified Amendment 004 and must not authorize EOS artifact modification outside declared gate controls.
+- Verify frontend route, state, and authorization conventions before changes.
+- Preserve the distinction between the rebuildable Mission Inbox projection and
+  the transactional Mission Work source of truth.
+
+## Explicitly Out of Scope
+
+- SLA.
+- Comments.
+- Attachments.
+- Notifications.
+- Automation.
+- AI.
 
 ## Next Package
 
-Prepare and execute the WS-000 bootstrap implementation prompt.
+Implement WS-004B — Mission Work Queue Frontend.
