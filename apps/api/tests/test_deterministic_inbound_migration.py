@@ -55,6 +55,99 @@ def _drop_temp_database(database_name: str) -> None:
         connection.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(database_name)))
 
 
+def test_mission_work_queue_migration_contract_and_round_trip() -> None:
+    database_name = f"yarvis_test_ws004_{uuid4().hex}"
+    _create_temp_database(database_name)
+    engine = create_engine(BASE_URL.format(database_name))
+    config = Config(str(ALembic_ini))
+    config.set_main_option("sqlalchemy.url", BASE_URL.format(database_name))
+
+    try:
+        command.upgrade(config, "20260726_13")
+        with engine.connect() as connection:
+            assert "mission_work_items" not in inspect(connection).get_table_names()
+
+        command.upgrade(config, "head")
+        with engine.begin() as connection:
+            inspector = inspect(connection)
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260726_14"
+            assert "mission_work_items" in inspector.get_table_names()
+            assert {
+                "id", "organization_id", "inbox_item_id", "source_type", "source_id", "title", "summary",
+                "status", "priority", "assignee_subject_id", "created_by_subject_id", "created_at", "updated_at",
+                "assigned_at", "started_at", "resolved_at", "version",
+            } == {column["name"] for column in inspector.get_columns("mission_work_items")}
+            assert {"ck_mission_work_items_status", "ck_mission_work_items_priority"}.issubset(
+                {constraint["name"] for constraint in inspector.get_check_constraints("mission_work_items")}
+            )
+            assert {
+                "uq_mission_work_items_inbox_identity",
+                "uq_mission_work_items_source_identity",
+            }.issubset({
+                constraint["name"] for constraint in inspector.get_unique_constraints("mission_work_items")
+            })
+            indexes = {index["name"]: index["column_names"] for index in inspector.get_indexes("mission_work_items")}
+            expected_indexes = {
+                "ix_mission_work_items_org_status_updated": ["organization_id", "status", "updated_at"],
+                "ix_mission_work_items_org_assignee_status": ["organization_id", "assignee_subject_id", "status"],
+                "ix_mission_work_items_org_priority_updated": ["organization_id", "priority", "updated_at"],
+                "ix_mission_work_items_org_source": ["organization_id", "source_type", "source_id"],
+                "ix_mission_work_items_org_inbox": ["organization_id", "inbox_item_id"],
+            }
+            assert expected_indexes.items() <= indexes.items()
+            foreign_keys = inspector.get_foreign_keys("mission_work_items")
+            assert [foreign_key["referred_table"] for foreign_key in foreign_keys] == ["organizations"]
+            assert all("inbox_item_id" not in foreign_key["constrained_columns"] for foreign_key in foreign_keys)
+
+            first_organization_id, second_organization_id, inbox_item_id = uuid4(), uuid4(), uuid4()
+            for organization_id in (first_organization_id, second_organization_id):
+                connection.execute(
+                    text(
+                        "INSERT INTO organizations (id, legal_name, display_name, organization_type, status) "
+                        "VALUES (:id, :legal_name, :display_name, 'organization', 'active')"
+                    ),
+                    {"id": str(organization_id), "legal_name": str(organization_id), "display_name": str(organization_id)},
+                )
+
+            insert = text(
+                "INSERT INTO mission_work_items "
+                "(id, organization_id, inbox_item_id, source_type, source_id, title, status, priority, "
+                "created_by_subject_id, created_at, updated_at, version) VALUES "
+                "(:id, :organization_id, :inbox_item_id, 'email', :source_id, 'Migration work', :status, :priority, "
+                "'migration:test', now(), now(), 1)"
+            )
+            first = {"id": str(uuid4()), "organization_id": str(first_organization_id), "inbox_item_id": str(inbox_item_id), "source_id": str(uuid4()), "status": "open", "priority": "normal"}
+            connection.execute(insert, first)
+            connection.execute(insert, {**first, "id": str(uuid4()), "organization_id": str(second_organization_id)})
+            try:
+                with connection.begin_nested():
+                    connection.execute(
+                        insert,
+                        {**first, "id": str(uuid4()), "inbox_item_id": str(uuid4())},
+                    )
+                assert False, "expected duplicate organization/source rejection"
+            except IntegrityError:
+                pass
+            for invalid_values in (({"id": str(uuid4()), "status": "invalid", "priority": "normal"}), ({"id": str(uuid4()), "status": "open", "priority": "invalid"}), ({"id": str(uuid4()), "status": "open", "priority": "normal"})):
+                try:
+                    with connection.begin_nested():
+                        connection.execute(insert, {**first, **invalid_values})
+                    assert False, "expected migration constraint rejection"
+                except IntegrityError:
+                    pass
+
+        command.downgrade(config, "20260726_13")
+        with engine.connect() as connection:
+            assert "mission_work_items" not in inspect(connection).get_table_names()
+        command.upgrade(config, "head")
+        with engine.connect() as connection:
+            assert "mission_work_items" in inspect(connection).get_table_names()
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260726_14"
+    finally:
+        engine.dispose()
+        _drop_temp_database(database_name)
+
+
 def test_deterministic_inbound_migration_round_trip() -> None:
     database_name = f"yarvis_test_f002_{uuid4().hex}"
     _create_temp_database(database_name)
@@ -124,7 +217,7 @@ def test_deterministic_inbound_migration_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260726_13"
+            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260726_14"
             assert "messages" in inspector.get_table_names()
             message_columns = {column["name"] for column in inspector.get_columns("messages")}
             assert {

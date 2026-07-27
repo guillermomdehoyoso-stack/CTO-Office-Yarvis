@@ -121,6 +121,17 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-MISSION-QRY-001 | QRY | Mission Control / attention projection | RetrieveCaseAttention | Co | operator work surface |
 | IC-MISSION-EVT-001 | EVT | Mission Control / projection | AttentionPublished | O | operator surfaces |
 | IC-MISSION-NTF-001 | NTF | Mission Control / communication | NotifyAttentionRecipient | I | relevant actor |
+| IC-MISSION-CMD-002 | CMD | Mission Control / work queue | CreateMissionWorkItemFromInbox | C | operator work creation |
+| IC-MISSION-CMD-003 | CMD | Mission Control / work queue | AssignMissionWorkItem | C | operator assignment |
+| IC-MISSION-CMD-004 | CMD | Mission Control / work queue | ChangeMissionWorkItemStatus | C | operator work state |
+| IC-MISSION-CMD-005 | CMD | Mission Control / work queue | ChangeMissionWorkItemPriority | C | operator prioritization |
+| IC-MISSION-QRY-004 | QRY | Mission Control / work queue | ListMissionWorkItems | C | operator queue view |
+| IC-MISSION-QRY-005 | QRY | Mission Control / work queue | RetrieveMissionWorkItem | C | operator work detail |
+| IC-MISSION-EVT-002 | EVT | Mission Control / work queue | MissionWorkItemCreated | C | projections and automation |
+| IC-MISSION-EVT-003 | EVT | Mission Control / work queue | MissionWorkItemAssigned | C | projections and automation |
+| IC-MISSION-EVT-004 | EVT | Mission Control / work queue | MissionWorkItemUnassigned | C | projections and automation |
+| IC-MISSION-EVT-005 | EVT | Mission Control / work queue | MissionWorkItemStatusChanged | C | projections and automation |
+| IC-MISSION-EVT-006 | EVT | Mission Control / work queue | MissionWorkItemPriorityChanged | C | projections and automation |
 | IC-NETPAY-CMD-001 | CMD | Netpay Merchant Operations / merchant candidate | IdentifyOrRegisterMerchantCandidate | C | inbox association |
 | IC-NETPAY-CMD-002 | CMD | Netpay Merchant Operations / case | OpenNetpayOnboardingOrServiceCase | C | TPV/e-commerce service case |
 | IC-NETPAY-CMD-003 | CMD | Netpay Merchant Operations / case classification | ClassifyNetpayChannel | Co | TPV, e-commerce, or mixed |
@@ -131,7 +142,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 totals:** 44 contracts — 16 Commands, 14 Queries, 12 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+**Tier 1 totals:** 55 contracts — 20 Commands, 16 Queries, 17 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
 
 ### 7.1 Verified WS-001 Inbox Binding
 

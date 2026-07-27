@@ -7,6 +7,9 @@ from yarvis_api.application.contracts import (
     WS001CommandName,
     WS001QueryName,
     WS003QueryName,
+    WS004CommandName,
+    WS004EventName,
+    WS004QueryName,
     command_contracts,
     event_contracts,
     query_contracts,
@@ -178,3 +181,35 @@ def test_application_contract_ids_are_unique_and_mission_inbox_bindings_are_cano
     assert query_contracts[WS001QueryName.RETRIEVE_CASE_ATTENTION].interaction_contract_id == "IC-MISSION-QRY-001"
     assert query_contracts[WS003QueryName.LIST_MISSION_INBOX].interaction_contract_id == "IC-MISSION-QRY-002"
     assert query_contracts[WS003QueryName.RETRIEVE_MISSION_INBOX_ITEM].interaction_contract_id == "IC-MISSION-QRY-003"
+
+
+def test_ws004_contract_bindings_require_actor_authority_and_preserve_mutation_semantics() -> None:
+    expected_commands = {
+        WS004CommandName.CREATE_MISSION_WORK_ITEM_FROM_INBOX: ("IC-MISSION-CMD-002", "mission.work.create"),
+        WS004CommandName.ASSIGN_MISSION_WORK_ITEM: ("IC-MISSION-CMD-003", "mission.work.assign"),
+        WS004CommandName.CHANGE_MISSION_WORK_ITEM_STATUS: ("IC-MISSION-CMD-004", "mission.work.status.change"),
+        WS004CommandName.CHANGE_MISSION_WORK_ITEM_PRIORITY: ("IC-MISSION-CMD-005", "mission.work.priority.change"),
+    }
+    expected_queries = {
+        WS004QueryName.LIST_MISSION_WORK_ITEMS: "IC-MISSION-QRY-004",
+        WS004QueryName.RETRIEVE_MISSION_WORK_ITEM: "IC-MISSION-QRY-005",
+    }
+    expected_events = {
+        WS004EventName.MISSION_WORK_ITEM_CREATED: "IC-MISSION-EVT-002",
+        WS004EventName.MISSION_WORK_ITEM_ASSIGNED: "IC-MISSION-EVT-003",
+        WS004EventName.MISSION_WORK_ITEM_UNASSIGNED: "IC-MISSION-EVT-004",
+        WS004EventName.MISSION_WORK_ITEM_STATUS_CHANGED: "IC-MISSION-EVT-005",
+        WS004EventName.MISSION_WORK_ITEM_PRIORITY_CHANGED: "IC-MISSION-EVT-006",
+    }
+    for name, (contract_id, authority) in expected_commands.items():
+        contract = command_contracts[name]
+        assert (contract.interaction_contract_id, contract.required_authority_scope) == (contract_id, authority)
+        assert contract.mutating is True and contract.requires_actor is True and contract.requires_authority is True
+    for name, contract_id in expected_queries.items():
+        contract = query_contracts[name]
+        assert (contract.interaction_contract_id, contract.required_authority_scope) == (contract_id, "mission.work.read")
+        assert contract.mutating is False and contract.requires_actor is True and contract.requires_authority is True
+    for name, contract_id in expected_events.items():
+        contract = event_contracts[name]
+        assert contract.interaction_contract_id == contract_id
+        assert contract.mutating is False and contract.requires_actor is False

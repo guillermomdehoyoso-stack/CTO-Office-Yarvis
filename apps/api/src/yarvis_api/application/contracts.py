@@ -43,6 +43,26 @@ class WS003QueryName(StrEnum):
     RETRIEVE_MISSION_INBOX_ITEM = "retrieve_mission_inbox_item"
 
 
+class WS004CommandName(StrEnum):
+    CREATE_MISSION_WORK_ITEM_FROM_INBOX = "create_mission_work_item_from_inbox"
+    ASSIGN_MISSION_WORK_ITEM = "assign_mission_work_item"
+    CHANGE_MISSION_WORK_ITEM_STATUS = "change_mission_work_item_status"
+    CHANGE_MISSION_WORK_ITEM_PRIORITY = "change_mission_work_item_priority"
+
+
+class WS004QueryName(StrEnum):
+    LIST_MISSION_WORK_ITEMS = "list_mission_work_items"
+    RETRIEVE_MISSION_WORK_ITEM = "retrieve_mission_work_item"
+
+
+class WS004EventName(StrEnum):
+    MISSION_WORK_ITEM_CREATED = "mission_work_item_created"
+    MISSION_WORK_ITEM_ASSIGNED = "mission_work_item_assigned"
+    MISSION_WORK_ITEM_UNASSIGNED = "mission_work_item_unassigned"
+    MISSION_WORK_ITEM_STATUS_CHANGED = "mission_work_item_status_changed"
+    MISSION_WORK_ITEM_PRIORITY_CHANGED = "mission_work_item_priority_changed"
+
+
 class WS001EventName(StrEnum):
     OBSERVATION_CAPTURED = "observation_captured"
     EVIDENCE_VALIDATED = "evidence_validated"
@@ -65,7 +85,7 @@ class ApplicationContract:
     requires_idempotency_key: bool = False
 
 
-command_contracts: dict[WS001CommandName | WS002CommandName, ApplicationContract] = {
+command_contracts: dict[WS001CommandName | WS002CommandName | WS004CommandName, ApplicationContract] = {
     WS001CommandName.RECEIVE_INTAKE: ApplicationContract(
         interaction_contract_id="IC-INBOX-CMD-001",
         owning_context="intake",
@@ -189,8 +209,16 @@ command_contracts[WS002CommandName.ASSOCIATE_INTAKE_OPERATIONAL_CONTEXT] = Appli
     requires_idempotency_key=True,
 )
 
+for name, contract_id, capability, authority in (
+    (WS004CommandName.CREATE_MISSION_WORK_ITEM_FROM_INBOX, "IC-MISSION-CMD-002", "work_item_creation", "mission.work.create"),
+    (WS004CommandName.ASSIGN_MISSION_WORK_ITEM, "IC-MISSION-CMD-003", "work_item_assignment", "mission.work.assign"),
+    (WS004CommandName.CHANGE_MISSION_WORK_ITEM_STATUS, "IC-MISSION-CMD-004", "work_item_status", "mission.work.status.change"),
+    (WS004CommandName.CHANGE_MISSION_WORK_ITEM_PRIORITY, "IC-MISSION-CMD-005", "work_item_priority", "mission.work.priority.change"),
+):
+    command_contracts[name] = ApplicationContract(contract_id, "mission_control", capability, True, True, True, authority)
 
-query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName, ApplicationContract] = {
+
+query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName, ApplicationContract] = {
     WS001QueryName.RETRIEVE_DETERMINISTIC_INTAKE_DETAIL: ApplicationContract(
         interaction_contract_id="IC-INBOX-QRY-001",
         owning_context="intake",
@@ -260,8 +288,15 @@ query_contracts[WS003QueryName.RETRIEVE_MISSION_INBOX_ITEM] = ApplicationContrac
     required_authority_scope="mission.inbox.read",
 )
 
+query_contracts[WS004QueryName.LIST_MISSION_WORK_ITEMS] = ApplicationContract(
+    "IC-MISSION-QRY-004", "mission_control", "work_item_list", False, True, True, "mission.work.read"
+)
+query_contracts[WS004QueryName.RETRIEVE_MISSION_WORK_ITEM] = ApplicationContract(
+    "IC-MISSION-QRY-005", "mission_control", "work_item_detail", False, True, True, "mission.work.read"
+)
 
-event_contracts: dict[WS001EventName, ApplicationContract] = {
+
+event_contracts: dict[WS001EventName | WS004EventName, ApplicationContract] = {
     WS001EventName.OBSERVATION_CAPTURED: ApplicationContract(
         interaction_contract_id="IC-EVIDENCE-EVT-001",
         owning_context="observation_evidence",
@@ -312,3 +347,12 @@ event_contracts: dict[WS001EventName, ApplicationContract] = {
         requires_actor=False,
     ),
 }
+
+for name, contract_id, capability in (
+    (WS004EventName.MISSION_WORK_ITEM_CREATED, "IC-MISSION-EVT-002", "work_item_creation"),
+    (WS004EventName.MISSION_WORK_ITEM_ASSIGNED, "IC-MISSION-EVT-003", "work_item_assignment"),
+    (WS004EventName.MISSION_WORK_ITEM_UNASSIGNED, "IC-MISSION-EVT-004", "work_item_assignment"),
+    (WS004EventName.MISSION_WORK_ITEM_STATUS_CHANGED, "IC-MISSION-EVT-005", "work_item_status"),
+    (WS004EventName.MISSION_WORK_ITEM_PRIORITY_CHANGED, "IC-MISSION-EVT-006", "work_item_priority"),
+):
+    event_contracts[name] = ApplicationContract(contract_id, "mission_control", capability, False, False)
