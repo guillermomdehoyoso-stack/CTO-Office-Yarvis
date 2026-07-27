@@ -63,6 +63,18 @@ class WS004EventName(StrEnum):
     MISSION_WORK_ITEM_PRIORITY_CHANGED = "mission_work_item_priority_changed"
 
 
+class WS005CommandName(StrEnum):
+    ADD_MISSION_WORK_ITEM_COMMENT = "add_mission_work_item_comment"
+
+
+class WS005QueryName(StrEnum):
+    RETRIEVE_MISSION_WORK_TIMELINE = "retrieve_mission_work_timeline"
+
+
+class WS005EventName(StrEnum):
+    MISSION_WORK_ITEM_COMMENT_ADDED = "mission_work_item_comment_added"
+
+
 class WS001EventName(StrEnum):
     OBSERVATION_CAPTURED = "observation_captured"
     EVIDENCE_VALIDATED = "evidence_validated"
@@ -85,7 +97,7 @@ class ApplicationContract:
     requires_idempotency_key: bool = False
 
 
-command_contracts: dict[WS001CommandName | WS002CommandName | WS004CommandName, ApplicationContract] = {
+command_contracts: dict[WS001CommandName | WS002CommandName | WS004CommandName | WS005CommandName, ApplicationContract] = {
     WS001CommandName.RECEIVE_INTAKE: ApplicationContract(
         interaction_contract_id="IC-INBOX-CMD-001",
         owning_context="intake",
@@ -217,8 +229,12 @@ for name, contract_id, capability, authority in (
 ):
     command_contracts[name] = ApplicationContract(contract_id, "mission_control", capability, True, True, True, authority)
 
+command_contracts[WS005CommandName.ADD_MISSION_WORK_ITEM_COMMENT] = ApplicationContract(
+    "IC-MISSION-CMD-006", "mission_control", "work_item_comment", True, True, True, "mission.work.create"
+)
 
-query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName, ApplicationContract] = {
+
+query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName, ApplicationContract] = {
     WS001QueryName.RETRIEVE_DETERMINISTIC_INTAKE_DETAIL: ApplicationContract(
         interaction_contract_id="IC-INBOX-QRY-001",
         owning_context="intake",
@@ -294,9 +310,12 @@ query_contracts[WS004QueryName.LIST_MISSION_WORK_ITEMS] = ApplicationContract(
 query_contracts[WS004QueryName.RETRIEVE_MISSION_WORK_ITEM] = ApplicationContract(
     "IC-MISSION-QRY-005", "mission_control", "work_item_detail", False, True, True, "mission.work.read"
 )
+query_contracts[WS005QueryName.RETRIEVE_MISSION_WORK_TIMELINE] = ApplicationContract(
+    "IC-MISSION-QRY-006", "mission_control", "work_item_timeline", False, True, True, "mission.work.read"
+)
 
 
-event_contracts: dict[WS001EventName | WS004EventName, ApplicationContract] = {
+event_contracts: dict[WS001EventName | WS004EventName | WS005EventName, ApplicationContract] = {
     WS001EventName.OBSERVATION_CAPTURED: ApplicationContract(
         interaction_contract_id="IC-EVIDENCE-EVT-001",
         owning_context="observation_evidence",
@@ -356,3 +375,7 @@ for name, contract_id, capability in (
     (WS004EventName.MISSION_WORK_ITEM_PRIORITY_CHANGED, "IC-MISSION-EVT-006", "work_item_priority"),
 ):
     event_contracts[name] = ApplicationContract(contract_id, "mission_control", capability, False, False)
+
+event_contracts[WS005EventName.MISSION_WORK_ITEM_COMMENT_ADDED] = ApplicationContract(
+    "IC-MISSION-EVT-007", "mission_control", "work_item_comment", False, False
+)

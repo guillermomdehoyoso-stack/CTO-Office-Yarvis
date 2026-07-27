@@ -28,6 +28,11 @@ class PriorityRequest(BaseModel):
     priority: str = Field(min_length=1, max_length=50)
 
 
+class CommentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    comment: str = Field(min_length=1, max_length=4000)
+
+
 class MissionWorkItemRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
@@ -53,3 +58,17 @@ class MissionWorkItemPage(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class MissionWorkEventRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    occurred_at: datetime
+    event_type: str
+    actor_subject_id: str | None
+    payload: dict = Field(validation_alias="payload_json")
+    sequence_number: int
+
+
+class MissionWorkTimeline(BaseModel):
+    items: list[MissionWorkEventRead]

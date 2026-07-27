@@ -9,10 +9,10 @@ from sqlalchemy.orm import Session
 
 from yarvis_api.api.authentication import transport_authentication_request
 from yarvis_api.application.metadata import RequestMetadata
-from yarvis_api.application.mission_work import AssignMissionWorkItemCommand, ChangeMissionWorkItemPriorityCommand, ChangeMissionWorkItemStatusCommand, CreateMissionWorkItemFromInboxCommand, MissionWorkItemFilters
+from yarvis_api.application.mission_work import AddMissionWorkItemCommentCommand, AssignMissionWorkItemCommand, ChangeMissionWorkItemPriorityCommand, ChangeMissionWorkItemStatusCommand, CreateMissionWorkItemFromInboxCommand, MissionWorkItemFilters
 from yarvis_api.clock import utc_now
 from yarvis_api.database import get_db
-from yarvis_api.schemas.mission_work import AssignmentRequest, CreateMissionWorkItemRequest, MissionWorkItemPage, MissionWorkItemRead, PriorityRequest, StatusRequest
+from yarvis_api.schemas.mission_work import AssignmentRequest, CommentRequest, CreateMissionWorkItemRequest, MissionWorkEventRead, MissionWorkItemPage, MissionWorkItemRead, MissionWorkTimeline, PriorityRequest, StatusRequest
 
 
 router = APIRouter(prefix="/mission/work-items", tags=["mission-work"])
@@ -38,6 +38,22 @@ def list_work_items(request: Request, status: str | None = None, priority: str |
 def retrieve_work_item(work_item_id: UUID, request: Request, db: Session = Depends(get_db)) -> MissionWorkItemRead:
     principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
     return request.app.state.yarvis.mission_work_query_service.retrieve(db, work_item_id, principal, _metadata(principal, query_id="retrieve_mission_work_item"))
+
+
+@router.get("/{work_item_id}/timeline", response_model=MissionWorkTimeline)
+def retrieve_work_item_timeline(work_item_id: UUID, request: Request, db: Session = Depends(get_db)) -> MissionWorkTimeline:
+    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    return request.app.state.yarvis.mission_work_query_service.timeline(db, work_item_id, principal, _metadata(principal, query_id="retrieve_mission_work_timeline"))
+
+
+@router.post("/{work_item_id}/comments", response_model=MissionWorkEventRead, status_code=status.HTTP_201_CREATED)
+def add_work_item_comment(work_item_id: UUID, payload: CommentRequest, request: Request) -> MissionWorkEventRead:
+    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    return request.app.state.yarvis.mission_work_service.add_comment(
+        AddMissionWorkItemCommentCommand(work_item_id, payload.comment),
+        _metadata(principal, command_id="add_mission_work_item_comment"),
+        principal,
+    )
 
 
 @router.post("/{work_item_id}/assignment", response_model=MissionWorkItemRead)

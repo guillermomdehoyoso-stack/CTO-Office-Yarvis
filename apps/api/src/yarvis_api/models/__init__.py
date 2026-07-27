@@ -7,6 +7,7 @@ from yarvis_api.models.evidence import Evidence
 from yarvis_api.models.intake import IntakeItem
 from yarvis_api.models.mission_inbox import MissionInboxItem, ProjectionCheckpoint
 from yarvis_api.models.mission_work import MissionWorkItem
+from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.message import Message
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
 from yarvis_api.models.observation_engine import (
@@ -38,6 +39,7 @@ __all__ = [
 	"IntakeItem",
 	"MissionInboxItem",
 	"MissionWorkItem",
+	"MissionWorkEvent",
 	"Message",
 	"NetpayDeviceAssignment",
 	"NetpayServiceCase",

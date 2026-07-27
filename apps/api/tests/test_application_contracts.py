@@ -10,6 +10,9 @@ from yarvis_api.application.contracts import (
     WS004CommandName,
     WS004EventName,
     WS004QueryName,
+    WS005CommandName,
+    WS005EventName,
+    WS005QueryName,
     command_contracts,
     event_contracts,
     query_contracts,
@@ -213,3 +216,22 @@ def test_ws004_contract_bindings_require_actor_authority_and_preserve_mutation_s
         contract = event_contracts[name]
         assert contract.interaction_contract_id == contract_id
         assert contract.mutating is False and contract.requires_actor is False
+
+
+def test_ws005_timeline_contract_bindings_are_governed_and_unique() -> None:
+    command = command_contracts[WS005CommandName.ADD_MISSION_WORK_ITEM_COMMENT]
+    query = query_contracts[WS005QueryName.RETRIEVE_MISSION_WORK_TIMELINE]
+    event = event_contracts[WS005EventName.MISSION_WORK_ITEM_COMMENT_ADDED]
+
+    assert (command.interaction_contract_id, command.required_authority_scope) == (
+        "IC-MISSION-CMD-006",
+        "mission.work.create",
+    )
+    assert command.mutating is True and command.requires_actor is True
+    assert (query.interaction_contract_id, query.required_authority_scope) == (
+        "IC-MISSION-QRY-006",
+        "mission.work.read",
+    )
+    assert query.mutating is False and query.requires_actor is True
+    assert event.interaction_contract_id == "IC-MISSION-EVT-007"
+    assert event.mutating is False and event.requires_actor is False

@@ -30,6 +30,12 @@ class ChangeMissionWorkItemPriorityCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class AddMissionWorkItemCommentCommand:
+    work_item_id: UUID
+    comment: str
+
+
+@dataclass(frozen=True, slots=True)
 class MissionWorkItemFilters:
     status: str | None = None
     priority: str | None = None

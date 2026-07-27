@@ -11,11 +11,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from yarvis_api.application.authentication import AuthenticatedPrincipal
-from yarvis_api.application.contracts import WS004CommandName, WS004QueryName, command_contracts, query_contracts
+from yarvis_api.application.contracts import WS004CommandName, WS004QueryName, WS005CommandName, WS005QueryName, command_contracts, query_contracts
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 from yarvis_api.application.metadata import RequestMetadata
 from yarvis_api.application.mission_work import (
     AssignMissionWorkItemCommand,
+    AddMissionWorkItemCommentCommand,
     ChangeMissionWorkItemPriorityCommand,
     ChangeMissionWorkItemStatusCommand,
     CreateMissionWorkItemFromInboxCommand,
@@ -26,8 +27,9 @@ from yarvis_api.clock import utc_now
 from yarvis_api.models.domain_event import record_event
 from yarvis_api.models.mission_inbox import MissionInboxItem
 from yarvis_api.models.mission_work import MissionWorkItem
+from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.persistence import OperationScope, PersistenceRuntime, UnitOfWork
-from yarvis_api.schemas.mission_work import MissionWorkItemPage, MissionWorkItemRead
+from yarvis_api.schemas.mission_work import MissionWorkEventRead, MissionWorkItemPage, MissionWorkItemRead, MissionWorkTimeline
 from yarvis_api.services.inbound_intake import _principal_organization_id
 
 
@@ -44,6 +46,14 @@ _TRANSITIONS = {
     "waiting": {"assigned", "in_progress", "resolved", "cancelled"},
     "resolved": {"open"},
     "cancelled": {"open"},
+}
+_TIMELINE_EVENT_TYPES = {
+    "mission.work_item_created": "work_item.created",
+    "mission.work_item_assigned": "work_item.assigned",
+    "mission.work_item_unassigned": "work_item.unassigned",
+    "mission.work_item_status_changed": "work_item.status_changed",
+    "mission.work_item_priority_changed": "work_item.priority_changed",
+    "mission.work_item_comment_added": "comment.added",
 }
 
 
@@ -110,12 +120,42 @@ class MissionWorkService:
     def change_priority(self, command: ChangeMissionWorkItemPriorityCommand, metadata: RequestMetadata, principal: AuthenticatedPrincipal) -> MissionWorkItemRead:
         return self._mutate(command.work_item_id, WS004CommandName.CHANGE_MISSION_WORK_ITEM_PRIORITY, metadata, principal, lambda session, item: self._priority(session, item, command.priority, metadata, principal))
 
+    def add_comment(self, command: AddMissionWorkItemCommentCommand, metadata: RequestMetadata, principal: AuthenticatedPrincipal) -> MissionWorkEventRead:
+        enforce_command_boundary(command_contracts[WS005CommandName.ADD_MISSION_WORK_ITEM_COMMENT], metadata=metadata, principal=principal)
+        organization_id = _principal_organization_id(principal)
+        with UnitOfWork(self.persistence, OperationScope()) as unit_of_work:
+            session = unit_of_work.session
+            item = session.scalar(
+                select(MissionWorkItem)
+                .where(MissionWorkItem.id == command.work_item_id)
+                .where(MissionWorkItem.organization_id == organization_id)
+                .with_for_update()
+            )
+            if item is None:
+                raise _not_found()
+            event = self._event(
+                session,
+                item,
+                "mission.work_item_comment_added",
+                {"work_item_id": str(item.id), "comment": command.comment},
+                metadata,
+                principal,
+            )
+            result = MissionWorkEventRead.model_validate(event)
+            unit_of_work.commit()
+            return result
+
     def _mutate(self, work_item_id: UUID, contract_name: WS004CommandName, metadata: RequestMetadata, principal: AuthenticatedPrincipal, mutation) -> MissionWorkItemRead:
         enforce_command_boundary(command_contracts[contract_name], metadata=metadata, principal=principal)
         organization_id = _principal_organization_id(principal)
         with UnitOfWork(self.persistence, OperationScope()) as unit_of_work:
             session = unit_of_work.session
-            item = session.scalar(select(MissionWorkItem).where(MissionWorkItem.id == work_item_id).where(MissionWorkItem.organization_id == organization_id))
+            item = session.scalar(
+                select(MissionWorkItem)
+                .where(MissionWorkItem.id == work_item_id)
+                .where(MissionWorkItem.organization_id == organization_id)
+                .with_for_update()
+            )
             if item is None:
                 raise _not_found()
             changed = mutation(session, item)
@@ -133,16 +173,18 @@ class MissionWorkService:
             if item.status != "assigned":
                 raise _conflict("only an assigned work item can be unassigned")
             previous = item.assignee_subject_id
+            previous_status = item.status
             item.assignee_subject_id, item.assigned_at, item.status = None, None, "open"
             self._changed(item)
-            self._event(session, item, "mission.work_item_unassigned", {"work_item_id": str(item.id), "previous_assignee_subject_id": previous, "version": item.version}, metadata, principal)
+            self._event(session, item, "mission.work_item_unassigned", {"work_item_id": str(item.id), "previous_status": previous_status, "status": item.status, "previous_assignee_subject_id": previous, "assignee_subject_id": None, "version": item.version}, metadata, principal)
             return True
         previous = item.assignee_subject_id
+        previous_status = item.status
         item.assignee_subject_id, item.assigned_at = assignee, utc_now()
         if item.status == "open":
             item.status = "assigned"
         self._changed(item)
-        self._event(session, item, "mission.work_item_assigned", {"work_item_id": str(item.id), "previous_assignee_subject_id": previous, "assignee_subject_id": assignee, "version": item.version}, metadata, principal)
+        self._event(session, item, "mission.work_item_assigned", {"work_item_id": str(item.id), "previous_status": previous_status, "status": item.status, "previous_assignee_subject_id": previous, "assignee_subject_id": assignee, "version": item.version}, metadata, principal)
         return True
 
     def _status(self, session: Session, item: MissionWorkItem, status: str, metadata: RequestMetadata, principal: AuthenticatedPrincipal) -> bool:
@@ -182,8 +224,25 @@ class MissionWorkService:
         item.updated_at = now or utc_now()
 
     @staticmethod
-    def _event(session: Session, item: MissionWorkItem, event_type: str, payload: dict[str, object], metadata: RequestMetadata, principal: AuthenticatedPrincipal) -> None:
+    def _event(session: Session, item: MissionWorkItem, event_type: str, payload: dict[str, object], metadata: RequestMetadata, principal: AuthenticatedPrincipal) -> MissionWorkEvent:
         record_event(session, event_type=event_type, aggregate_type="mission_work_item", aggregate_id=item.id, organization_id=item.organization_id, correlation_id=UUID(metadata.correlation_id), causation_id=UUID(metadata.causation_id) if metadata.causation_id else None, payload=payload)
+        sequence_number = (session.scalar(
+            select(func.coalesce(func.max(MissionWorkEvent.sequence_number), 0))
+            .where(MissionWorkEvent.organization_id == item.organization_id)
+            .where(MissionWorkEvent.work_item_id == item.id)
+        ) or 0) + 1
+        event = MissionWorkEvent(
+            organization_id=item.organization_id,
+            work_item_id=item.id,
+            occurred_at=utc_now(),
+            event_type=_TIMELINE_EVENT_TYPES[event_type],
+            actor_subject_id=principal.actor_id,
+            payload_json=payload,
+            sequence_number=sequence_number,
+        )
+        session.add(event)
+        session.flush()
+        return event
 
 
 @dataclass(frozen=True, slots=True)
@@ -208,3 +267,21 @@ class MissionWorkQueryService:
         if item is None:
             raise _not_found()
         return _read(item)
+
+    def timeline(self, session: Session, work_item_id: UUID, principal: AuthenticatedPrincipal, metadata: RequestMetadata) -> MissionWorkTimeline:
+        enforce_query_boundary(query_contracts[WS005QueryName.RETRIEVE_MISSION_WORK_TIMELINE], metadata=metadata, principal=principal)
+        organization_id = _principal_organization_id(principal)
+        item = session.scalar(
+            select(MissionWorkItem)
+            .where(MissionWorkItem.id == work_item_id)
+            .where(MissionWorkItem.organization_id == organization_id)
+        )
+        if item is None:
+            raise _not_found()
+        events = session.scalars(
+            select(MissionWorkEvent)
+            .where(MissionWorkEvent.organization_id == organization_id)
+            .where(MissionWorkEvent.work_item_id == work_item_id)
+            .order_by(MissionWorkEvent.sequence_number.asc())
+        ).all()
+        return MissionWorkTimeline(items=[MissionWorkEventRead.model_validate(event) for event in events])
