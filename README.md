@@ -8,7 +8,7 @@ Operational Memory for Real Operations
 
 An Operational Evidence Consolidation and Operational Memory System designed to organize, connect, and preserve operational evidence, transforming operational chaos into actionable, explainable, and verifiable operational knowledge.
 
-Current implementation phase: **E-001 Engineering Foundation — F-001 Repository Normalization**. Architecture is in [docs/architecture](docs/architecture); engineering guidance is in [docs/engineering](docs/engineering).
+Current implementation checkpoint: **WS-006A Process Domain Foundation** at `63740d8` / `ws006a-process-domain-complete`. Start with the [Architecture Checkpoint](docs/architecture/YARVIS_ARCHITECTURE_CHECKPOINT.md), then the [As-Is Architecture](docs/architecture/YARVIS_AS_IS_ARCHITECTURE.md), [Target Architecture](docs/architecture/YARVIS_TARGET_ARCHITECTURE.md), and [Roadmap and Technical Debt](docs/architecture/YARVIS_ROADMAP_AND_TECHNICAL_DEBT.md). Architecture is in [docs/architecture](docs/architecture); engineering guidance is in [docs/engineering](docs/engineering).
 
 Backend requirement: **Python 3.12**. Canonical local setup and run command: `docker compose up -d --build`. For an editable backend environment, run from `apps/api`: `python -m pip install -r requirements-dev.txt` followed by `python -m pip install -e .`. Canonical backend test command: `docker compose exec api sh -lc "pip install -q -r requirements-dev.txt && pytest -ra"`.
 
@@ -79,9 +79,9 @@ La API no crea tablas automáticamente. Para aplicar el esquema versionado:
 docker compose exec api alembic upgrade head
 ```
 
-La migración activa de conversaciones está en:
+La línea de migración actual llega a:
 
-- apps/api/migrations/versions/20260712_05_conversations.py
+- apps/api/migrations/versions/20260727_16_process_domain_foundation.py
 
 Para revisar el estado actual del head:
 
