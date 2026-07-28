@@ -2,12 +2,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
+  addMissionWorkComment,
   assignMissionWorkItem,
   changeMissionWorkPriority,
   changeMissionWorkStatus,
   createMissionWorkItem,
   getMissionWorkAccess,
   getMissionWorkItem,
+  getMissionWorkTimeline,
   hasMissionWorkAuthority,
   listMissionInboxItems,
   listMissionWorkItems,
@@ -19,6 +21,7 @@ import {
   MISSION_WORK_STATUSES,
   type MissionWorkPriority,
   type MissionWorkStatus,
+  type MissionWorkEvent,
 } from '../../types/missionWork';
 
 const WORK_AUTHORITIES = [
@@ -36,6 +39,55 @@ function errorMessage(error: unknown): string {
   if (error.status === 409) return 'La operación entra en conflicto con el estado gobernado actual.';
   if (error.status === 403) return 'No tienes autorización para esta acción.';
   return 'No se pudo conectar con la API.';
+}
+
+function textValue(payload: Record<string, unknown>, key: string): string | null {
+  const value = payload[key];
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function transition(payload: Record<string, unknown>, previousKey: string, currentKey: string): string | null {
+  const previous = payload[previousKey] === null ? 'sin asignar' : textValue(payload, previousKey) || 'sin dato';
+  const current = payload[currentKey] === null ? 'sin asignar' : textValue(payload, currentKey) || 'sin dato';
+  return `${previous} → ${current}`;
+}
+
+function timelineDescription(event: MissionWorkEvent): string {
+  const payload = event.payload;
+  switch (event.event_type) {
+    case 'work_item.created':
+      return `Work Item creado: estado ${textValue(payload, 'status') || 'sin dato'}; prioridad ${textValue(payload, 'priority') || 'sin dato'}.`;
+    case 'work_item.assigned':
+      return `Responsable: ${transition(payload, 'previous_assignee_subject_id', 'assignee_subject_id')}. Estado: ${transition(payload, 'previous_status', 'status')}.`;
+    case 'work_item.unassigned':
+      return `Responsable: ${transition(payload, 'previous_assignee_subject_id', 'assignee_subject_id')}. Estado: ${transition(payload, 'previous_status', 'status')}.`;
+    case 'work_item.status_changed':
+      return `Estado: ${transition(payload, 'previous_status', 'status')}.`;
+    case 'work_item.priority_changed':
+      return `Prioridad: ${transition(payload, 'previous_priority', 'priority')}.`;
+    case 'comment.added':
+      return textValue(payload, 'comment') || 'Comentario interno agregado.';
+    default:
+      return `Evento desconocido: ${event.event_type}.`;
+  }
+}
+
+function timelineLabel(eventType: string): string {
+  return {
+    'work_item.created': 'Work Item creado',
+    'work_item.assigned': 'Work Item asignado',
+    'work_item.unassigned': 'Work Item desasignado',
+    'work_item.status_changed': 'Estado actualizado',
+    'work_item.priority_changed': 'Prioridad actualizada',
+    'comment.added': 'Comentario interno',
+  }[eventType] || 'Evento desconocido';
+}
+
+function timelineDate(timestamp: string): string {
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime()) ? timestamp : new Intl.DateTimeFormat('es-MX', {
+    dateStyle: 'medium', timeStyle: 'short',
+  }).format(date);
 }
 
 function AccessConfiguration({ onSaved }: { onSaved: () => void }) {
@@ -92,6 +144,7 @@ export function MissionWorkQueue() {
   const [priority, setPriority] = useState<MissionWorkPriority | ''>('');
   const [assignee, setAssignee] = useState('');
   const [assignment, setAssignment] = useState('');
+  const [comment, setComment] = useState('');
   const [offset, setOffset] = useState(0);
   const [notice, setNotice] = useState('');
   const creationAttemptedForInbox = useRef(new Set<string>());
@@ -122,6 +175,12 @@ export function MissionWorkQueue() {
     enabled: canRead && Boolean(workItemId),
     retry: false,
   });
+  const timeline = useQuery({
+    queryKey: ['mission-work-timeline', workItemId, accessRevision],
+    queryFn: () => getMissionWorkTimeline(workItemId),
+    enabled: canRead && Boolean(workItemId),
+    retry: false,
+  });
   const inbox = useQuery({
     queryKey: ['mission-inbox-for-work', accessRevision],
     queryFn: listMissionInboxItems,
@@ -135,6 +194,7 @@ export function MissionWorkQueue() {
   const refresh = async () => {
     await queryClient.invalidateQueries({ queryKey: ['mission-work-items'] });
     await queryClient.invalidateQueries({ queryKey: ['mission-work-item'] });
+    await queryClient.invalidateQueries({ queryKey: ['mission-work-timeline'] });
   };
   const open = (id: string) => setSearchParams({ work_item_id: id });
   const close = () => setSearchParams({});
@@ -193,9 +253,18 @@ export function MissionWorkQueue() {
     },
     onError: (error) => setNotice(errorMessage(error)),
   });
+  const addComment = useMutation({
+    mutationFn: ({ id, value }: { id: string; value: string }) => addMissionWorkComment(id, value),
+    onSuccess: async () => {
+      setComment('');
+      setNotice('Comentario agregado.');
+      await queryClient.invalidateQueries({ queryKey: ['mission-work-timeline'] });
+    },
+    onError: (error) => setNotice(errorMessage(error)),
+  });
 
   const selected = detail.data;
-  const mutationPending = create.isPending || assign.isPending || changeStatus.isPending || changePriority.isPending;
+  const mutationPending = create.isPending || assign.isPending || changeStatus.isPending || changePriority.isPending || addComment.isPending;
 
   function submitAssignment(event: FormEvent) {
     event.preventDefault();
@@ -212,6 +281,12 @@ export function MissionWorkQueue() {
       return;
     }
     create.mutate({ inboxItemId, sourceType: inboxItem.source_type, sourceId: inboxItem.source_id });
+  }
+
+  function submitComment(event: FormEvent) {
+    event.preventDefault();
+    if (!selected || !comment.trim() || addComment.isPending) return;
+    addComment.mutate({ id: selected.id, value: comment.trim() });
   }
 
   return (
@@ -255,6 +330,25 @@ export function MissionWorkQueue() {
           </form>
           <label>Estado<select aria-label="Cambiar estado" value={selected.status} disabled={!canChangeStatus || mutationPending} onChange={(event) => changeStatus.mutate({ id: selected.id, value: event.target.value as MissionWorkStatus })}>{MISSION_WORK_STATUSES.map((value) => <option value={value} key={value}>{value}</option>)}</select></label>
           <label>Prioridad<select aria-label="Cambiar prioridad" value={selected.priority} disabled={!canChangePriority || mutationPending} onChange={(event) => changePriority.mutate({ id: selected.id, value: event.target.value as MissionWorkPriority })}>{MISSION_WORK_PRIORITIES.map((value) => <option value={value} key={value}>{value}</option>)}</select></label>
+          <section aria-label="Timeline operativo">
+            <h3>Timeline operativo</h3>
+            {timeline.isLoading && <p>Cargando Timeline…</p>}
+            {timeline.error && <p className="error">{errorMessage(timeline.error)}</p>}
+            {timeline.data?.items.length === 0 && <p>No hay eventos registrados para este Work Item.</p>}
+            {timeline.data?.items.map((event) => (
+              <article key={event.id}>
+                <h4>{timelineLabel(event.event_type)}</h4>
+                <time title={event.occurred_at} dateTime={event.occurred_at}>{timelineDate(event.occurred_at)}</time>
+                {event.actor_subject_id && <p>Actor: {event.actor_subject_id}</p>}
+                <p>{timelineDescription(event)}</p>
+                <small>Secuencia {event.sequence_number}</small>
+              </article>
+            ))}
+          </section>
+          <form onSubmit={submitComment}>
+            <label>Comentario interno<textarea aria-label="Comentario interno" value={comment} disabled={!canCreate || addComment.isPending} onChange={(event) => setComment(event.target.value)} /></label>
+            <button type="submit" disabled={!canCreate || !comment.trim() || addComment.isPending}>{addComment.isPending ? 'Agregando comentario…' : 'Agregar comentario'}</button>
+          </form>
         </section>
       )}
 

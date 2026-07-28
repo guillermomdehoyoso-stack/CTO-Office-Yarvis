@@ -6,6 +6,8 @@ import type {
   MissionWorkPage,
   MissionWorkPriority,
   MissionWorkStatus,
+  MissionWorkEvent,
+  MissionWorkTimeline,
 } from '../types/missionWork';
 
 const BASE_URL = 'http://localhost:8000';
@@ -83,6 +85,17 @@ export function listMissionWorkItems(filters: MissionWorkFilters = {}): Promise<
 
 export function getMissionWorkItem(workItemId: string): Promise<MissionWorkItem> {
   return request(`/mission/work-items/${encodeURIComponent(workItemId)}`, 'mission.work.read');
+}
+
+export function getMissionWorkTimeline(workItemId: string): Promise<MissionWorkTimeline> {
+  return request(`/mission/work-items/${encodeURIComponent(workItemId)}/timeline`, 'mission.work.read');
+}
+
+export function addMissionWorkComment(workItemId: string, comment: string): Promise<MissionWorkEvent> {
+  return request(`/mission/work-items/${encodeURIComponent(workItemId)}/comments`, 'mission.work.create', {
+    method: 'POST',
+    body: JSON.stringify({ comment }),
+  });
 }
 
 export function createMissionWorkItem(inboxItemId: string): Promise<MissionWorkItem> {

@@ -15,13 +15,21 @@ const workItem = {
   updated_at: '2026-07-27T00:00:00Z', assigned_at: null, started_at: null, resolved_at: null, version: 1,
 };
 const inboxItem = { id: 'inbox-after-rebuild', source_type: 'intake', source_id: 'intake-1', title: 'Review merchant intake', summary: 'Needs review', status: 'pending', priority: 'normal' };
+const timelineItems = [
+  { id: 'event-1', occurred_at: '2026-07-27T10:00:00Z', event_type: 'work_item.created', actor_subject_id: 'subject-1', payload: { status: 'open', priority: 'normal' }, sequence_number: 1 },
+  { id: 'event-2', occurred_at: '2026-07-27T11:00:00Z', event_type: 'work_item.assigned', actor_subject_id: 'subject-2', payload: { previous_status: 'open', status: 'assigned', previous_assignee_subject_id: null, assignee_subject_id: 'subject-2' }, sequence_number: 2 },
+  { id: 'event-3', occurred_at: '2026-07-27T12:00:00Z', event_type: 'work_item.priority_changed', actor_subject_id: 'subject-2', payload: { previous_priority: 'normal', priority: 'high' }, sequence_number: 3 },
+  { id: 'event-4', occurred_at: '2026-07-27T13:00:00Z', event_type: 'work_item.unassigned', actor_subject_id: 'subject-2', payload: { previous_status: 'assigned', status: 'open', previous_assignee_subject_id: 'subject-2', assignee_subject_id: null }, sequence_number: 4 },
+  { id: 'event-5', occurred_at: '2026-07-27T14:00:00Z', event_type: 'work_item.status_changed', actor_subject_id: 'subject-1', payload: { previous_status: 'open', status: 'in_progress' }, sequence_number: 5 },
+];
 
 function response(body: unknown, status = 200): Response {
   return { ok: status >= 200 && status < 300, status, json: async () => body } as Response;
 }
 
-function installApi(options: { empty?: boolean; detailStatus?: number; createStatus?: number; network?: boolean } = {}) {
+function installApi(options: { empty?: boolean; detailStatus?: number; createStatus?: number; network?: boolean; timelineEmpty?: boolean; timelineError?: boolean; unknownEvent?: boolean; commentStatus?: number } = {}) {
   let current = { ...workItem };
+  let timeline = options.timelineEmpty ? [] : [...timelineItems, ...(options.unknownEvent ? [{ id: 'event-unknown', occurred_at: '2026-07-27T13:00:00Z', event_type: 'future.event', actor_subject_id: null, payload: {}, sequence_number: 4 }] : [])];
   fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
     if (options.network) throw new Error('offline');
     const url = new URL(String(input));
@@ -29,6 +37,14 @@ function installApi(options: { empty?: boolean; detailStatus?: number; createSta
     if (path === '/mission/work-items' && !init?.method) return response({ items: options.empty ? [] : [current], total: options.empty ? 0 : 1, limit: 20, offset: 0 });
     if (path === '/mission/inbox') return response({ items: [inboxItem], total: 1, limit: 50, offset: 0 });
     if (path === '/mission/work-items/work-1' && !init?.method) return response(options.detailStatus ? { code: 'RESOURCE_NOT_FOUND' } : current, options.detailStatus);
+    if (path === '/mission/work-items/work-1/timeline' && !init?.method) return response(options.timelineError ? { code: 'RESOURCE_NOT_FOUND' } : { items: timeline }, options.timelineError ? 404 : 200);
+    if (path === '/mission/work-items/work-1/comments' && init?.method === 'POST') {
+      if (options.commentStatus) return response({ code: 'CONFLICT' }, options.commentStatus);
+      const comment = JSON.parse(String(init?.body)).comment;
+      const event = { id: `comment-${timeline.length + 1}`, occurred_at: '2026-07-27T14:00:00Z', event_type: 'comment.added', actor_subject_id: 'subject-1', payload: { comment }, sequence_number: timeline.length + 1 };
+      timeline = [...timeline, event];
+      return response(event, 201);
+    }
     if (path === '/mission/work-items' && init?.method === 'POST') return response(options.createStatus ? { code: 'DUPLICATE_RESOURCE' } : current, options.createStatus);
     if (path.endsWith('/assignment')) {
       current = { ...current, assignee_subject_id: (JSON.parse(String(init?.body)).assignee_subject_id), version: current.version + 1 };
@@ -124,5 +140,64 @@ describe('Mission Work Queue', () => {
     renderWork();
     expect(await screen.findByText('No se pudo conectar con la API.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Crear o abrir Work Item' })).toBeNull();
+  });
+
+  it('loads the Timeline in sequence order and renders governed transitions', async () => {
+    installApi();
+    const user = userEvent.setup();
+    renderWork();
+    await user.click(await screen.findByRole('button', { name: /review merchant intake/i }));
+
+    const timeline = await screen.findByRole('region', { name: 'Timeline operativo' });
+    expect(timeline.textContent).toContain('Work Item creado');
+    expect(timeline.textContent).toContain('sin asignar → subject-2');
+    expect(timeline.textContent).toContain('subject-2 → sin asignar');
+    expect(timeline.textContent).toContain('open → in_progress');
+    expect(timeline.textContent).toContain('normal → high');
+    expect(timeline.textContent?.indexOf('Secuencia 1')).toBeLessThan(timeline.textContent?.indexOf('Secuencia 2') || 0);
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/mission/work-items/work-1/timeline'), expect.any(Object));
+  });
+
+  it('renders empty, error, and unknown Timeline states safely', async () => {
+    installApi({ timelineEmpty: true });
+    const { unmount } = renderWork('/mission-work?work_item_id=work-1');
+    expect(await screen.findByText('No hay eventos registrados para este Work Item.')).toBeTruthy();
+    unmount();
+
+    installApi({ timelineError: true });
+    const second = renderWork('/mission-work?work_item_id=work-1');
+    expect(await screen.findByText(/ya no est. disponible/i)).toBeTruthy();
+    second.unmount();
+
+    installApi({ unknownEvent: true });
+    renderWork('/mission-work?work_item_id=work-1');
+    expect(await screen.findByText('Evento desconocido: future.event.')).toBeTruthy();
+  });
+
+  it('adds a non-empty comment once, clears it, and refreshes the Timeline', async () => {
+    installApi();
+    const user = userEvent.setup();
+    renderWork('/mission-work?work_item_id=work-1');
+    const comment = await screen.findByLabelText('Comentario interno');
+    expect(screen.getByRole('button', { name: 'Agregar comentario' }).hasAttribute('disabled')).toBe(true);
+    await user.type(comment, 'Seguimiento confirmado');
+    await user.dblClick(screen.getByRole('button', { name: 'Agregar comentario' }));
+
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Comentario agregado.'));
+    expect((screen.getByLabelText('Comentario interno') as HTMLTextAreaElement).value).toBe('');
+    expect(await screen.findByText('Seguimiento confirmado')).toBeTruthy();
+    expect(fetchMock.mock.calls.filter(([url, init]) => String(url).endsWith('/comments') && init?.method === 'POST')).toHaveLength(1);
+  });
+
+  it('preserves the comment text when the governed comment request fails', async () => {
+    installApi({ commentStatus: 409 });
+    const user = userEvent.setup();
+    renderWork('/mission-work?work_item_id=work-1');
+    const comment = await screen.findByLabelText('Comentario interno');
+    await user.type(comment, 'No perder este texto');
+    await user.click(screen.getByRole('button', { name: 'Agregar comentario' }));
+
+    expect(await screen.findByText(/entra en conflicto/i)).toBeTruthy();
+    expect((screen.getByLabelText('Comentario interno') as HTMLTextAreaElement).value).toBe('No perder este texto');
   });
 });

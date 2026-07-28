@@ -30,6 +30,19 @@ export interface MissionWorkPage {
   offset: number;
 }
 
+export interface MissionWorkEvent {
+  id: string;
+  occurred_at: string;
+  event_type: string;
+  actor_subject_id: string | null;
+  payload: Record<string, unknown>;
+  sequence_number: number;
+}
+
+export interface MissionWorkTimeline {
+  items: MissionWorkEvent[];
+}
+
 export interface MissionInboxItem {
   id: string;
   source_type: string;
