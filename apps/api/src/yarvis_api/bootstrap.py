@@ -27,6 +27,7 @@ from yarvis_api.services.inbound_intake import InboundIntakeQueryService, Inboun
 from yarvis_api.services.operational_context import IntakeOperationalContextAssociationService, IntakeOperationalContextQueryService
 from yarvis_api.services.mission_inbox import MissionInboxProjectionService, MissionInboxQueryService
 from yarvis_api.services.mission_work import MissionWorkQueryService, MissionWorkService
+from yarvis_api.services.process import ProcessDefinitionQueryService, ProcessDefinitionService
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
 
@@ -56,6 +57,8 @@ class ApplicationState:
     mission_inbox_query_service: MissionInboxQueryService
     mission_work_service: MissionWorkService
     mission_work_query_service: MissionWorkQueryService
+    process_definition_service: ProcessDefinitionService
+    process_definition_query_service: ProcessDefinitionQueryService
     persistence: PersistenceRuntime
     persistence_owner_token: object
     lifecycle_active: bool = False
@@ -108,6 +111,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         operational_policies,
         organizations,
         people,
+        process,
         recovery_queue,
         workspace_api,
     )
@@ -126,6 +130,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     app.include_router(mission_control.router)
     app.include_router(mission_inbox.router)
     app.include_router(mission_work.router)
+    app.include_router(process.router)
     app.include_router(netpay.router)
     app.include_router(observations.router)
     app.include_router(operational_policies.router)
@@ -171,6 +176,8 @@ def create_app(
     mission_inbox_query_service = MissionInboxQueryService()
     mission_work_service = MissionWorkService(persistence_runtime)
     mission_work_query_service = MissionWorkQueryService()
+    process_definition_service = ProcessDefinitionService(persistence_runtime)
+    process_definition_query_service = ProcessDefinitionQueryService()
     workspace_platform = WorkspacePlatform(workspace_root)
     persistence_owner_token = object()
     persistence_runtime.transfer_ownership(persistence_owner_token)
@@ -201,6 +208,8 @@ def create_app(
         mission_inbox_query_service=mission_inbox_query_service,
         mission_work_service=mission_work_service,
         mission_work_query_service=mission_work_query_service,
+        process_definition_service=process_definition_service,
+        process_definition_query_service=process_definition_query_service,
         persistence=persistence_runtime,
         persistence_owner_token=persistence_owner_token,
     )

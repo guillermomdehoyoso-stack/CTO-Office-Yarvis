@@ -70,7 +70,7 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.begin() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260727_15"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260727_16"
             assert "mission_work_items" in inspector.get_table_names()
             assert "mission_work_events" in inspector.get_table_names()
             assert {
@@ -150,7 +150,7 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             assert "mission_work_items" in inspect(connection).get_table_names()
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260727_15"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260727_16"
     finally:
         engine.dispose()
         _drop_temp_database(database_name)
@@ -225,7 +225,7 @@ def test_deterministic_inbound_migration_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260727_15"
+            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260727_16"
             assert "messages" in inspector.get_table_names()
             message_columns = {column["name"] for column in inspector.get_columns("messages")}
             assert {

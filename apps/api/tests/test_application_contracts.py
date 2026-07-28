@@ -13,6 +13,9 @@ from yarvis_api.application.contracts import (
     WS005CommandName,
     WS005EventName,
     WS005QueryName,
+    WS006CommandName,
+    WS006EventName,
+    WS006QueryName,
     command_contracts,
     event_contracts,
     query_contracts,
@@ -235,3 +238,40 @@ def test_ws005_timeline_contract_bindings_are_governed_and_unique() -> None:
     assert query.mutating is False and query.requires_actor is True
     assert event.interaction_contract_id == "IC-MISSION-EVT-007"
     assert event.mutating is False and event.requires_actor is False
+
+
+def test_ws006_process_contract_bindings_are_governed_and_unique() -> None:
+    expected_commands = {
+        WS006CommandName.CREATE_PROCESS_DEFINITION: "IC-PROCESS-CMD-001",
+        WS006CommandName.CREATE_PROCESS_VERSION: "IC-PROCESS-CMD-002",
+        WS006CommandName.ADD_PROCESS_STAGE: "IC-PROCESS-CMD-003",
+        WS006CommandName.UPDATE_PROCESS_STAGE: "IC-PROCESS-CMD-004",
+        WS006CommandName.DELETE_PROCESS_STAGE: "IC-PROCESS-CMD-005",
+        WS006CommandName.ADD_PROCESS_TRANSITION: "IC-PROCESS-CMD-006",
+        WS006CommandName.UPDATE_PROCESS_TRANSITION: "IC-PROCESS-CMD-007",
+        WS006CommandName.DELETE_PROCESS_TRANSITION: "IC-PROCESS-CMD-008",
+        WS006CommandName.PUBLISH_PROCESS_DEFINITION: "IC-PROCESS-CMD-009",
+        WS006CommandName.RETIRE_PROCESS_DEFINITION: "IC-PROCESS-CMD-010",
+    }
+    expected_queries = {
+        WS006QueryName.LIST_PROCESS_DEFINITIONS: "IC-PROCESS-QRY-001",
+        WS006QueryName.RETRIEVE_PROCESS_DEFINITION: "IC-PROCESS-QRY-002",
+    }
+    expected_events = {
+        WS006EventName.PROCESS_DEFINITION_CREATED: "IC-PROCESS-EVT-001",
+        WS006EventName.PROCESS_DEFINITION_VERSION_CREATED: "IC-PROCESS-EVT-002",
+        WS006EventName.PROCESS_DEFINITION_PUBLISHED: "IC-PROCESS-EVT-003",
+        WS006EventName.PROCESS_DEFINITION_RETIRED: "IC-PROCESS-EVT-004",
+    }
+    for name, contract_id in expected_commands.items():
+        contract = command_contracts[name]
+        assert (contract.interaction_contract_id, contract.required_authority_scope) == (contract_id, "process.definition.manage")
+        assert contract.mutating is True and contract.requires_actor is True and contract.requires_authority is True
+    for name, contract_id in expected_queries.items():
+        contract = query_contracts[name]
+        assert (contract.interaction_contract_id, contract.required_authority_scope) == (contract_id, "process.definition.read")
+        assert contract.mutating is False and contract.requires_actor is True and contract.requires_authority is True
+    for name, contract_id in expected_events.items():
+        contract = event_contracts[name]
+        assert contract.interaction_contract_id == contract_id
+        assert contract.mutating is False and contract.requires_actor is False

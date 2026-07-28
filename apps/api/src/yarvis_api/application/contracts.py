@@ -75,6 +75,31 @@ class WS005EventName(StrEnum):
     MISSION_WORK_ITEM_COMMENT_ADDED = "mission_work_item_comment_added"
 
 
+class WS006CommandName(StrEnum):
+    CREATE_PROCESS_DEFINITION = "create_process_definition"
+    CREATE_PROCESS_VERSION = "create_process_version"
+    ADD_PROCESS_STAGE = "add_process_stage"
+    UPDATE_PROCESS_STAGE = "update_process_stage"
+    DELETE_PROCESS_STAGE = "delete_process_stage"
+    ADD_PROCESS_TRANSITION = "add_process_transition"
+    UPDATE_PROCESS_TRANSITION = "update_process_transition"
+    DELETE_PROCESS_TRANSITION = "delete_process_transition"
+    PUBLISH_PROCESS_DEFINITION = "publish_process_definition"
+    RETIRE_PROCESS_DEFINITION = "retire_process_definition"
+
+
+class WS006QueryName(StrEnum):
+    LIST_PROCESS_DEFINITIONS = "list_process_definitions"
+    RETRIEVE_PROCESS_DEFINITION = "retrieve_process_definition"
+
+
+class WS006EventName(StrEnum):
+    PROCESS_DEFINITION_CREATED = "process_definition_created"
+    PROCESS_DEFINITION_VERSION_CREATED = "process_definition_version_created"
+    PROCESS_DEFINITION_PUBLISHED = "process_definition_published"
+    PROCESS_DEFINITION_RETIRED = "process_definition_retired"
+
+
 class WS001EventName(StrEnum):
     OBSERVATION_CAPTURED = "observation_captured"
     EVIDENCE_VALIDATED = "evidence_validated"
@@ -97,7 +122,7 @@ class ApplicationContract:
     requires_idempotency_key: bool = False
 
 
-command_contracts: dict[WS001CommandName | WS002CommandName | WS004CommandName | WS005CommandName, ApplicationContract] = {
+command_contracts: dict[WS001CommandName | WS002CommandName | WS004CommandName | WS005CommandName | WS006CommandName, ApplicationContract] = {
     WS001CommandName.RECEIVE_INTAKE: ApplicationContract(
         interaction_contract_id="IC-INBOX-CMD-001",
         owning_context="intake",
@@ -233,8 +258,22 @@ command_contracts[WS005CommandName.ADD_MISSION_WORK_ITEM_COMMENT] = ApplicationC
     "IC-MISSION-CMD-006", "mission_control", "work_item_comment", True, True, True, "mission.work.create"
 )
 
+for name, contract_id, capability in (
+    (WS006CommandName.CREATE_PROCESS_DEFINITION, "IC-PROCESS-CMD-001", "process_definition"),
+    (WS006CommandName.CREATE_PROCESS_VERSION, "IC-PROCESS-CMD-002", "process_version"),
+    (WS006CommandName.ADD_PROCESS_STAGE, "IC-PROCESS-CMD-003", "process_stage"),
+    (WS006CommandName.UPDATE_PROCESS_STAGE, "IC-PROCESS-CMD-004", "process_stage"),
+    (WS006CommandName.DELETE_PROCESS_STAGE, "IC-PROCESS-CMD-005", "process_stage"),
+    (WS006CommandName.ADD_PROCESS_TRANSITION, "IC-PROCESS-CMD-006", "process_transition"),
+    (WS006CommandName.UPDATE_PROCESS_TRANSITION, "IC-PROCESS-CMD-007", "process_transition"),
+    (WS006CommandName.DELETE_PROCESS_TRANSITION, "IC-PROCESS-CMD-008", "process_transition"),
+    (WS006CommandName.PUBLISH_PROCESS_DEFINITION, "IC-PROCESS-CMD-009", "process_publication"),
+    (WS006CommandName.RETIRE_PROCESS_DEFINITION, "IC-PROCESS-CMD-010", "process_retirement"),
+):
+    command_contracts[name] = ApplicationContract(contract_id, "process", capability, True, True, True, "process.definition.manage")
 
-query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName, ApplicationContract] = {
+
+query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName, ApplicationContract] = {
     WS001QueryName.RETRIEVE_DETERMINISTIC_INTAKE_DETAIL: ApplicationContract(
         interaction_contract_id="IC-INBOX-QRY-001",
         owning_context="intake",
@@ -313,9 +352,15 @@ query_contracts[WS004QueryName.RETRIEVE_MISSION_WORK_ITEM] = ApplicationContract
 query_contracts[WS005QueryName.RETRIEVE_MISSION_WORK_TIMELINE] = ApplicationContract(
     "IC-MISSION-QRY-006", "mission_control", "work_item_timeline", False, True, True, "mission.work.read"
 )
+query_contracts[WS006QueryName.LIST_PROCESS_DEFINITIONS] = ApplicationContract(
+    "IC-PROCESS-QRY-001", "process", "process_definition_list", False, True, True, "process.definition.read"
+)
+query_contracts[WS006QueryName.RETRIEVE_PROCESS_DEFINITION] = ApplicationContract(
+    "IC-PROCESS-QRY-002", "process", "process_definition_detail", False, True, True, "process.definition.read"
+)
 
 
-event_contracts: dict[WS001EventName | WS004EventName | WS005EventName, ApplicationContract] = {
+event_contracts: dict[WS001EventName | WS004EventName | WS005EventName | WS006EventName, ApplicationContract] = {
     WS001EventName.OBSERVATION_CAPTURED: ApplicationContract(
         interaction_contract_id="IC-EVIDENCE-EVT-001",
         owning_context="observation_evidence",
@@ -379,3 +424,11 @@ for name, contract_id, capability in (
 event_contracts[WS005EventName.MISSION_WORK_ITEM_COMMENT_ADDED] = ApplicationContract(
     "IC-MISSION-EVT-007", "mission_control", "work_item_comment", False, False
 )
+
+for name, contract_id, capability in (
+    (WS006EventName.PROCESS_DEFINITION_CREATED, "IC-PROCESS-EVT-001", "process_definition"),
+    (WS006EventName.PROCESS_DEFINITION_VERSION_CREATED, "IC-PROCESS-EVT-002", "process_version"),
+    (WS006EventName.PROCESS_DEFINITION_PUBLISHED, "IC-PROCESS-EVT-003", "process_publication"),
+    (WS006EventName.PROCESS_DEFINITION_RETIRED, "IC-PROCESS-EVT-004", "process_retirement"),
+):
+    event_contracts[name] = ApplicationContract(contract_id, "process", capability, False, False)

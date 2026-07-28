@@ -23,6 +23,7 @@ from yarvis_api.models.organization import Organization
 from yarvis_api.models.operational_context import ConnectorMapping, IntakeOperationalContextAssociation, Project, Site
 from yarvis_api.models.operational import NextActionSuggestion, OperationalAlert
 from yarvis_api.models.person import Person
+from yarvis_api.models.process import ProcessDefinition, ProcessStage, ProcessTransition
 
 __all__ = [
 	"Base",
@@ -52,6 +53,9 @@ __all__ = [
 	"Project",
 	"Site",
 	"Person",
+	"ProcessDefinition",
+	"ProcessStage",
+	"ProcessTransition",
 	"PolicyEvaluation",
 	"ProjectionCheckpoint",
 	"ResolutionDecision",

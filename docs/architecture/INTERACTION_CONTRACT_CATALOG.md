@@ -135,6 +135,22 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-MISSION-EVT-005 | EVT | Mission Control / work queue | MissionWorkItemStatusChanged | C | projections and automation |
 | IC-MISSION-EVT-006 | EVT | Mission Control / work queue | MissionWorkItemPriorityChanged | C | projections and automation |
 | IC-MISSION-EVT-007 | EVT | Mission Control / work timeline | MissionWorkItemCommentAdded | C | timeline consumers |
+| IC-PROCESS-CMD-001 | CMD | Process / definition | CreateProcessDefinition | C | process administration |
+| IC-PROCESS-CMD-002 | CMD | Process / version | CreateProcessVersion | C | controlled process evolution |
+| IC-PROCESS-CMD-003 | CMD | Process / stage | AddProcessStage | C | draft graph composition |
+| IC-PROCESS-CMD-004 | CMD | Process / stage | UpdateProcessStage | C | draft graph composition |
+| IC-PROCESS-CMD-005 | CMD | Process / stage | DeleteProcessStage | C | draft graph composition |
+| IC-PROCESS-CMD-006 | CMD | Process / transition | AddProcessTransition | C | draft graph composition |
+| IC-PROCESS-CMD-007 | CMD | Process / transition | UpdateProcessTransition | C | draft graph composition |
+| IC-PROCESS-CMD-008 | CMD | Process / transition | DeleteProcessTransition | C | draft graph composition |
+| IC-PROCESS-CMD-009 | CMD | Process / publication | PublishProcessDefinition | C | governed process activation |
+| IC-PROCESS-CMD-010 | CMD | Process / retirement | RetireProcessDefinition | C | governed process withdrawal |
+| IC-PROCESS-QRY-001 | QRY | Process / definition list | ListProcessDefinitions | C | tenant process administration |
+| IC-PROCESS-QRY-002 | QRY | Process / definition detail | RetrieveProcessDefinition | C | tenant process inspection |
+| IC-PROCESS-EVT-001 | EVT | Process / definition | ProcessDefinitionCreated | C | append-only process history |
+| IC-PROCESS-EVT-002 | EVT | Process / version | ProcessDefinitionVersionCreated | C | append-only process history |
+| IC-PROCESS-EVT-003 | EVT | Process / publication | ProcessDefinitionPublished | C | append-only process history |
+| IC-PROCESS-EVT-004 | EVT | Process / retirement | ProcessDefinitionRetired | C | append-only process history |
 | IC-NETPAY-CMD-001 | CMD | Netpay Merchant Operations / merchant candidate | IdentifyOrRegisterMerchantCandidate | C | inbox association |
 | IC-NETPAY-CMD-002 | CMD | Netpay Merchant Operations / case | OpenNetpayOnboardingOrServiceCase | C | TPV/e-commerce service case |
 | IC-NETPAY-CMD-003 | CMD | Netpay Merchant Operations / case classification | ClassifyNetpayChannel | Co | TPV, e-commerce, or mixed |
@@ -145,7 +161,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 totals:** 58 contracts — 21 Commands, 17 Queries, 18 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+**Tier 1 totals:** 74 contracts — 31 Commands, 19 Queries, 22 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
 
 ### 7.1 Verified WS-001 Inbox Binding
 
