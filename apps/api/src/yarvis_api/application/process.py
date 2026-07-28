@@ -69,3 +69,22 @@ class DeleteProcessTransitionCommand:
 @dataclass(frozen=True, slots=True)
 class ProcessLifecycleCommand:
     process_definition_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class StartProcessInstanceCommand:
+    process_definition_id: UUID
+
+
+@dataclass(frozen=True, slots=True)
+class TransitionProcessInstanceCommand:
+    process_instance_id: UUID
+    transition_id: UUID
+    expected_version: int
+
+
+@dataclass(frozen=True, slots=True)
+class CancelProcessInstanceCommand:
+    process_instance_id: UUID
+    expected_version: int
+    reason: str

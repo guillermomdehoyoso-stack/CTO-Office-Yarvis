@@ -70,7 +70,7 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.begin() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260727_16"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260728_17"
             assert "mission_work_items" in inspector.get_table_names()
             assert "mission_work_events" in inspector.get_table_names()
             assert {
@@ -150,7 +150,51 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             assert "mission_work_items" in inspect(connection).get_table_names()
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260727_16"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260728_17"
+    finally:
+        engine.dispose()
+        _drop_temp_database(database_name)
+
+
+def test_process_runtime_migration_contract_and_round_trip() -> None:
+    database_name = f"yarvis_test_ws006c_{uuid4().hex}"
+    _create_temp_database(database_name)
+    engine = create_engine(BASE_URL.format(database_name))
+    config = Config(str(ALembic_ini))
+    config.set_main_option("sqlalchemy.url", BASE_URL.format(database_name))
+
+    try:
+        command.upgrade(config, "20260727_16")
+        with engine.connect() as connection:
+            assert "process_instances" not in inspect(connection).get_table_names()
+
+        command.upgrade(config, "head")
+        with engine.connect() as connection:
+            inspector = inspect(connection)
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260728_17"
+            assert {"process_instances", "process_instance_events"}.issubset(inspector.get_table_names())
+            instance_constraints = {constraint["name"] for constraint in inspector.get_unique_constraints("process_instances")}
+            assert {"uq_process_instances_id_organization", "uq_process_instances_start_idempotency"}.issubset(
+                instance_constraints
+            )
+            event_constraints = {constraint["name"] for constraint in inspector.get_unique_constraints("process_instance_events")}
+            assert {"uq_process_instance_events_sequence", "uq_process_instance_events_idempotency"}.issubset(
+                event_constraints
+            )
+            indexes = {index["name"]: index["column_names"] for index in inspector.get_indexes("process_instance_events")}
+            assert indexes["ix_process_instance_events_org_instance_sequence"] == [
+                "organization_id",
+                "process_instance_id",
+                "sequence_number",
+            ]
+
+        command.downgrade(config, "20260727_16")
+        with engine.connect() as connection:
+            assert "process_instances" not in inspect(connection).get_table_names()
+            assert "process_instance_events" not in inspect(connection).get_table_names()
+        command.upgrade(config, "head")
+        with engine.connect() as connection:
+            assert {"process_instances", "process_instance_events"}.issubset(inspect(connection).get_table_names())
     finally:
         engine.dispose()
         _drop_temp_database(database_name)
@@ -225,7 +269,7 @@ def test_deterministic_inbound_migration_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260727_16"
+            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260728_17"
             assert "messages" in inspector.get_table_names()
             message_columns = {column["name"] for column in inspector.get_columns("messages")}
             assert {

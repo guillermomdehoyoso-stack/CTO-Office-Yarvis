@@ -86,11 +86,17 @@ class WS006CommandName(StrEnum):
     DELETE_PROCESS_TRANSITION = "delete_process_transition"
     PUBLISH_PROCESS_DEFINITION = "publish_process_definition"
     RETIRE_PROCESS_DEFINITION = "retire_process_definition"
+    START_PROCESS_INSTANCE = "start_process_instance"
+    TRANSITION_PROCESS_INSTANCE = "transition_process_instance"
+    CANCEL_PROCESS_INSTANCE = "cancel_process_instance"
 
 
 class WS006QueryName(StrEnum):
     LIST_PROCESS_DEFINITIONS = "list_process_definitions"
     RETRIEVE_PROCESS_DEFINITION = "retrieve_process_definition"
+    LIST_PROCESS_INSTANCES = "list_process_instances"
+    RETRIEVE_PROCESS_INSTANCE = "retrieve_process_instance"
+    RETRIEVE_PROCESS_INSTANCE_TIMELINE = "retrieve_process_instance_timeline"
 
 
 class WS006EventName(StrEnum):
@@ -98,6 +104,10 @@ class WS006EventName(StrEnum):
     PROCESS_DEFINITION_VERSION_CREATED = "process_definition_version_created"
     PROCESS_DEFINITION_PUBLISHED = "process_definition_published"
     PROCESS_DEFINITION_RETIRED = "process_definition_retired"
+    PROCESS_INSTANCE_STARTED = "process_instance_started"
+    PROCESS_INSTANCE_TRANSITIONED = "process_instance_transitioned"
+    PROCESS_INSTANCE_COMPLETED = "process_instance_completed"
+    PROCESS_INSTANCE_CANCELLED = "process_instance_cancelled"
 
 
 class WS001EventName(StrEnum):
@@ -272,6 +282,13 @@ for name, contract_id, capability in (
 ):
     command_contracts[name] = ApplicationContract(contract_id, "process", capability, True, True, True, "process.definition.manage")
 
+for name, contract_id, capability, authority in (
+    (WS006CommandName.START_PROCESS_INSTANCE, "IC-PROCESS-CMD-011", "process_instance_start", "process.instance.start"),
+    (WS006CommandName.TRANSITION_PROCESS_INSTANCE, "IC-PROCESS-CMD-012", "process_instance_transition", "process.instance.transition"),
+    (WS006CommandName.CANCEL_PROCESS_INSTANCE, "IC-PROCESS-CMD-013", "process_instance_cancel", "process.instance.cancel"),
+):
+    command_contracts[name] = ApplicationContract(contract_id, "process", capability, True, True, True, authority, True)
+
 
 query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName, ApplicationContract] = {
     WS001QueryName.RETRIEVE_DETERMINISTIC_INTAKE_DETAIL: ApplicationContract(
@@ -358,6 +375,12 @@ query_contracts[WS006QueryName.LIST_PROCESS_DEFINITIONS] = ApplicationContract(
 query_contracts[WS006QueryName.RETRIEVE_PROCESS_DEFINITION] = ApplicationContract(
     "IC-PROCESS-QRY-002", "process", "process_definition_detail", False, True, True, "process.definition.read"
 )
+for name, contract_id, capability in (
+    (WS006QueryName.LIST_PROCESS_INSTANCES, "IC-PROCESS-QRY-003", "process_instance_list"),
+    (WS006QueryName.RETRIEVE_PROCESS_INSTANCE, "IC-PROCESS-QRY-004", "process_instance_detail"),
+    (WS006QueryName.RETRIEVE_PROCESS_INSTANCE_TIMELINE, "IC-PROCESS-QRY-005", "process_instance_timeline"),
+):
+    query_contracts[name] = ApplicationContract(contract_id, "process", capability, False, True, True, "process.instance.read")
 
 
 event_contracts: dict[WS001EventName | WS004EventName | WS005EventName | WS006EventName, ApplicationContract] = {
@@ -430,5 +453,13 @@ for name, contract_id, capability in (
     (WS006EventName.PROCESS_DEFINITION_VERSION_CREATED, "IC-PROCESS-EVT-002", "process_version"),
     (WS006EventName.PROCESS_DEFINITION_PUBLISHED, "IC-PROCESS-EVT-003", "process_publication"),
     (WS006EventName.PROCESS_DEFINITION_RETIRED, "IC-PROCESS-EVT-004", "process_retirement"),
+):
+    event_contracts[name] = ApplicationContract(contract_id, "process", capability, False, False)
+
+for name, contract_id, capability in (
+    (WS006EventName.PROCESS_INSTANCE_STARTED, "IC-PROCESS-EVT-005", "process_instance_start"),
+    (WS006EventName.PROCESS_INSTANCE_TRANSITIONED, "IC-PROCESS-EVT-006", "process_instance_transition"),
+    (WS006EventName.PROCESS_INSTANCE_COMPLETED, "IC-PROCESS-EVT-007", "process_instance_completion"),
+    (WS006EventName.PROCESS_INSTANCE_CANCELLED, "IC-PROCESS-EVT-008", "process_instance_cancellation"),
 ):
     event_contracts[name] = ApplicationContract(contract_id, "process", capability, False, False)

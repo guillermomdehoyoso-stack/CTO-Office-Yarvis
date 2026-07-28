@@ -88,3 +88,66 @@ class ProcessDefinitionListItem(BaseModel):
     lifecycle: str
     created_at: datetime
     updated_at: datetime
+
+
+class StartProcessInstanceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    process_definition_id: UUID
+    idempotency_key: str = Field(min_length=1, max_length=255)
+    correlation_id: UUID
+    causation_id: UUID | None = None
+
+
+class TransitionProcessInstanceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    transition_id: UUID
+    expected_version: int = Field(ge=1)
+    idempotency_key: str = Field(min_length=1, max_length=255)
+    correlation_id: UUID
+    causation_id: UUID | None = None
+
+
+class CancelProcessInstanceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_version: int = Field(ge=1)
+    reason: str = Field(min_length=1, max_length=4000)
+    idempotency_key: str = Field(min_length=1, max_length=255)
+    correlation_id: UUID
+    causation_id: UUID | None = None
+
+
+class ProcessInstanceRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    process_definition_id: UUID
+    process_definition_version: int
+    current_stage_id: UUID
+    lifecycle: str
+    created_by_subject_id: str
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None
+    cancelled_at: datetime | None
+    cancellation_reason: str | None
+    version: int
+
+
+class ProcessInstanceEventRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    occurred_at: datetime
+    event_type: str
+    actor_subject_id: str | None
+    payload: dict[str, Any] = Field(validation_alias="payload_json")
+    sequence_number: int
+
+
+class ProcessInstanceTimeline(BaseModel):
+    items: list[ProcessInstanceEventRead]
+
+
+class ProcessInstancePage(BaseModel):
+    items: list[ProcessInstanceRead]
+    total: int
+    limit: int
+    offset: int

@@ -1,18 +1,18 @@
 # Current Engineering State
 
-**Last updated:** 2026-07-27 — AC-001B Architecture Checkpoint
+**Last updated:** 2026-07-28 — WS-006C Process Runtime Backend in validation
 
 | Field | Current value |
 | --- | --- |
 | Current branch | `main`; verify at session start. |
-| Current HEAD | `63740d8` — WS-006A Process Domain Foundation. |
-| Current sprint | AC-001B — Yarvis Architecture Checkpoint Documentation. |
-| Current engineering gate | Checkpoint documentation; WS-006B is a design-review candidate only. |
-| Current work package | AC-001B documentation synchronization. |
-| Current blocker count | 0 implementation blockers at the WS-006A checkpoint. |
-| Current major findings | Documented architectural and technical-debt items; see `YARVIS_ROADMAP_AND_TECHNICAL_DEBT.md`. |
-| Next mandatory action | Approve WS-006B Process Runtime design review or prioritize a Foundation-debt item. |
-| Current repository health | Documentation-only AC-001B changes are pending; Alembic head `20260727_16`. Verify runtime at session start. |
+| Current HEAD | `21270a1` — Architecture Checkpoint 001. |
+| Current sprint | WS-006C — Process Runtime Backend. |
+| Current engineering gate | Conformance review; WS-006C is uncommitted. |
+| Current work package | WS-006C Process Runtime Backend. |
+| Current blocker count | 0 WS-006C blockers; one historical Workspace test expectation remains outside this increment. |
+| Current major findings | Process-to-Mission-Work association and Timeline projection remain deliberately deferred to WS-006D. |
+| Next mandatory action | Perform WS-006C conformance review before staging. |
+| Current repository health | WS-006C runtime, migration, test, and documentation changes are pending; Alembic head `20260728_17`. Full suite: 284 passed, 1 historical Workspace expectation failure. |
 
 ## Closed Workstreams
 
@@ -37,10 +37,11 @@ reference to the projection row that originated creation.
 
 ## Current Runtime Evidence
 
-- Alembic head: `20260727_16`.
-- WS-006A focused backend evidence: **23 passed**.
-- Last full backend evidence: **279 passed, 1 historical Workspace expectation
-  failure**. The failure is recorded as technical debt in the architecture checkpoint.
+- Alembic head: `20260728_17`.
+- WS-006C focused runtime, definition, contract, and migration evidence: **28
+  passed**.
+- WS-006C full backend evidence: **284 passed, 1 historical Workspace expectation
+  failure** in `tests/test_workspace_api.py::test_workspace_uses_the_configured_container_corpus`.
 
 ## Current Authoritative Inputs
 
@@ -49,11 +50,12 @@ reference to the projection row that originated creation.
 - Technical Blueprint and its review.
 - [Yarvis Architecture Checkpoint](../architecture/YARVIS_ARCHITECTURE_CHECKPOINT.md)
   and its As-Is, target, roadmap, and technical-debt companion documents.
+- [Process Runtime Design](../architecture/PROCESS_RUNTIME_DESIGN.md) and its
+  associated ADRs.
 - Relevant implementation baselines and engineering documentation for WS-003 through
-  WS-006A.
+  WS-006C.
 
 ## Next Allowed Action
 
-Begin WS-006B as a Process Runtime **design review** only. No Process runtime
-implementation is authorized until its ownership, event semantics, and interaction
-contracts are reviewed and approved.
+Complete WS-006C validation and a conformance review. Do not begin WS-006D Process
+to Mission Work association until WS-006C is reviewed and committed.

@@ -157,4 +157,6 @@ def test_workspace_uses_the_configured_container_corpus() -> None:
 
     assert app.state.yarvis.workspace_platform.repository_root == Path("/workspace-repository").resolve()
     snapshot = app.state.yarvis.workspace_platform.snapshot("ws000")
-    assert snapshot["state"]["current_sprint"] == "WS-000 - Development Workspace Bootstrap"
+    current_state = (Path("/workspace-repository") / "docs" / "development" / "CURRENT_STATE.md").read_text(encoding="utf-8")
+    expected_sprint = next(line.split("|")[2].strip() for line in current_state.splitlines() if "| Current sprint |" in line)
+    assert snapshot["state"]["current_sprint"] == expected_sprint
