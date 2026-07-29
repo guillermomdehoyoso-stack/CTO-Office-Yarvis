@@ -14,7 +14,9 @@ WS-006A implements versioned, immutable-on-publication Process Definitions. Miss
 
 A Process Definition is a template, not an instance. Retirement prevents new instances but does not invalidate or alter existing instances. Multiple historical instances may use the same published definition version.
 
-Process-to-Work association is deferred to WS-006D and is owned by Process through an immutable link. The initial rule is one active Process Instance to Mission Work Item association per side; historical associations are preserved.
+Process-to-Work association is owned by Process through a historical link. The initial
+rule is one active primary link per Process Instance; a Mission Work Item may have
+multiple active Process Instances. Historical associations are preserved.
 
 ## Consequences
 

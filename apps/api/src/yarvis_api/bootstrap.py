@@ -28,6 +28,7 @@ from yarvis_api.services.operational_context import IntakeOperationalContextAsso
 from yarvis_api.services.mission_inbox import MissionInboxProjectionService, MissionInboxQueryService
 from yarvis_api.services.mission_work import MissionWorkQueryService, MissionWorkService
 from yarvis_api.services.process import ProcessDefinitionQueryService, ProcessDefinitionService, ProcessRuntimeQueryService, ProcessRuntimeService
+from yarvis_api.services.process_work_association import ProcessMissionWorkTimelineProjector, ProcessWorkAssociationQueryService, ProcessWorkAssociationService
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
 
@@ -61,6 +62,9 @@ class ApplicationState:
     process_definition_query_service: ProcessDefinitionQueryService
     process_runtime_service: ProcessRuntimeService
     process_runtime_query_service: ProcessRuntimeQueryService
+    process_work_association_service: ProcessWorkAssociationService
+    process_work_association_query_service: ProcessWorkAssociationQueryService
+    process_mission_work_timeline_projector: ProcessMissionWorkTimelineProjector
     persistence: PersistenceRuntime
     persistence_owner_token: object
     lifecycle_active: bool = False
@@ -184,6 +188,9 @@ def create_app(
     process_definition_query_service = ProcessDefinitionQueryService()
     process_runtime_service = ProcessRuntimeService(persistence_runtime)
     process_runtime_query_service = ProcessRuntimeQueryService()
+    process_work_association_service = ProcessWorkAssociationService(persistence_runtime)
+    process_work_association_query_service = ProcessWorkAssociationQueryService()
+    process_mission_work_timeline_projector = ProcessMissionWorkTimelineProjector(persistence_runtime)
     workspace_platform = WorkspacePlatform(workspace_root)
     persistence_owner_token = object()
     persistence_runtime.transfer_ownership(persistence_owner_token)
@@ -218,6 +225,9 @@ def create_app(
         process_definition_query_service=process_definition_query_service,
         process_runtime_service=process_runtime_service,
         process_runtime_query_service=process_runtime_query_service,
+        process_work_association_service=process_work_association_service,
+        process_work_association_query_service=process_work_association_query_service,
+        process_mission_work_timeline_projector=process_mission_work_timeline_projector,
         persistence=persistence_runtime,
         persistence_owner_token=persistence_owner_token,
     )

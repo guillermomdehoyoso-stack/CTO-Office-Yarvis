@@ -88,3 +88,16 @@ class CancelProcessInstanceCommand:
     process_instance_id: UUID
     expected_version: int
     reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class LinkProcessInstanceToMissionWorkCommand:
+    process_instance_id: UUID
+    mission_work_item_id: UUID
+    relationship_type: str = "primary"
+
+
+@dataclass(frozen=True, slots=True)
+class UnlinkProcessInstanceFromMissionWorkCommand:
+    process_instance_id: UUID
+    link_id: UUID

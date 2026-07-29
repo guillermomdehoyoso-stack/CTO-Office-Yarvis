@@ -13,6 +13,7 @@ from yarvis_api.application.mission_work import AddMissionWorkItemCommentCommand
 from yarvis_api.clock import utc_now
 from yarvis_api.database import get_db
 from yarvis_api.schemas.mission_work import AssignmentRequest, CommentRequest, CreateMissionWorkItemRequest, MissionWorkEventRead, MissionWorkItemPage, MissionWorkItemRead, MissionWorkTimeline, PriorityRequest, StatusRequest
+from yarvis_api.schemas.process import ProcessInstanceWorkLinkHistory
 
 
 router = APIRouter(prefix="/mission/work-items", tags=["mission-work"])
@@ -44,6 +45,12 @@ def retrieve_work_item(work_item_id: UUID, request: Request, db: Session = Depen
 def retrieve_work_item_timeline(work_item_id: UUID, request: Request, db: Session = Depends(get_db)) -> MissionWorkTimeline:
     principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
     return request.app.state.yarvis.mission_work_query_service.timeline(db, work_item_id, principal, _metadata(principal, query_id="retrieve_mission_work_timeline"))
+
+
+@router.get("/{work_item_id}/process-links", response_model=ProcessInstanceWorkLinkHistory)
+def list_work_item_process_links(work_item_id: UUID, request: Request, db: Session = Depends(get_db)) -> ProcessInstanceWorkLinkHistory:
+    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    return request.app.state.yarvis.process_work_association_query_service.list_for_work(db, work_item_id, principal, _metadata(principal, query_id="list_mission_work_process_links"))
 
 
 @router.post("/{work_item_id}/comments", response_model=MissionWorkEventRead, status_code=status.HTTP_201_CREATED)

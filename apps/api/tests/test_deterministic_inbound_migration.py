@@ -70,12 +70,12 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.begin() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260728_17"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260728_18"
             assert "mission_work_items" in inspector.get_table_names()
             assert "mission_work_events" in inspector.get_table_names()
             assert {
                 "id", "organization_id", "work_item_id", "occurred_at", "event_type", "actor_subject_id",
-                "payload_json", "sequence_number",
+                "payload_json", "sequence_number", "source_domain_event_id",
             } == {column["name"] for column in inspector.get_columns("mission_work_events")}
             assert "uq_mission_work_events_work_sequence" in {
                 constraint["name"] for constraint in inspector.get_unique_constraints("mission_work_events")
@@ -150,7 +150,7 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             assert "mission_work_items" in inspect(connection).get_table_names()
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260728_17"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260728_18"
     finally:
         engine.dispose()
         _drop_temp_database(database_name)
@@ -171,8 +171,10 @@ def test_process_runtime_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260728_17"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260728_18"
             assert {"process_instances", "process_instance_events"}.issubset(inspector.get_table_names())
+            assert "process_instance_work_links" in inspector.get_table_names()
+            assert "source_domain_event_id" in {column["name"] for column in inspector.get_columns("mission_work_events")}
             instance_constraints = {constraint["name"] for constraint in inspector.get_unique_constraints("process_instances")}
             assert {"uq_process_instances_id_organization", "uq_process_instances_start_idempotency"}.issubset(
                 instance_constraints
@@ -194,7 +196,7 @@ def test_process_runtime_migration_contract_and_round_trip() -> None:
             assert "process_instance_events" not in inspect(connection).get_table_names()
         command.upgrade(config, "head")
         with engine.connect() as connection:
-            assert {"process_instances", "process_instance_events"}.issubset(inspect(connection).get_table_names())
+            assert {"process_instances", "process_instance_events", "process_instance_work_links"}.issubset(inspect(connection).get_table_names())
     finally:
         engine.dispose()
         _drop_temp_database(database_name)
@@ -269,7 +271,7 @@ def test_deterministic_inbound_migration_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260728_17"
+            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260728_18"
             assert "messages" in inspector.get_table_names()
             message_columns = {column["name"] for column in inspector.get_columns("messages")}
             assert {

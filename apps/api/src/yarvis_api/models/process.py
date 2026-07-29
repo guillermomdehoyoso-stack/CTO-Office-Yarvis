@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, ForeignKeyConstraint, Index, Integer, String, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -156,3 +156,50 @@ class ProcessInstanceEvent(Base):
     sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
     idempotency_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
     request_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+
+class ProcessInstanceWorkLink(Base):
+    """Process-owned, historical association to an independent Mission Work Item."""
+
+    __tablename__ = "process_instance_work_links"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ("process_instance_id", "organization_id"),
+            ("process_instances.id", "process_instances.organization_id"),
+            name="fk_process_work_links_instance_organization",
+        ),
+        CheckConstraint("relationship_type <> ''", name="ck_process_work_links_relationship_type"),
+        Index(
+            "uq_process_work_links_active_primary_instance",
+            "organization_id",
+            "process_instance_id",
+            unique=True,
+            postgresql_where=text("unlinked_at IS NULL AND relationship_type = 'primary'"),
+        ),
+        Index(
+            "uq_process_work_links_active_relationship",
+            "organization_id",
+            "process_instance_id",
+            "mission_work_item_id",
+            "relationship_type",
+            unique=True,
+            postgresql_where=text("unlinked_at IS NULL"),
+        ),
+        UniqueConstraint("organization_id", "link_idempotency_key", name="uq_process_work_links_link_idempotency"),
+        UniqueConstraint("organization_id", "unlink_idempotency_key", name="uq_process_work_links_unlink_idempotency"),
+        Index("ix_process_work_links_org_work_active", "organization_id", "mission_work_item_id", "unlinked_at"),
+        Index("ix_process_work_links_org_instance_active", "organization_id", "process_instance_id", "unlinked_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    mission_work_item_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("mission_work_items.id"), nullable=False)
+    process_instance_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    relationship_type: Mapped[str] = mapped_column(String(100), nullable=False, default="primary")
+    linked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    unlinked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by_authority_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    link_idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    link_request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    unlink_idempotency_key: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    unlink_request_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)

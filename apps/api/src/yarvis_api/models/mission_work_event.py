@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,6 +26,14 @@ class MissionWorkEvent(Base):
             name="uq_mission_work_events_work_sequence",
         ),
         CheckConstraint("sequence_number > 0", name="ck_mission_work_events_sequence_positive"),
+        Index(
+            "uq_mission_work_events_source_domain_event",
+            "organization_id",
+            "work_item_id",
+            "source_domain_event_id",
+            unique=True,
+            postgresql_where=text("source_domain_event_id IS NOT NULL"),
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -36,3 +44,4 @@ class MissionWorkEvent(Base):
     actor_subject_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False, default=dict)
     sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_domain_event_id: Mapped[UUID | None] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=True)

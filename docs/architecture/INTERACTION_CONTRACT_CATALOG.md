@@ -148,11 +148,16 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-PROCESS-CMD-011 | CMD | Process / runtime | StartProcessInstance | C | governed process start |
 | IC-PROCESS-CMD-012 | CMD | Process / runtime | TransitionProcessInstance | C | governed graph transition |
 | IC-PROCESS-CMD-013 | CMD | Process / runtime | CancelProcessInstance | C | accountable terminal cancellation |
+| IC-PROCESS-CMD-014 | CMD | Process / work association | LinkProcessInstanceToMissionWork | C | governed historical association |
+| IC-PROCESS-CMD-015 | CMD | Process / work association | UnlinkProcessInstanceFromMissionWork | C | governed historical unlink |
 | IC-PROCESS-QRY-001 | QRY | Process / definition list | ListProcessDefinitions | C | tenant process administration |
 | IC-PROCESS-QRY-002 | QRY | Process / definition detail | RetrieveProcessDefinition | C | tenant process inspection |
 | IC-PROCESS-QRY-003 | QRY | Process / runtime | ListProcessInstances | C | tenant runtime inspection |
 | IC-PROCESS-QRY-004 | QRY | Process / runtime | RetrieveProcessInstance | C | tenant runtime detail |
 | IC-PROCESS-QRY-005 | QRY | Process / runtime timeline | RetrieveProcessInstanceTimeline | C | append-only runtime evidence |
+| IC-PROCESS-QRY-006 | QRY | Process / work association | ListMissionWorkProcessLinks | C | tenant-scoped association view |
+| IC-PROCESS-QRY-007 | QRY | Process / work association | RetrieveProcessInstancePrimaryWorkLink | C | primary association view |
+| IC-PROCESS-QRY-008 | QRY | Process / work association | ListProcessInstanceWorkLinkHistory | C | historical association evidence |
 | IC-PROCESS-EVT-001 | EVT | Process / definition | ProcessDefinitionCreated | C | append-only process history |
 | IC-PROCESS-EVT-002 | EVT | Process / version | ProcessDefinitionVersionCreated | C | append-only process history |
 | IC-PROCESS-EVT-003 | EVT | Process / publication | ProcessDefinitionPublished | C | append-only process history |
@@ -161,6 +166,8 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-PROCESS-EVT-006 | EVT | Process / runtime | ProcessInstanceTransitioned | C | runtime source event |
 | IC-PROCESS-EVT-007 | EVT | Process / runtime | ProcessInstanceCompleted | C | terminal runtime source event |
 | IC-PROCESS-EVT-008 | EVT | Process / runtime | ProcessInstanceCancelled | C | terminal runtime source event |
+| IC-PROCESS-EVT-009 | EVT | Process / work association | ProcessInstanceWorkLinked | C | source event for Work Timeline projection |
+| IC-PROCESS-EVT-010 | EVT | Process / work association | ProcessInstanceWorkUnlinked | C | source event for Work Timeline projection |
 | IC-NETPAY-CMD-001 | CMD | Netpay Merchant Operations / merchant candidate | IdentifyOrRegisterMerchantCandidate | C | inbox association |
 | IC-NETPAY-CMD-002 | CMD | Netpay Merchant Operations / case | OpenNetpayOnboardingOrServiceCase | C | TPV/e-commerce service case |
 | IC-NETPAY-CMD-003 | CMD | Netpay Merchant Operations / case classification | ClassifyNetpayChannel | Co | TPV, e-commerce, or mixed |
@@ -171,7 +178,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 totals:** 74 contracts — 31 Commands, 19 Queries, 22 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+**Tier 1 totals:** 81 contracts — 33 Commands, 22 Queries, 24 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
 
 ### 7.1 Verified WS-001 Inbox Binding
 

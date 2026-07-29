@@ -116,6 +116,22 @@ class CancelProcessInstanceRequest(BaseModel):
     causation_id: UUID | None = None
 
 
+class LinkProcessInstanceToMissionWorkRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    mission_work_item_id: UUID
+    relationship_type: str = Field(default="primary", min_length=1, max_length=100)
+    idempotency_key: str = Field(min_length=1, max_length=255)
+    correlation_id: UUID
+    causation_id: UUID | None = None
+
+
+class UnlinkProcessInstanceFromMissionWorkRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    idempotency_key: str = Field(min_length=1, max_length=255)
+    correlation_id: UUID
+    causation_id: UUID | None = None
+
+
 class ProcessInstanceRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
@@ -144,6 +160,21 @@ class ProcessInstanceEventRead(BaseModel):
 
 class ProcessInstanceTimeline(BaseModel):
     items: list[ProcessInstanceEventRead]
+
+
+class ProcessInstanceWorkLinkRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    mission_work_item_id: UUID
+    process_instance_id: UUID
+    relationship_type: str
+    linked_at: datetime
+    unlinked_at: datetime | None
+    created_by_authority_id: str | None
+
+
+class ProcessInstanceWorkLinkHistory(BaseModel):
+    items: list[ProcessInstanceWorkLinkRead]
 
 
 class ProcessInstancePage(BaseModel):

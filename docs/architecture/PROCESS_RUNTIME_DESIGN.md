@@ -17,7 +17,8 @@ Define the implementation-neutral runtime model through which an Organization us
 - Lifecycle values are `active`, `completed`, and `cancelled`; `completed` and `cancelled` are final.
 - A valid transition into a terminal stage records `process_instance.transitioned` and then `process_instance.completed` as consecutive events in one transaction.
 - Work and Process retain independent lifecycles. Neither lifecycle silently changes the other.
-- WS-006D will initially permit one active `ProcessInstance` to `MissionWorkItem` association on each side while preserving historical associations.
+- WS-006D permits one active *primary* `ProcessInstance` association while allowing a
+  `MissionWorkItem` to have multiple active Process Instances and preserving history.
 
 ## Domain Model and Ownership
 
@@ -172,7 +173,12 @@ Implements Process Instance state, local Timeline, contracts, authorization, ide
 
 ### WS-006D — Process and Mission Work Association
 
-Introduces the Process-owned immutable association. Initially there may be only one active association per Process Instance and one active association per Mission Work Item. Historical links remain preserved rather than being overwritten or deleted. WS-006D also introduces the source-event to Mission Work Timeline projection, with durable projection idempotency. Work and Process lifecycles remain independent.
+Introduces the Process-owned historical association. Initially there may be only one
+active primary association per Process Instance; a Mission Work Item may have multiple
+active Process Instances. Historical links remain preserved rather than being
+overwritten or deleted. WS-006D also introduces the source-event to Mission Work
+Timeline projection, with durable projection idempotency. Work and Process lifecycles
+remain independent.
 
 ## Related Decisions
 

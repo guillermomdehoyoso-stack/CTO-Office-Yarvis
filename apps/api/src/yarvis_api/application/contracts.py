@@ -89,6 +89,8 @@ class WS006CommandName(StrEnum):
     START_PROCESS_INSTANCE = "start_process_instance"
     TRANSITION_PROCESS_INSTANCE = "transition_process_instance"
     CANCEL_PROCESS_INSTANCE = "cancel_process_instance"
+    LINK_PROCESS_INSTANCE_TO_MISSION_WORK = "link_process_instance_to_mission_work"
+    UNLINK_PROCESS_INSTANCE_FROM_MISSION_WORK = "unlink_process_instance_from_mission_work"
 
 
 class WS006QueryName(StrEnum):
@@ -97,6 +99,9 @@ class WS006QueryName(StrEnum):
     LIST_PROCESS_INSTANCES = "list_process_instances"
     RETRIEVE_PROCESS_INSTANCE = "retrieve_process_instance"
     RETRIEVE_PROCESS_INSTANCE_TIMELINE = "retrieve_process_instance_timeline"
+    LIST_MISSION_WORK_PROCESS_LINKS = "list_mission_work_process_links"
+    RETRIEVE_PROCESS_INSTANCE_PRIMARY_WORK_LINK = "retrieve_process_instance_primary_work_link"
+    LIST_PROCESS_INSTANCE_WORK_LINK_HISTORY = "list_process_instance_work_link_history"
 
 
 class WS006EventName(StrEnum):
@@ -108,6 +113,8 @@ class WS006EventName(StrEnum):
     PROCESS_INSTANCE_TRANSITIONED = "process_instance_transitioned"
     PROCESS_INSTANCE_COMPLETED = "process_instance_completed"
     PROCESS_INSTANCE_CANCELLED = "process_instance_cancelled"
+    PROCESS_INSTANCE_WORK_LINKED = "process_instance_work_linked"
+    PROCESS_INSTANCE_WORK_UNLINKED = "process_instance_work_unlinked"
 
 
 class WS001EventName(StrEnum):
@@ -286,6 +293,8 @@ for name, contract_id, capability, authority in (
     (WS006CommandName.START_PROCESS_INSTANCE, "IC-PROCESS-CMD-011", "process_instance_start", "process.instance.start"),
     (WS006CommandName.TRANSITION_PROCESS_INSTANCE, "IC-PROCESS-CMD-012", "process_instance_transition", "process.instance.transition"),
     (WS006CommandName.CANCEL_PROCESS_INSTANCE, "IC-PROCESS-CMD-013", "process_instance_cancel", "process.instance.cancel"),
+    (WS006CommandName.LINK_PROCESS_INSTANCE_TO_MISSION_WORK, "IC-PROCESS-CMD-014", "process_instance_work_link", "process.instance.work.link"),
+    (WS006CommandName.UNLINK_PROCESS_INSTANCE_FROM_MISSION_WORK, "IC-PROCESS-CMD-015", "process_instance_work_unlink", "process.instance.work.unlink"),
 ):
     command_contracts[name] = ApplicationContract(contract_id, "process", capability, True, True, True, authority, True)
 
@@ -379,6 +388,9 @@ for name, contract_id, capability in (
     (WS006QueryName.LIST_PROCESS_INSTANCES, "IC-PROCESS-QRY-003", "process_instance_list"),
     (WS006QueryName.RETRIEVE_PROCESS_INSTANCE, "IC-PROCESS-QRY-004", "process_instance_detail"),
     (WS006QueryName.RETRIEVE_PROCESS_INSTANCE_TIMELINE, "IC-PROCESS-QRY-005", "process_instance_timeline"),
+    (WS006QueryName.LIST_MISSION_WORK_PROCESS_LINKS, "IC-PROCESS-QRY-006", "mission_work_process_links"),
+    (WS006QueryName.RETRIEVE_PROCESS_INSTANCE_PRIMARY_WORK_LINK, "IC-PROCESS-QRY-007", "process_instance_primary_work_link"),
+    (WS006QueryName.LIST_PROCESS_INSTANCE_WORK_LINK_HISTORY, "IC-PROCESS-QRY-008", "process_instance_work_link_history"),
 ):
     query_contracts[name] = ApplicationContract(contract_id, "process", capability, False, True, True, "process.instance.read")
 
@@ -461,5 +473,7 @@ for name, contract_id, capability in (
     (WS006EventName.PROCESS_INSTANCE_TRANSITIONED, "IC-PROCESS-EVT-006", "process_instance_transition"),
     (WS006EventName.PROCESS_INSTANCE_COMPLETED, "IC-PROCESS-EVT-007", "process_instance_completion"),
     (WS006EventName.PROCESS_INSTANCE_CANCELLED, "IC-PROCESS-EVT-008", "process_instance_cancellation"),
+    (WS006EventName.PROCESS_INSTANCE_WORK_LINKED, "IC-PROCESS-EVT-009", "process_instance_work_link"),
+    (WS006EventName.PROCESS_INSTANCE_WORK_UNLINKED, "IC-PROCESS-EVT-010", "process_instance_work_unlink"),
 ):
     event_contracts[name] = ApplicationContract(contract_id, "process", capability, False, False)
