@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   addMissionWorkComment,
   assignMissionWorkItem,
@@ -322,7 +322,7 @@ export function MissionWorkQueue() {
       {detail.error && <p className="error">{errorMessage(detail.error)}</p>}
       {selected && (
         <section className="chat">
-          <button type="button" onClick={close}>Cerrar detalle</button><h2>{selected.title}</h2><p>{selected.summary || 'Sin resumen'} · v{selected.version}</p><p>{selected.status} · {selected.priority} · {selected.assignee_subject_id || 'Sin asignar'}</p>
+          <button type="button" onClick={close}>Cerrar detalle</button><h2>{selected.title}</h2><Link to={`/mission-work/${selected.id}/workspace`}>Abrir espacio operativo</Link><p>{selected.summary || 'Sin resumen'} · v{selected.version}</p><p>{selected.status} · {selected.priority} · {selected.assignee_subject_id || 'Sin asignar'}</p>
           <form onSubmit={submitAssignment}>
             <label>Asignado a<input aria-label="Asignar a" value={assignment} disabled={!canAssign || mutationPending} onChange={(event) => setAssignment(event.target.value)} /></label>
             <button type="submit" disabled={!canAssign || mutationPending}>Asignar</button>

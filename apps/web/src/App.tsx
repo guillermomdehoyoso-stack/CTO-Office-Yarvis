@@ -7,6 +7,7 @@ import {RecoveryQueueWorkspace} from './components/store-intelligence/RecoveryQu
 import {MissionControlStoreIntelligenceCard} from './components/store-intelligence/MissionControlStoreIntelligenceCard';
 import { WorkspaceShell } from './workspace-shell/WorkspaceShell';
 import { MissionWorkQueue } from './components/mission-work/MissionWorkQueue';
+import { OperationalWorkspace } from './components/mission-work/OperationalWorkspace';
 
 const api = 'http://localhost:8000';
 
@@ -66,6 +67,7 @@ function Layout() {
         <Route path="/recovery-queue" element={<RecoveryQueuePage />} />
         <Route path="/workspace/*" element={<WorkspaceShell />} />
         <Route path="/mission-work" element={<MissionWorkQueue />} />
+        <Route path="/mission-work/:workItemId/workspace" element={<OperationalWorkspace />} />
       </Routes>
     </main>
   );

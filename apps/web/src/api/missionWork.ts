@@ -8,6 +8,7 @@ import type {
   MissionWorkStatus,
   MissionWorkEvent,
   MissionWorkTimeline,
+  OperationalWorkspace,
 } from '../types/missionWork';
 
 const BASE_URL = 'http://localhost:8000';
@@ -89,6 +90,10 @@ export function getMissionWorkItem(workItemId: string): Promise<MissionWorkItem>
 
 export function getMissionWorkTimeline(workItemId: string): Promise<MissionWorkTimeline> {
   return request(`/mission/work-items/${encodeURIComponent(workItemId)}/timeline`, 'mission.work.read');
+}
+
+export function getOperationalWorkspace(workItemId: string, currency = 'MXN'): Promise<OperationalWorkspace> {
+  return request(`/mission/work-items/${encodeURIComponent(workItemId)}/workspace?currency=${encodeURIComponent(currency)}`, 'mission.work.read');
 }
 
 export function addMissionWorkComment(workItemId: string, comment: string): Promise<MissionWorkEvent> {
