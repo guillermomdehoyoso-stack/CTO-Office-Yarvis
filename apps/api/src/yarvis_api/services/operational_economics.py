@@ -49,6 +49,28 @@ def _read(fact: EconomicFact) -> EconomicFactRead:
     return EconomicFactRead.model_validate(fact)
 
 
+def build_direct_summary(subject_type: str, subject_id: UUID, currency: str, facts: list[EconomicFact], requested_at: datetime) -> EconomicSummary:
+    """Apply the canonical OV-001 direct-subject metric policy once."""
+    totals = {fact_type: Decimal("0") for fact_type in _FACT_TYPES}
+    for fact in facts:
+        totals[fact.fact_type] += fact.amount
+    revenue_basis = totals["revenue_contracted"] or totals["revenue_expected"]
+    projected = totals["cost_incurred"] + totals["cost_to_complete"]
+    profit = revenue_basis - projected
+    return EconomicSummary(
+        subject_type=subject_type, subject_id=subject_id, currency=currency,
+        as_of=max((fact.created_at for fact in facts), default=requested_at),
+        expected_revenue=totals["revenue_expected"], contracted_revenue=totals["revenue_contracted"],
+        estimated_cost=totals["cost_estimated"], committed_cost=totals["cost_committed"],
+        incurred_cost=totals["cost_incurred"], labor_cost=totals["labor_cost"],
+        estimated_cost_to_complete=totals["cost_to_complete"], projected_total_cost=projected,
+        cash_received=totals["cash_in"], cash_paid=totals["cash_out"],
+        net_cash_position=totals["cash_in"] - totals["cash_out"], expected_final_profit=profit,
+        expected_final_margin_percent=(profit * Decimal("100") / revenue_basis) if revenue_basis else None,
+        input_fact_ids=[fact.id for fact in facts], availability="AVAILABLE" if facts else "UNAVAILABLE",
+    )
+
+
 @dataclass(slots=True)
 class OperationalEconomicsService:
     persistence: PersistenceRuntime
@@ -219,17 +241,4 @@ class OperationalEconomicsQueryService:
         OperationalEconomicsService._lock_subject(session, subject_type, subject_id, organization_id)
         superseded = select(EconomicFact.supersedes_fact_id).where(EconomicFact.organization_id == organization_id).where(EconomicFact.supersedes_fact_id.is_not(None))
         facts = session.scalars(select(EconomicFact).where(EconomicFact.organization_id == organization_id).where(EconomicFact.subject_type == subject_type).where(EconomicFact.subject_id == subject_id).where(EconomicFact.currency == currency).where(~EconomicFact.id.in_(superseded)).order_by(EconomicFact.effective_at.asc(), EconomicFact.id.asc())).all()
-        totals = {fact_type: Decimal("0") for fact_type in _FACT_TYPES}
-        for fact in facts:
-            totals[fact.fact_type] += fact.amount
-        revenue_basis = totals["revenue_contracted"] or totals["revenue_expected"]
-        projected = totals["cost_incurred"] + totals["cost_to_complete"]
-        profit = revenue_basis - projected
-        margin = (profit * Decimal("100") / revenue_basis) if revenue_basis else None
-        return EconomicSummary(
-            subject_type=subject_type, subject_id=subject_id, currency=currency, as_of=max((fact.created_at for fact in facts), default=metadata.requested_at),
-            expected_revenue=totals["revenue_expected"], contracted_revenue=totals["revenue_contracted"],
-            estimated_cost=totals["cost_estimated"], committed_cost=totals["cost_committed"], incurred_cost=totals["cost_incurred"], labor_cost=totals["labor_cost"], estimated_cost_to_complete=totals["cost_to_complete"], projected_total_cost=projected,
-            cash_received=totals["cash_in"], cash_paid=totals["cash_out"], net_cash_position=totals["cash_in"] - totals["cash_out"],
-            expected_final_profit=profit, expected_final_margin_percent=margin, input_fact_ids=[fact.id for fact in facts], availability="AVAILABLE" if facts else "UNAVAILABLE",
-        )
+        return build_direct_summary(subject_type, subject_id, currency, facts, metadata.requested_at)

@@ -174,6 +174,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-ECONOMICS-QRY-002 | QRY | Operational Economics / facts | RetrieveEconomicFactHistory | C | tenant-scoped append-only fact lineage |
 | IC-ECONOMICS-EVT-001 | EVT | Operational Economics / facts | EconomicFactRecorded | C | source event for future economics projections |
 | IC-ECONOMICS-EVT-002 | EVT | Operational Economics / facts | EconomicFactCorrected | C | source event for correction lineage |
+| IC-MISSION-QRY-007 | QRY | Mission Control / operational workspace | RetrieveOperationalWorkspace | C | bounded, tenant-safe composition of existing owner read models |
 | IC-NETPAY-CMD-001 | CMD | Netpay Merchant Operations / merchant candidate | IdentifyOrRegisterMerchantCandidate | C | inbox association |
 | IC-NETPAY-CMD-002 | CMD | Netpay Merchant Operations / case | OpenNetpayOnboardingOrServiceCase | C | TPV/e-commerce service case |
 | IC-NETPAY-CMD-003 | CMD | Netpay Merchant Operations / case classification | ClassifyNetpayChannel | Co | TPV, e-commerce, or mixed |
@@ -184,7 +185,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 totals:** 87 contracts — 35 Commands, 24 Queries, 26 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+**Tier 1 totals:** 88 contracts — 35 Commands, 25 Queries, 26 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
 
 ### 7.1 Verified WS-001 Inbox Binding
 

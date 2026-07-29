@@ -30,6 +30,7 @@ from yarvis_api.services.mission_work import MissionWorkQueryService, MissionWor
 from yarvis_api.services.process import ProcessDefinitionQueryService, ProcessDefinitionService, ProcessRuntimeQueryService, ProcessRuntimeService
 from yarvis_api.services.process_work_association import ProcessMissionWorkTimelineProjector, ProcessWorkAssociationQueryService, ProcessWorkAssociationService
 from yarvis_api.services.operational_economics import OperationalEconomicsQueryService, OperationalEconomicsService
+from yarvis_api.services.operational_workspace import OperationalWorkspaceQueryService
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
 
@@ -68,6 +69,7 @@ class ApplicationState:
     process_mission_work_timeline_projector: ProcessMissionWorkTimelineProjector
     operational_economics_service: OperationalEconomicsService
     operational_economics_query_service: OperationalEconomicsQueryService
+    operational_workspace_query_service: OperationalWorkspaceQueryService
     persistence: PersistenceRuntime
     persistence_owner_token: object
     lifecycle_active: bool = False
@@ -198,6 +200,7 @@ def create_app(
     process_mission_work_timeline_projector = ProcessMissionWorkTimelineProjector(persistence_runtime)
     operational_economics_service = OperationalEconomicsService(persistence_runtime)
     operational_economics_query_service = OperationalEconomicsQueryService()
+    operational_workspace_query_service = OperationalWorkspaceQueryService()
     workspace_platform = WorkspacePlatform(workspace_root)
     persistence_owner_token = object()
     persistence_runtime.transfer_ownership(persistence_owner_token)
@@ -237,6 +240,7 @@ def create_app(
         process_mission_work_timeline_projector=process_mission_work_timeline_projector,
         operational_economics_service=operational_economics_service,
         operational_economics_query_service=operational_economics_query_service,
+        operational_workspace_query_service=operational_workspace_query_service,
         persistence=persistence_runtime,
         persistence_owner_token=persistence_owner_token,
     )

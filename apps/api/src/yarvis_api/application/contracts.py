@@ -102,6 +102,7 @@ class WS006QueryName(StrEnum):
     LIST_MISSION_WORK_PROCESS_LINKS = "list_mission_work_process_links"
     RETRIEVE_PROCESS_INSTANCE_PRIMARY_WORK_LINK = "retrieve_process_instance_primary_work_link"
     LIST_PROCESS_INSTANCE_WORK_LINK_HISTORY = "list_process_instance_work_link_history"
+    RETRIEVE_OPERATIONAL_WORKSPACE = "retrieve_operational_workspace"
 
 
 class WS006EventName(StrEnum):
@@ -412,8 +413,11 @@ for name, contract_id, capability in (
     (WS006QueryName.LIST_MISSION_WORK_PROCESS_LINKS, "IC-PROCESS-QRY-006", "mission_work_process_links"),
     (WS006QueryName.RETRIEVE_PROCESS_INSTANCE_PRIMARY_WORK_LINK, "IC-PROCESS-QRY-007", "process_instance_primary_work_link"),
     (WS006QueryName.LIST_PROCESS_INSTANCE_WORK_LINK_HISTORY, "IC-PROCESS-QRY-008", "process_instance_work_link_history"),
+    (WS006QueryName.RETRIEVE_OPERATIONAL_WORKSPACE, "IC-MISSION-QRY-007", "operational_workspace"),
 ):
-    query_contracts[name] = ApplicationContract(contract_id, "process", capability, False, True, True, "process.instance.read")
+    authority = "mission.work.read" if name == WS006QueryName.RETRIEVE_OPERATIONAL_WORKSPACE else "process.instance.read"
+    context = "mission_control" if name == WS006QueryName.RETRIEVE_OPERATIONAL_WORKSPACE else "process"
+    query_contracts[name] = ApplicationContract(contract_id, context, capability, False, True, True, authority)
 
 for name, contract_id, capability in (
     (OV002QueryName.RETRIEVE_OPERATIONAL_ECONOMICS, "IC-ECONOMICS-QRY-001", "economic_summary"),

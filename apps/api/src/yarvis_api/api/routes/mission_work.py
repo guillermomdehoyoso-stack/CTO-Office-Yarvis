@@ -14,6 +14,7 @@ from yarvis_api.clock import utc_now
 from yarvis_api.database import get_db
 from yarvis_api.schemas.mission_work import AssignmentRequest, CommentRequest, CreateMissionWorkItemRequest, MissionWorkEventRead, MissionWorkItemPage, MissionWorkItemRead, MissionWorkTimeline, PriorityRequest, StatusRequest
 from yarvis_api.schemas.process import ProcessInstanceWorkLinkHistory
+from yarvis_api.schemas.operational_workspace import OperationalWorkspaceRead
 
 
 router = APIRouter(prefix="/mission/work-items", tags=["mission-work"])
@@ -39,6 +40,14 @@ def list_work_items(request: Request, status: str | None = None, priority: str |
 def retrieve_work_item(work_item_id: UUID, request: Request, db: Session = Depends(get_db)) -> MissionWorkItemRead:
     principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
     return request.app.state.yarvis.mission_work_query_service.retrieve(db, work_item_id, principal, _metadata(principal, query_id="retrieve_mission_work_item"))
+
+
+@router.get("/{work_item_id}/workspace", response_model=OperationalWorkspaceRead)
+def retrieve_operational_workspace(work_item_id: UUID, request: Request, currency: str = Query(..., min_length=3, max_length=3), db: Session = Depends(get_db)) -> OperationalWorkspaceRead:
+    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    return request.app.state.yarvis.operational_workspace_query_service.retrieve(
+        db, work_item_id, currency, principal, _metadata(principal, query_id="retrieve_operational_workspace")
+    )
 
 
 @router.get("/{work_item_id}/timeline", response_model=MissionWorkTimeline)
