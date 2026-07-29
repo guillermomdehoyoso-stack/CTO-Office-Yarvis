@@ -168,6 +168,12 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-PROCESS-EVT-008 | EVT | Process / runtime | ProcessInstanceCancelled | C | terminal runtime source event |
 | IC-PROCESS-EVT-009 | EVT | Process / work association | ProcessInstanceWorkLinked | C | source event for Work Timeline projection |
 | IC-PROCESS-EVT-010 | EVT | Process / work association | ProcessInstanceWorkUnlinked | C | source event for Work Timeline projection |
+| IC-ECONOMICS-CMD-001 | CMD | Operational Economics / facts | RecordEconomicFact | C | append-only, provenance-bearing economic fact |
+| IC-ECONOMICS-CMD-002 | CMD | Operational Economics / facts | CorrectEconomicFact | C | append-only supersession with reason |
+| IC-ECONOMICS-QRY-001 | QRY | Operational Economics / summary | RetrieveOperationalEconomics | C | direct-subject deterministic metrics by currency |
+| IC-ECONOMICS-QRY-002 | QRY | Operational Economics / facts | RetrieveEconomicFactHistory | C | tenant-scoped append-only fact lineage |
+| IC-ECONOMICS-EVT-001 | EVT | Operational Economics / facts | EconomicFactRecorded | C | source event for future economics projections |
+| IC-ECONOMICS-EVT-002 | EVT | Operational Economics / facts | EconomicFactCorrected | C | source event for correction lineage |
 | IC-NETPAY-CMD-001 | CMD | Netpay Merchant Operations / merchant candidate | IdentifyOrRegisterMerchantCandidate | C | inbox association |
 | IC-NETPAY-CMD-002 | CMD | Netpay Merchant Operations / case | OpenNetpayOnboardingOrServiceCase | C | TPV/e-commerce service case |
 | IC-NETPAY-CMD-003 | CMD | Netpay Merchant Operations / case classification | ClassifyNetpayChannel | Co | TPV, e-commerce, or mixed |
@@ -178,7 +184,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 totals:** 81 contracts — 33 Commands, 22 Queries, 24 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+**Tier 1 totals:** 87 contracts — 35 Commands, 24 Queries, 26 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
 
 ### 7.1 Verified WS-001 Inbox Binding
 

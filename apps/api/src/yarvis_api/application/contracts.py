@@ -117,6 +117,21 @@ class WS006EventName(StrEnum):
     PROCESS_INSTANCE_WORK_UNLINKED = "process_instance_work_unlinked"
 
 
+class OV002CommandName(StrEnum):
+    RECORD_ECONOMIC_FACT = "record_economic_fact"
+    CORRECT_ECONOMIC_FACT = "correct_economic_fact"
+
+
+class OV002QueryName(StrEnum):
+    RETRIEVE_OPERATIONAL_ECONOMICS = "retrieve_operational_economics"
+    RETRIEVE_ECONOMIC_FACT_HISTORY = "retrieve_economic_fact_history"
+
+
+class OV002EventName(StrEnum):
+    ECONOMIC_FACT_RECORDED = "economic_fact_recorded"
+    ECONOMIC_FACT_CORRECTED = "economic_fact_corrected"
+
+
 class WS001EventName(StrEnum):
     OBSERVATION_CAPTURED = "observation_captured"
     EVIDENCE_VALIDATED = "evidence_validated"
@@ -139,7 +154,7 @@ class ApplicationContract:
     requires_idempotency_key: bool = False
 
 
-command_contracts: dict[WS001CommandName | WS002CommandName | WS004CommandName | WS005CommandName | WS006CommandName, ApplicationContract] = {
+command_contracts: dict[WS001CommandName | WS002CommandName | WS004CommandName | WS005CommandName | WS006CommandName | OV002CommandName, ApplicationContract] = {
     WS001CommandName.RECEIVE_INTAKE: ApplicationContract(
         interaction_contract_id="IC-INBOX-CMD-001",
         owning_context="intake",
@@ -298,8 +313,14 @@ for name, contract_id, capability, authority in (
 ):
     command_contracts[name] = ApplicationContract(contract_id, "process", capability, True, True, True, authority, True)
 
+for name, contract_id, capability, authority in (
+    (OV002CommandName.RECORD_ECONOMIC_FACT, "IC-ECONOMICS-CMD-001", "economic_fact_recording", "economics.fact.record"),
+    (OV002CommandName.CORRECT_ECONOMIC_FACT, "IC-ECONOMICS-CMD-002", "economic_fact_correction", "economics.fact.correct"),
+):
+    command_contracts[name] = ApplicationContract(contract_id, "operational_economics", capability, True, True, True, authority, True)
 
-query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName, ApplicationContract] = {
+
+query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName | OV002QueryName, ApplicationContract] = {
     WS001QueryName.RETRIEVE_DETERMINISTIC_INTAKE_DETAIL: ApplicationContract(
         interaction_contract_id="IC-INBOX-QRY-001",
         owning_context="intake",
@@ -394,8 +415,14 @@ for name, contract_id, capability in (
 ):
     query_contracts[name] = ApplicationContract(contract_id, "process", capability, False, True, True, "process.instance.read")
 
+for name, contract_id, capability in (
+    (OV002QueryName.RETRIEVE_OPERATIONAL_ECONOMICS, "IC-ECONOMICS-QRY-001", "economic_summary"),
+    (OV002QueryName.RETRIEVE_ECONOMIC_FACT_HISTORY, "IC-ECONOMICS-QRY-002", "economic_fact_history"),
+):
+    query_contracts[name] = ApplicationContract(contract_id, "operational_economics", capability, False, True, True, "economics.read")
 
-event_contracts: dict[WS001EventName | WS004EventName | WS005EventName | WS006EventName, ApplicationContract] = {
+
+event_contracts: dict[WS001EventName | WS004EventName | WS005EventName | WS006EventName | OV002EventName, ApplicationContract] = {
     WS001EventName.OBSERVATION_CAPTURED: ApplicationContract(
         interaction_contract_id="IC-EVIDENCE-EVT-001",
         owning_context="observation_evidence",
@@ -467,6 +494,12 @@ for name, contract_id, capability in (
     (WS006EventName.PROCESS_DEFINITION_RETIRED, "IC-PROCESS-EVT-004", "process_retirement"),
 ):
     event_contracts[name] = ApplicationContract(contract_id, "process", capability, False, False)
+
+for name, contract_id, capability in (
+    (OV002EventName.ECONOMIC_FACT_RECORDED, "IC-ECONOMICS-EVT-001", "economic_fact_recording"),
+    (OV002EventName.ECONOMIC_FACT_CORRECTED, "IC-ECONOMICS-EVT-002", "economic_fact_correction"),
+):
+    event_contracts[name] = ApplicationContract(contract_id, "operational_economics", capability, False, False)
 
 for name, contract_id, capability in (
     (WS006EventName.PROCESS_INSTANCE_STARTED, "IC-PROCESS-EVT-005", "process_instance_start"),

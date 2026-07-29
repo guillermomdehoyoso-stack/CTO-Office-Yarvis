@@ -29,6 +29,7 @@ from yarvis_api.services.mission_inbox import MissionInboxProjectionService, Mis
 from yarvis_api.services.mission_work import MissionWorkQueryService, MissionWorkService
 from yarvis_api.services.process import ProcessDefinitionQueryService, ProcessDefinitionService, ProcessRuntimeQueryService, ProcessRuntimeService
 from yarvis_api.services.process_work_association import ProcessMissionWorkTimelineProjector, ProcessWorkAssociationQueryService, ProcessWorkAssociationService
+from yarvis_api.services.operational_economics import OperationalEconomicsQueryService, OperationalEconomicsService
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
 
@@ -65,6 +66,8 @@ class ApplicationState:
     process_work_association_service: ProcessWorkAssociationService
     process_work_association_query_service: ProcessWorkAssociationQueryService
     process_mission_work_timeline_projector: ProcessMissionWorkTimelineProjector
+    operational_economics_service: OperationalEconomicsService
+    operational_economics_query_service: OperationalEconomicsQueryService
     persistence: PersistenceRuntime
     persistence_owner_token: object
     lifecycle_active: bool = False
@@ -115,6 +118,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         netpay,
         observations,
         operational_policies,
+        operational_economics,
         organizations,
         people,
         process,
@@ -142,6 +146,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     app.include_router(netpay.router)
     app.include_router(observations.router)
     app.include_router(operational_policies.router)
+    app.include_router(operational_economics.router)
     app.include_router(recovery_queue.router)
     app.include_router(workspace_api.router)
     for module in module_registry.modules:
@@ -191,6 +196,8 @@ def create_app(
     process_work_association_service = ProcessWorkAssociationService(persistence_runtime)
     process_work_association_query_service = ProcessWorkAssociationQueryService()
     process_mission_work_timeline_projector = ProcessMissionWorkTimelineProjector(persistence_runtime)
+    operational_economics_service = OperationalEconomicsService(persistence_runtime)
+    operational_economics_query_service = OperationalEconomicsQueryService()
     workspace_platform = WorkspacePlatform(workspace_root)
     persistence_owner_token = object()
     persistence_runtime.transfer_ownership(persistence_owner_token)
@@ -228,6 +235,8 @@ def create_app(
         process_work_association_service=process_work_association_service,
         process_work_association_query_service=process_work_association_query_service,
         process_mission_work_timeline_projector=process_mission_work_timeline_projector,
+        operational_economics_service=operational_economics_service,
+        operational_economics_query_service=operational_economics_query_service,
         persistence=persistence_runtime,
         persistence_owner_token=persistence_owner_token,
     )
