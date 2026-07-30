@@ -1,6 +1,6 @@
 # ADR — Operational Economics Fact Ownership
 
-**Status:** Proposed  
+**Status:** Accepted for implemented EconomicFact scope; roll-up/snapshot extensions remain deferred.
 **Decision:** ADR-OPERATIONAL-ECONOMICS-FACT-OWNERSHIP  
 **Checkpoint:** OV-001
 
@@ -11,12 +11,12 @@ visibility, but each already owns a distinct operational lifecycle. Embedding re
 cost, cash, and forecast fields in each aggregate would duplicate truth, create
 incompatible semantics, and make cross-subject reporting unreliable.
 
-## Proposed Decision
+## Decision
 
-Create an Operational Economics core that owns append-only `EconomicFact`, correction
-lineage, roll-up membership, metric policy, and derived metric snapshots. Operational
-subjects remain foreign references. Their owners retain lifecycle and mutation
-authority.
+Operational Economics owns append-only `EconomicFact` and correction lineage.
+Operational subjects remain foreign references and retain lifecycle/mutation
+authority. OV-002 implements direct-subject facts and summaries; roll-up membership,
+metric snapshots, and adapters remain future scoped capabilities.
 
 The core is operational, not accounting. Accounting, payroll, payment, procurement,
 and invoicing systems remain external authorities reached through provenance-bearing
@@ -29,8 +29,8 @@ adapters.
 - Facts are historically explainable and tenant-scoped.
 - Accounting adapters can be added without making external ledgers canonical Yarvis
   truth.
-- A future implementation must provide append-only database protection and governed
-  correction semantics.
+- The implemented database protects facts against update/delete and correction uses
+  supersession lineage.
 
 ## Rejected Alternatives
 

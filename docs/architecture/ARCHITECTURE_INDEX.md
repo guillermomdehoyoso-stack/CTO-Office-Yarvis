@@ -15,6 +15,11 @@ This Index is the canonical navigation map for Yarvis architecture. It identifie
 
 It introduces no new architectural concepts. It organizes the existing Foundation and Platform documents so that contributors can locate the governing artifact before deriving architecture, applications, or implementation.
 
+For implementation evidence after `ws006f-operational-workspace-ui-complete`, read
+[Architecture Checkpoint 002](YARVIS_ARCHITECTURE_CHECKPOINT_002.md). AC-002 does
+not supersede higher authority; it supersedes AC-001 only as the current As-Is
+navigation point.
+
 ---
 
 # 2. Architectural Authority
@@ -135,14 +140,25 @@ The pillars operate over the Yarvis Reality Graph (YRG). They do not create comp
 
 | Document | Role | Authority status |
 | --- | --- | --- |
-| `APPLICATION_ARCHITECTURE.md` | Defines application composition over platform capabilities and bounded contexts. | Planned — not yet created or authoritative |
-| `TECHNICAL_BLUEPRINT.md` | Defines the technical blueprint derived from ratified architecture. | Planned — not yet created or authoritative |
+| `APPLICATION_ARCHITECTURE.md` | Defines application composition over platform capabilities and bounded contexts. | Existing artifact; consult its declared status |
+| `TECHNICAL_BLUEPRINT.md` | Defines the technical blueprint derived from ratified architecture. | Existing artifact; consult its declared status |
 
-## 5.7 Architectural Decisions
+## 5.7 Current Architecture Evidence
+
+| Document | Role | Authority status |
+| --- | --- | --- |
+| `YARVIS_ARCHITECTURE_CHECKPOINT_002.md` | Current repository-evidence checkpoint for the Core after Process Runtime, Operational Economics, and Operational Workspace implementation. | Evidence-based; subordinate to ratified architecture |
+| `YARVIS_AS_IS_ARCHITECTURE.md` | Current Core implementation view. | Evidence-based companion view |
+| `YARVIS_TARGET_ARCHITECTURE.md` | Bounded extension constraints, not implementation authorization. | Derived target view |
+| `YARVIS_ROADMAP_AND_TECHNICAL_DEBT.md` | Implemented sequence, approved future boundaries, and technical debt. | Planning/evidence view |
+| `OPERATIONAL_EXECUTION_ARCHITECTURE.md` | Accepted OE-001 Task bounded-context decisions and integration boundaries with Mission Work, Process, Timeline, and Economics. | Accepted OE-001 architecture decision |
+| `ADR-OPERATIONAL-TASK-*.md` | Accepted OE-001 ownership, lifecycle/dependency, and projection/economics decisions for Operational Tasks. | Accepted OE-001 ADRs |
+
+## 5.8 Architectural Decisions
 
 Architecture Decision Records record bounded, durable decisions that refine the Foundation and Platform without contradicting them. ADRs are authoritative only within their declared scope and only when consistent with higher-level architecture.
 
-## 5.8 Implementation
+## 5.9 Implementation
 
 Code, configuration, tests, deployments, and operational procedures implement architecture. They are not architectural authority. When implementation conflicts with ratified architecture, implementation shall change unless an explicit architectural ratification changes the governing documents.
 

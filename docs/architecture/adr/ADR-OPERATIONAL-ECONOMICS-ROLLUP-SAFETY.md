@@ -1,6 +1,6 @@
 # ADR — Operational Economics Roll-up Safety
 
-**Status:** Proposed  
+**Status:** Accepted safety constraint; roll-up implementation deferred.
 **Decision:** ADR-OPERATIONAL-ECONOMICS-ROLLUP-SAFETY  
 **Checkpoint:** OV-001
 
@@ -10,12 +10,13 @@ Operational subjects have relationships, but relationship graphs are not necessa
 economic aggregation graphs. Directly summing Project, Work, Process, and Task values
 would duplicate facts whenever the same work appears through multiple relationships.
 
-## Proposed Decision
+## Decision
 
-Use explicit temporal `EconomicRollupMembership` records. A child subject has at most
-one active parent for the initial `operational` dimension. Facts contribute through a
-single declared route and are deduplicated by fact identity. A Process/Work association
-does not imply roll-up membership.
+When roll-ups are implemented, they use explicit temporal
+`EconomicRollupMembership` records. A child may have at most one active parent for
+the initial `operational` dimension. Facts contribute through a single declared route
+and are deduplicated by fact identity. A Process/Work association does not imply
+roll-up membership. OV-002 deliberately implements no roll-up persistence or query.
 
 Forecast metrics select current non-superseded facts; projected total cost is incurred
 cost plus cost to complete, not a sum of estimate, commitment, and incurred values.

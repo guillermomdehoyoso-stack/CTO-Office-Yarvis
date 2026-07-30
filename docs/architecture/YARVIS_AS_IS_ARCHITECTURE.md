@@ -1,92 +1,75 @@
 # Yarvis As-Is Architecture
 
-**Baseline:** `63740d8` / `ws006a-process-domain-complete`
-**Status:** Repository-evidence view; not a replacement for ratified architecture.
+**Baseline:** `9751d45` / `ws006f-operational-workspace-ui-complete`
+**Status:** Repository-evidence view; governed by [AC-002](YARVIS_ARCHITECTURE_CHECKPOINT_002.md).
 
 ## Context
 
 ```mermaid
 flowchart LR
-    Source["Deterministic inbound / uploads"] --> Intake["Intake and evidence"]
-    Intake --> Events["DomainEvent"]
-    Intake --> Context["Operational context: Organization, Site, Project"]
-    Context --> Events
-    Events --> Inbox["Mission Inbox: rebuildable projection"]
-    Inbox --> Work["Mission Work: transactional aggregate"]
-    Work --> Timeline["Mission Work Timeline: append-only evidence"]
-    Work --> Web["Mission Work frontend"]
-    Process["Process Definition: versioned template"]
+    Source["Inbound source"] --> Intake["Intake and Evidence"]
+    Intake --> DomainEvent["DomainEvent"]
+    DomainEvent --> Inbox["Mission Inbox projection"]
+    Inbox --> Work["MissionWorkItem"]
+    Process["ProcessDefinition / ProcessInstance"] --> Link["ProcessInstanceWorkLink"]
+    Link --> Work
+    Work --> Timeline["MissionWorkEvent"]
+    Process --> ProcessEvent["ProcessInstanceEvent"]
+    ProcessEvent --> Projector["Work Timeline projector"]
+    Projector --> Timeline
+    Economics["EconomicFact"] --> Workspace["Operational Workspace read model"]
+    Work --> Workspace
+    Process --> Workspace
+    Timeline --> Workspace
 ```
 
-`ProcessDefinition` is intentionally disconnected from runtime work: no Process Instance exists at this baseline.
-
-## Deployment
+## Deployment and Composition
 
 ```mermaid
 flowchart TB
-    Browser["Browser"] --> Web["React/Vite web :5173"]
-    Browser --> API["FastAPI API :8000"]
-    Web --> API
-    API --> DB[("PostgreSQL 16")]
-    API --> Data["/data document storage"]
-    API --> Corpus["/workspace-repository: read-only corpus"]
-    Corpus --> Docs["AGENTS.md, development and engineering docs"]
+    Browser["React/Vite browser client"] --> API["FastAPI composition root"]
+    API --> Auth["Tenant principal and authorities"]
+    API --> Services["Owner application/query services"]
+    Services --> UoW["Synchronous Unit of Work"]
+    UoW --> DB[("PostgreSQL")]
+    API --> WorkspaceCorpus["Read-only Development Workspace corpus"]
 ```
 
-## Components
+The browser's Mission Work UI has a separate Operational Workspace route. The latter
+is a consumer of an existing read API, not the Development Workspace corpus surface.
 
-```mermaid
-flowchart TB
-    Bootstrap["bootstrap.py composition root"] --> Auth["Deterministic authentication"]
-    Bootstrap --> Persistence["PersistenceRuntime and UnitOfWork"]
-    Bootstrap --> Contracts["Module, Contract, Handler registries"]
-    Bootstrap --> Routes["FastAPI routes"]
-    Routes --> Services["Application services: newer capabilities"]
-    Routes --> Legacy["Legacy direct route persistence"]
-    Services --> Models["SQLAlchemy models"]
-    Services --> Events["DomainEvent"]
-    Services --> WorkEvents["MissionWorkEvent"]
-    Models --> DB[("PostgreSQL")]
-```
-
-## End-to-End Operational Flow
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant I as Deterministic Intake
-    participant E as DomainEvent
-    participant P as Mission Inbox Projection
-    participant W as Mission Work
-    participant T as Work Timeline
-    C->>I: POST /intake/deterministic
-    I->>E: intake.received
-    C->>P: project pending events
-    P->>E: read ordered events
-    P->>P: rebuildable Inbox item
-    C->>W: create from Inbox item
-    W->>E: work lifecycle event
-    W->>T: append ordered Work event
-    C->>W: assign, status, priority, comment
-    W->>T: append timeline evidence
-```
-
-## Transactional Ownership versus Projections
+## Transactional Ownership and Read Models
 
 ```mermaid
 flowchart LR
-    Intake["IntakeItem: transactional"] --> DE["DomainEvent"]
-    Context["Context association: transactional, immutable"] --> DE
-    DE --> Inbox["MissionInboxItem: rebuildable projection"]
-    Inbox --> Work["MissionWorkItem: transactional source of truth"]
-    Work --> WorkEvent["MissionWorkEvent: append-only timeline"]
-    Definition["ProcessDefinition: transactional versioned template"]
-    style Inbox stroke-dasharray: 5 5
+    Work["Mission Work aggregate"] --> WE["MissionWorkEvent"]
+    Process["Process aggregate"] --> PE["ProcessInstanceEvent + DomainEvent"]
+    PE --> P["Idempotent Work Timeline projection"]
+    P --> WE
+    Economics["EconomicFact aggregate"] --> EE["Economics DomainEvent"]
+    Work --> R["Operational Workspace query"]
+    Process --> R
+    WE --> R
+    Economics --> R
+    style R stroke-dasharray: 5 5
 ```
 
-## Current Boundary Notes
+`MissionInboxItem` and the Operational Workspace are projections/read compositions.
+They are not sources of transactional truth. Mission Work, Process, and Economics
+remain independent owners and commit their own assertions locally.
 
-- Workspace routes require `x-yarvis-workspace-token` and expose only an allowlisted corpus mounted read-only in Docker.
-- Mission Work reads and writes require distinct authority scopes and conceal cross-organization resources as `404`.
-- Process Definition reads require `process.definition.read`; lifecycle and draft changes require `process.definition.manage`.
-- The generic `DomainEvent` stream supports projections but lacks a database append-only trigger.
+## Implemented Boundaries
+
+- **Mission Work:** operator lifecycle, assignment, priority, stable source identity,
+  append-only operational Timeline.
+- **Process:** versioned definitions, Process Instances, graph transitions, Process
+  lifecycle evidence, and historical Work links.
+- **Operational Economics:** append-only facts, correction lineage, provenance,
+  direct-subject summaries, currency separation, and no implicit roll-up.
+- **Operational Workspace:** bounded tenant-safe query composition for one Work Item.
+
+## Deferred Boundaries
+
+Tasks, Work-owned Checklist associations, Waiting, SLA, Documents in the workspace,
+automatic lifecycle coordination, EconomicRollupMembership, metric snapshots, FX,
+automation, schedulers, and AI are not implemented in this architecture view.

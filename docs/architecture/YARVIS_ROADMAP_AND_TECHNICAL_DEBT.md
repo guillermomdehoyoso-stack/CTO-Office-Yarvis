@@ -1,49 +1,56 @@
 # Yarvis Roadmap and Technical Debt
 
-**Baseline:** `63740d8` / `ws006a-process-domain-complete`
-**Status:** Implementation-facing roadmap synthesis. It does not amend the ratified roadmap.
+**Baseline:** `9751d45` / `ws006f-operational-workspace-ui-complete`
+**Status:** Evidence-based planning boundary; it does not authorize implementation.
 
-## Roadmap Dependencies
+## Implemented Sequence
 
 ```mermaid
 flowchart LR
-    WS006A["WS-006A: Process Definition"] --> WS006B["WS-006B: Process Runtime design"]
-    WS006B --> WS006C["Process Runtime backend"]
-    WS006C --> WS006D["Mission Work and Process association"]
-    Foundation["Foundation closure: Dispatch, authority, workers"] --> WS006C
-    Foundation --> Automation["Automation and execution runtime"]
-    WS006D --> ProcessUI["Process operator frontend"]
-    WS006C --> Automation
-    Knowledge["Knowledge and Decision runtime"] --> Automation
+    WS006A["WS-006A Process Definition"] --> WS006C["WS-006C Process Runtime"]
+    WS006C --> WS006D["WS-006D Work/Process association"]
+    OV001["OV-001 Economics design"] --> OV002["OV-002 Economics foundation"]
+    WS006D --> WS006E["WS-006E Workspace read model"]
+    OV002 --> WS006E
+    WS006E --> WS006F["WS-006F Workspace UI"]
+    WS006F --> OE001["OE-001 Operational Execution architecture"]
+    OE001 --> WS007A["WS-007A Task Core"]
 ```
 
-## Recommended Sequence
+## Approved Future Boundaries
 
-1. **WS-006B — Process Runtime design review.** Define Process Instance, ownership, transitions, immutable definition-version reference, authorization, idempotency, and event requirements.
-2. **Process runtime backend.** Build only after the design is reviewed; keep instance state separate from templates and Mission Work.
-3. **Foundation closure.** Materialize Dispatch handlers, production authority envelopes, query/event/notification pathways, worker/scheduler runtime, and conformance evidence.
-4. **Mission Work / Process association.** Associate work with an instance and stage without making Inbox a source of truth.
-5. **Process frontend.** Add administrative and operator visibility only after public Process Runtime contracts exist.
-6. **Decision, execution, and automation workstreams.** Continue only when authority, event integrity, and worker foundations are complete.
+1. **Foundation completion:** production authority, dispatch handlers, worker and
+   scheduler runtime, and conformance evidence before autonomous consumers.
+2. **Operational Economics deferred scope:** explicit roll-up membership, metric
+   snapshots, then separately ratified FX/adapters if required. No implicit relation
+   may substitute for those designs.
+3. **Operational Execution:** OE-001 accepts the neutral Task context. WS-007A must
+   allocate its accepted command contracts in the canonical catalog before public
+   endpoint exposure, then implement the Task Core without expanding scope.
+4. **Work extensions:** Waiting, Checklist association, SLA, and Documents each need
+   a separately owned aggregate/reference design and contracts; they must not be
+   smuggled into the initial Task lifecycle.
+5. **Operator surfaces:** Process administration and future workspace sections may
+   consume owner queries; they may not embed lifecycle or economics rules.
+6. **Automation and AI:** only after authority, evidence, event dispatch, and
+   execution controls are operational.
 
 ## Technical Debt Register
 
-| ID | Debt | Evidence | Priority | Boundary |
-| --- | --- | --- | --- | --- |
-| TD-001 | Generic DomainEvent lacks database append-only protection. | `models/domain_event.py`; no corresponding trigger migration. | High | Event infrastructure |
-| TD-002 | Workspace corpus test has an obsolete sprint assertion. | `tests/test_workspace_api.py`. | Medium | WS-000 test maintenance |
-| TD-003 | Process is not in canonical module composition. | `canonical_modules.py` vs Process service/contracts. | High | Module/contract governance |
-| TD-004 | Route-owned persistence coexists with service/UoW ownership. | Legacy route modules versus newer services. | High | Application boundary conformance |
-| TD-005 | Authentication is local/test deterministic only. | `api/authentication.py`. | High | Production governance |
-| TD-006 | Dispatcher has no registered handlers. | `bootstrap.py` composes an empty handler iterable. | High | Foundation execution |
-| TD-007 | Worker and scheduler have settings but no runtime process. | `config.py`, `docker-compose.yml`. | High | Async/projection operation |
-| TD-008 | Frontend has mixed governed and legacy API surfaces. | `App.tsx`, Mission Work client, legacy helper calls. | Medium | UI boundary consistency |
-| TD-009 | Operational state documents lag implementation. | Current-state documents before AC-001B. | Medium | Development Operating System |
+| ID | Debt | Boundary | Priority |
+| --- | --- | --- | --- |
+| TD-001 | Generic `DomainEvent` remains append-only by convention rather than a database update/delete guard. | Event infrastructure | High |
+| TD-002 | Process is not reconciled with `canonical_modules.py`. | Module governance | High |
+| TD-003 | Legacy route-owned persistence coexists with service/Unit-of-Work ownership. | Application boundary conformance | High |
+| TD-004 | Authentication is deterministic and restricted to local/test environments. | Production governance | High |
+| TD-005 | Dispatcher has no registered handlers; worker/scheduler runtime is absent. | Foundation execution | High |
+| TD-006 | The frontend contains governed Mission Work/Workspace and older simple API surfaces. | UI boundary consistency | Medium |
+| TD-007 | Frontend production build can be blocked by an `EPERM` lock on generated `dist/assets`. | Local build environment | Medium |
+| TD-008 | Development current-state/sprint documents required AC-002 reconciliation after WS-006E/F. | Development Operating System | Medium |
 
-## Status Vocabulary
+## Superseded Planning Statements
 
-- **Implemented:** executable and present in code, migrations, and tests.
-- **Partial:** executable fragments exist, but the end-to-end governed capability is incomplete.
-- **Foundation:** reusable technical base exists without its complete runtime execution path.
-- **Planned:** described by roadmap or architecture but not implemented.
-- **Exploratory:** candidate capability with no committed runtime scope.
+The earlier sequence that treated Process Runtime, Mission Work/Process association,
+Operational Economics foundation, and Operational Workspace as planned is complete.
+Those statements remain historical evidence only; AC-002 is the current navigation
+point.
