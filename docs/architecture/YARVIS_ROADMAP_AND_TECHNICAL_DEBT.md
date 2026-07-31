@@ -32,6 +32,9 @@ flowchart LR
    smuggled into the initial Task lifecycle.
 5. **Operator surfaces:** Process administration and future workspace sections may
    consume owner queries; they may not embed lifecycle or economics rules.
+   [UX-001 Experience Architecture](YARVIS_EXPERIENCE_ARCHITECTURE.md) is a
+   non-ratified product-experience proposal for the future Home → Space → Area →
+   Structured Workspace hierarchy; it creates no implementation authorization.
 6. **Automation and AI:** only after authority, evidence, event dispatch, and
    execution controls are operational.
 

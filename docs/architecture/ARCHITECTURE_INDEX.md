@@ -153,6 +153,8 @@ The pillars operate over the Yarvis Reality Graph (YRG). They do not create comp
 | `YARVIS_ROADMAP_AND_TECHNICAL_DEBT.md` | Implemented sequence, approved future boundaries, and technical debt. | Planning/evidence view |
 | `OPERATIONAL_EXECUTION_ARCHITECTURE.md` | Accepted OE-001 Task bounded-context decisions and integration boundaries with Mission Work, Process, Timeline, and Economics. | Accepted OE-001 architecture decision |
 | `ADR-OPERATIONAL-TASK-*.md` | Accepted OE-001 ownership, lifecycle/dependency, and projection/economics decisions for Operational Tasks. | Accepted OE-001 ADRs |
+| `YARVIS_EXPERIENCE_ARCHITECTURE.md` | UX-001 product-experience hierarchy, cellular visual language, accessibility, and non-authoritative projection boundaries. | Proposal; not ratified implementation authority |
+| `OPERATIONAL_WORKSPACE_EXPERIENCE_DISCOVERY.md` | WS-008B repository discovery and future Workspace/Document Registry decision preparation. | Discovery; not ratified implementation authority |
 
 ## 5.8 Architectural Decisions
 
