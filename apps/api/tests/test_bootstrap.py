@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from yarvis_api.bootstrap import ApplicationState, create_app
+from yarvis_api.canonical_contracts import CANONICAL_CONTRACTS
 from yarvis_api.config import Settings
 
 
@@ -98,10 +99,22 @@ def test_existing_interface_routes_are_preserved_without_new_business_routes() -
 def test_default_and_explicit_empty_contract_composition_are_isolated() -> None:
     default_app = create_app(Settings(environment="test"))
     empty_app = create_app(Settings(environment="test"), contracts=())
+    default_contracts = default_app.state.yarvis.contract_registry.list()
+    default_contract_ids = {contract.interaction_contract_id for contract in default_contracts}
 
     assert default_app.state.yarvis.contract_registry.is_sealed is True
-    assert len(default_app.state.yarvis.contract_registry.list()) == 37
+    assert len(default_contracts) == len(CANONICAL_CONTRACTS) == 44
+    assert {
+        "IC-TASK-CMD-001",
+        "IC-TASK-CMD-002",
+        "IC-TASK-CMD-003",
+        "IC-TASK-CMD-004",
+        "IC-TASK-CMD-005",
+        "IC-TASK-CMD-006",
+        "IC-TASK-CMD-007",
+    }.issubset(default_contract_ids)
     assert empty_app.state.yarvis.contract_registry.is_sealed is True
     assert empty_app.state.yarvis.contract_registry.list() == ()
+    assert default_contracts != empty_app.state.yarvis.contract_registry.list()
     assert default_app.state.yarvis.handler_registry.is_sealed is True
     assert default_app.state.yarvis.handler_registry.list() == ()

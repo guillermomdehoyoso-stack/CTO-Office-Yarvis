@@ -1,4 +1,8 @@
-"""Transactional Operational Task owner; Timeline remains a Mission projection."""
+"""Transactional Operational Task owner; Timeline remains a Mission projection.
+
+Timeline projection runs synchronously after Task commit. A projection failure leaves
+the committed Task and DomainEvent records durable and is returned to the caller.
+"""
 
 from __future__ import annotations
 
@@ -56,6 +60,7 @@ def _conflict(message: str) -> ApplicationError:
 @dataclass(slots=True)
 class OperationalTaskService:
     persistence: PersistenceRuntime
+    timeline_projector: TaskMissionWorkTimelineProjector
 
     def create(self, command: CreateOperationalTaskCommand, metadata: RequestMetadata, principal: AuthenticatedPrincipal) -> TaskRead:
         contract = command_contracts[WS007CommandName.CREATE_TASK]
@@ -96,11 +101,12 @@ class OperationalTaskService:
                 })
                 result = TaskRead.model_validate(task)
                 unit_of_work.commit()
-                return result
         except IntegrityError as error:
             if not self._is_create_idempotency_violation(error):
                 raise
             return self._resolve_create_replay(organization_id, key, fingerprint, error)
+        self.timeline_projector.project_task(result.id)
+        return result
 
     def update(self, command: UpdateOperationalTaskCommand, metadata: RequestMetadata, principal: AuthenticatedPrincipal) -> TaskRead:
         contract = command_contracts[WS007CommandName.UPDATE_TASK]
@@ -212,7 +218,9 @@ class OperationalTaskService:
             self._event(session, successor, event_type, principal, metadata, key, fingerprint, {
                 "predecessor_task_id": str(predecessor.id), "operation": "remove" if command.remove else "add",
             })
+            successor_id = successor.id
             unit_of_work.commit()
+        self.timeline_projector.project_task(successor_id)
 
     def _mutate(self, task_id: UUID, expected_version: int, metadata: RequestMetadata, principal: AuthenticatedPrincipal, contract, event_type: str, request: dict[str, object], change) -> TaskRead:
         organization_id = _principal_organization_id(principal)
@@ -234,7 +242,8 @@ class OperationalTaskService:
             })
             result = TaskRead.model_validate(task)
             unit_of_work.commit()
-            return result
+        self.timeline_projector.project_task(result.id)
+        return result
 
     @staticmethod
     def _idempotency_key(metadata: RequestMetadata) -> str:

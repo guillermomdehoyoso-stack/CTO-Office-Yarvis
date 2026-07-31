@@ -10,8 +10,10 @@ from yarvis_api.main import app
 from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.mission_work_event import MissionWorkEvent
-from yarvis_api.models.operational_task import OperationalTaskEvent
+from yarvis_api.models.operational_task import OperationalTask, OperationalTaskEvent
 from yarvis_api.models.organization import Organization
+from yarvis_api.persistence import UnitOfWork
+from yarvis_api.services.operational_task import TaskMissionWorkTimelineProjector
 
 
 client = TestClient(app)
@@ -133,6 +135,104 @@ def test_mutation_and_dependency_replays_do_not_duplicate_events_or_versions() -
     before = _counts(task_id, work_id)
     assert client.delete(f"/mission/tasks/{task_id}/dependencies/{predecessor_id}?idempotency_key={remove_key}", headers=_headers("task.dependency.manage")).status_code == 204
     assert _counts(task_id, work_id) == before
+
+
+def test_projection_runs_once_after_each_commit_and_never_for_replays(monkeypatch) -> None:
+    calls: list[UUID] = []
+    original_project = TaskMissionWorkTimelineProjector.project_task
+
+    def project_once(projector: TaskMissionWorkTimelineProjector, task_id: UUID) -> None:
+        calls.append(task_id)
+        original_project(projector, task_id)
+
+    monkeypatch.setattr(TaskMissionWorkTimelineProjector, "project_task", project_once)
+    work_id = _work()
+    task = _create(work_id).json()
+    predecessor = _create(work_id, title="Predecessor").json()
+    task_id, predecessor_id = UUID(task["id"]), UUID(predecessor["id"])
+    create_calls = len(calls)
+    assert _create(work_id, key="replayed-create").status_code == 201
+    # The distinct key above is a normal create; exact replays below add no calls.
+    create_key = uuid4().hex
+    created = _create(work_id, key=create_key, title="Replay target").json()
+    before_replay = len(calls)
+    assert _create(work_id, key=create_key, title="Replay target").status_code == 201
+    assert len(calls) == before_replay
+
+    operations = (
+        ("put", f"/mission/tasks/{task_id}", {"title": "Updated", "priority": "normal", "expected_version": 1}, "task.update"),
+        ("post", f"/mission/tasks/{task_id}/assignment", {"assignee_subject_id": "operator:two", "expected_version": 2}, "task.assign"),
+        ("post", f"/mission/tasks/{task_id}/transition", {"status": "ready", "expected_version": 3}, "task.transition"),
+        ("post", f"/mission/tasks/{task_id}/transition", {"status": "in_progress", "expected_version": 4}, "task.transition"),
+        ("post", f"/mission/tasks/{task_id}/complete", {"completion_note": "done", "expected_version": 5}, "task.complete"),
+    )
+    for method, path, payload, authority in operations:
+        request = {**payload, "idempotency_key": uuid4().hex, "correlation_id": str(uuid4())}
+        assert getattr(client, method)(path, json=request, headers=_headers(authority)).status_code == 200
+        before_replay = len(calls)
+        assert getattr(client, method)(path, json=request, headers=_headers(authority)).status_code == 200
+        assert len(calls) == before_replay
+
+    cancelled = _create(work_id, title="Cancelled").json()
+    cancel = {"reason": "stop", "expected_version": 1, "idempotency_key": uuid4().hex, "correlation_id": str(uuid4())}
+    assert client.post(f"/mission/tasks/{cancelled['id']}/cancel", json=cancel, headers=_headers("task.cancel")).status_code == 200
+    before_replay = len(calls)
+    assert client.post(f"/mission/tasks/{cancelled['id']}/cancel", json=cancel, headers=_headers("task.cancel")).status_code == 200
+    assert len(calls) == before_replay
+
+    add = {"predecessor_task_id": str(predecessor_id), "idempotency_key": uuid4().hex, "correlation_id": str(uuid4())}
+    assert client.post(f"/mission/tasks/{task_id}/dependencies", json=add, headers=_headers("task.dependency.manage")).status_code == 204
+    before_replay = len(calls)
+    assert client.post(f"/mission/tasks/{task_id}/dependencies", json=add, headers=_headers("task.dependency.manage")).status_code == 204
+    assert len(calls) == before_replay
+    remove_key = uuid4().hex
+    assert client.delete(f"/mission/tasks/{task_id}/dependencies/{predecessor_id}?idempotency_key={remove_key}", headers=_headers("task.dependency.manage")).status_code == 204
+    before_replay = len(calls)
+    assert client.delete(f"/mission/tasks/{task_id}/dependencies/{predecessor_id}?idempotency_key={remove_key}", headers=_headers("task.dependency.manage")).status_code == 204
+    assert len(calls) == before_replay
+    assert len(calls) > create_calls
+
+
+def test_rollback_does_not_project(monkeypatch) -> None:
+    calls: list[UUID] = []
+    monkeypatch.setattr(TaskMissionWorkTimelineProjector, "project_task", lambda _projector, task_id: calls.append(task_id))
+
+    def fail_commit(*_args, **_kwargs) -> None:
+        raise RuntimeError("forced task commit failure")
+
+    monkeypatch.setattr(UnitOfWork, "commit", fail_commit)
+    work_id = _work()
+    key = uuid4().hex
+    with pytest.raises(RuntimeError, match="forced task commit failure"):
+        _create(work_id, key=key)
+    assert calls == []
+    with app.state.yarvis.persistence.create_session() as session:
+        assert session.scalar(select(func.count()).select_from(OperationalTask).where(OperationalTask.create_idempotency_key == key)) == 0
+        assert session.scalar(select(func.count()).select_from(DomainEvent).where(DomainEvent.event_type == "operational_task.created")) == 0
+        assert session.scalar(select(func.count()).select_from(MissionWorkEvent).where(MissionWorkEvent.work_item_id == work_id)) == 0
+
+
+def test_projector_failure_surfaces_after_task_commit_without_partial_timeline(monkeypatch) -> None:
+    work_id = _work()
+    key = uuid4().hex
+    original_commit = UnitOfWork.commit
+    commit_count = 0
+
+    def fail_projector_commit(unit_of_work: UnitOfWork) -> None:
+        nonlocal commit_count
+        commit_count += 1
+        if commit_count == 2:
+            raise RuntimeError("forced timeline projection failure")
+        original_commit(unit_of_work)
+
+    monkeypatch.setattr(UnitOfWork, "commit", fail_projector_commit)
+    with pytest.raises(RuntimeError, match="forced timeline projection failure"):
+        _create(work_id, key=key)
+    with app.state.yarvis.persistence.create_session() as session:
+        task = session.scalar(select(OperationalTask).where(OperationalTask.create_idempotency_key == key))
+        assert task is not None
+        assert session.scalar(select(func.count()).select_from(DomainEvent).where(DomainEvent.aggregate_id == task.id)) == 1
+        assert session.scalar(select(func.count()).select_from(MissionWorkEvent).where(MissionWorkEvent.work_item_id == work_id)) == 0
 
 
 def test_cross_organization_task_is_concealed_and_migration_constraints_exist() -> None:
