@@ -31,6 +31,7 @@ from yarvis_api.services.process import ProcessDefinitionQueryService, ProcessDe
 from yarvis_api.services.process_work_association import ProcessMissionWorkTimelineProjector, ProcessWorkAssociationQueryService, ProcessWorkAssociationService
 from yarvis_api.services.operational_economics import OperationalEconomicsQueryService, OperationalEconomicsService
 from yarvis_api.services.operational_workspace import OperationalWorkspaceQueryService
+from yarvis_api.services.operational_workspace_overview import OperationalWorkspaceOverviewQueryService
 from yarvis_api.services.operational_task import OperationalTaskQueryService, OperationalTaskService, TaskMissionWorkTimelineProjector
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
@@ -71,6 +72,7 @@ class ApplicationState:
     operational_economics_service: OperationalEconomicsService
     operational_economics_query_service: OperationalEconomicsQueryService
     operational_workspace_query_service: OperationalWorkspaceQueryService
+    operational_workspace_overview_query_service: OperationalWorkspaceOverviewQueryService
     operational_task_service: OperationalTaskService
     operational_task_query_service: OperationalTaskQueryService
     task_mission_work_timeline_projector: TaskMissionWorkTimelineProjector
@@ -126,6 +128,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         operational_policies,
         operational_economics,
         operational_task,
+        operational_workspace,
         organizations,
         people,
         process,
@@ -155,6 +158,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     app.include_router(operational_policies.router)
     app.include_router(operational_economics.router)
     app.include_router(operational_task.router)
+    app.include_router(operational_workspace.router)
     app.include_router(recovery_queue.router)
     app.include_router(workspace_api.router)
     for module in module_registry.modules:
@@ -207,6 +211,7 @@ def create_app(
     operational_economics_service = OperationalEconomicsService(persistence_runtime)
     operational_economics_query_service = OperationalEconomicsQueryService()
     operational_workspace_query_service = OperationalWorkspaceQueryService()
+    operational_workspace_overview_query_service = OperationalWorkspaceOverviewQueryService()
     task_mission_work_timeline_projector = TaskMissionWorkTimelineProjector(persistence_runtime)
     operational_task_service = OperationalTaskService(persistence_runtime, task_mission_work_timeline_projector)
     operational_task_query_service = OperationalTaskQueryService()
@@ -250,6 +255,7 @@ def create_app(
         operational_economics_service=operational_economics_service,
         operational_economics_query_service=operational_economics_query_service,
         operational_workspace_query_service=operational_workspace_query_service,
+        operational_workspace_overview_query_service=operational_workspace_overview_query_service,
         operational_task_service=operational_task_service,
         operational_task_query_service=operational_task_query_service,
         task_mission_work_timeline_projector=task_mission_work_timeline_projector,

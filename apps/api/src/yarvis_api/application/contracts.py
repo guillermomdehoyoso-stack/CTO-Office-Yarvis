@@ -126,6 +126,10 @@ class WS007CommandName(StrEnum):
     CREATE_TASK="create_operational_task"; UPDATE_TASK="update_operational_task"; ASSIGN_TASK="assign_operational_task"; TRANSITION_TASK="transition_operational_task"; COMPLETE_TASK="complete_operational_task"; CANCEL_TASK="cancel_operational_task"; MANAGE_DEPENDENCIES="manage_operational_task_dependencies"
 
 
+class WS008QueryName(StrEnum):
+    RETRIEVE_OPERATIONAL_WORKSPACE_OVERVIEW = "retrieve_operational_workspace_overview"
+
+
 class OV002QueryName(StrEnum):
     RETRIEVE_OPERATIONAL_ECONOMICS = "retrieve_operational_economics"
     RETRIEVE_ECONOMIC_FACT_HISTORY = "retrieve_economic_fact_history"
@@ -328,7 +332,7 @@ for name, contract_id, capability, authority in (
 ): command_contracts[name]=ApplicationContract(contract_id,"operational_execution",capability,True,True,True,authority,True)
 
 
-query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName | OV002QueryName, ApplicationContract] = {
+query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName | WS008QueryName | OV002QueryName, ApplicationContract] = {
     WS001QueryName.RETRIEVE_DETERMINISTIC_INTAKE_DETAIL: ApplicationContract(
         interaction_contract_id="IC-INBOX-QRY-001",
         owning_context="intake",
@@ -425,6 +429,10 @@ for name, contract_id, capability in (
     authority = "mission.work.read" if name == WS006QueryName.RETRIEVE_OPERATIONAL_WORKSPACE else "process.instance.read"
     context = "mission_control" if name == WS006QueryName.RETRIEVE_OPERATIONAL_WORKSPACE else "process"
     query_contracts[name] = ApplicationContract(contract_id, context, capability, False, True, True, authority)
+
+query_contracts[WS008QueryName.RETRIEVE_OPERATIONAL_WORKSPACE_OVERVIEW] = ApplicationContract(
+    "IC-WORKSPACE-QRY-001", "mission_control", "operational_workspace_overview", False, True, True, "mission.work.read"
+)
 
 for name, contract_id, capability in (
     (OV002QueryName.RETRIEVE_OPERATIONAL_ECONOMICS, "IC-ECONOMICS-QRY-001", "economic_summary"),
