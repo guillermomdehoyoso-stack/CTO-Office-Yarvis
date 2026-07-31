@@ -122,6 +122,9 @@ class OV002CommandName(StrEnum):
     RECORD_ECONOMIC_FACT = "record_economic_fact"
     CORRECT_ECONOMIC_FACT = "correct_economic_fact"
 
+class WS007CommandName(StrEnum):
+    CREATE_TASK="create_operational_task"; UPDATE_TASK="update_operational_task"; ASSIGN_TASK="assign_operational_task"; TRANSITION_TASK="transition_operational_task"; COMPLETE_TASK="complete_operational_task"; CANCEL_TASK="cancel_operational_task"; MANAGE_DEPENDENCIES="manage_operational_task_dependencies"
+
 
 class OV002QueryName(StrEnum):
     RETRIEVE_OPERATIONAL_ECONOMICS = "retrieve_operational_economics"
@@ -155,7 +158,7 @@ class ApplicationContract:
     requires_idempotency_key: bool = False
 
 
-command_contracts: dict[WS001CommandName | WS002CommandName | WS004CommandName | WS005CommandName | WS006CommandName | OV002CommandName, ApplicationContract] = {
+command_contracts: dict[WS001CommandName | WS002CommandName | WS004CommandName | WS005CommandName | WS006CommandName | OV002CommandName | WS007CommandName, ApplicationContract] = {
     WS001CommandName.RECEIVE_INTAKE: ApplicationContract(
         interaction_contract_id="IC-INBOX-CMD-001",
         owning_context="intake",
@@ -319,6 +322,10 @@ for name, contract_id, capability, authority in (
     (OV002CommandName.CORRECT_ECONOMIC_FACT, "IC-ECONOMICS-CMD-002", "economic_fact_correction", "economics.fact.correct"),
 ):
     command_contracts[name] = ApplicationContract(contract_id, "operational_economics", capability, True, True, True, authority, True)
+
+for name, contract_id, capability, authority in (
+    (WS007CommandName.CREATE_TASK,"IC-TASK-CMD-001","task_creation","task.create"),(WS007CommandName.UPDATE_TASK,"IC-TASK-CMD-002","task_planning","task.update"),(WS007CommandName.ASSIGN_TASK,"IC-TASK-CMD-003","task_assignment","task.assign"),(WS007CommandName.TRANSITION_TASK,"IC-TASK-CMD-004","task_transition","task.transition"),(WS007CommandName.COMPLETE_TASK,"IC-TASK-CMD-005","task_completion","task.complete"),(WS007CommandName.CANCEL_TASK,"IC-TASK-CMD-006","task_cancellation","task.cancel"),(WS007CommandName.MANAGE_DEPENDENCIES,"IC-TASK-CMD-007","task_dependencies","task.dependency.manage"),
+): command_contracts[name]=ApplicationContract(contract_id,"operational_execution",capability,True,True,True,authority,True)
 
 
 query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName | OV002QueryName, ApplicationContract] = {

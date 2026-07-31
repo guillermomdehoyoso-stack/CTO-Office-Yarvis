@@ -86,6 +86,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 
 | ID | Type | Owner / capability | Name and semantic purpose | Criticality | Primary consumer/use case |
 | --- | --- | --- | --- | --- | --- |
+| IC-TASK-CMD-001â€“007 | CMD | Operational Execution / Task lifecycle | Create, plan, assign, transition, complete, cancel, and manage direct Task dependencies | Co | governed Mission Work commitments |
 | IC-IDENTITY-CMD-001 | CMD | Identity / resolution | ResolveSubjectCandidate: resolve or propose canonical Party/PartyGroup reference | C | intake association |
 | IC-IDENTITY-QRY-001 | QRY | Identity / canonical reference | RetrieveCanonicalIdentity | C | all Tier 1 association |
 | IC-IDENTITY-EVT-001 | EVT | Identity / resolution | IdentityResolutionRecorded | C | O&E, Netpay, MC |
