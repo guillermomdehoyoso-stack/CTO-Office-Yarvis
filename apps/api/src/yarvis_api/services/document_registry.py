@@ -322,3 +322,14 @@ class DocumentRegistryService:
 class DocumentRegistryQueryService:
  def get(self,s,i,p,m):
   enforce_query_boundary(query_contracts[DI002QueryName.GET],metadata=m,principal=p); service=DocumentRegistryService(None); return service._read(s,service._doc(s,i,_principal_organization_id(p)))
+ def versions(self,s,i,p,m):
+  enforce_query_boundary(query_contracts[DI002QueryName.VERSIONS],metadata=m,principal=p);service=DocumentRegistryService(None);d=service._doc(s,i,_principal_organization_id(p));return [version_read(version) for version in s.scalars(select(DocumentVersion).where(DocumentVersion.organization_id==d.organization_id,DocumentVersion.document_id==d.id).order_by(DocumentVersion.sequence.asc(),DocumentVersion.id.asc())).all()]
+ def associations(self,s,i,p,m):
+  enforce_query_boundary(query_contracts[DI002QueryName.ASSOCIATIONS],metadata=m,principal=p);service=DocumentRegistryService(None);d=service._doc(s,i,_principal_organization_id(p));return [DocumentAssociationRead.model_validate(association) for association in s.scalars(select(DocumentAssociation).where(DocumentAssociation.organization_id==d.organization_id,DocumentAssociation.document_id==d.id,DocumentAssociation.unlinked_at.is_(None)).order_by(DocumentAssociation.linked_at.asc(),DocumentAssociation.id.asc())).all()]
+ def by_subject(self,s,t,i,p,m,limit=50,offset=0):
+  enforce_query_boundary(query_contracts[DI002QueryName.BY_SUBJECT],metadata=m,principal=p);service=DocumentRegistryService(None);org=_principal_organization_id(p);service._subject(s,t,i,org)
+  if limit<1 or offset<0:raise err(ApplicationErrorCode.VALIDATION_FAILED,"invalid pagination")
+  query=select(Document).join(DocumentAssociation,DocumentAssociation.document_id==Document.id).where(Document.organization_id==org,DocumentAssociation.organization_id==org,DocumentAssociation.subject_type==t,DocumentAssociation.subject_id==i,DocumentAssociation.unlinked_at.is_(None))
+  total=s.scalar(select(func.count()).select_from(query.subquery())) or 0
+  documents=s.scalars(query.order_by(Document.updated_at.desc(),Document.id.asc()).offset(offset).limit(limit)).all()
+  return DocumentPage(items=[service._read(s,document) for document in documents],total=total,limit=limit,offset=offset)
