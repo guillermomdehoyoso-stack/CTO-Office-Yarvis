@@ -232,6 +232,7 @@ class DocumentRegistryService:
    if not(isinstance(e.orig,UniqueViolation) and e.orig.diag.constraint_name=="uq_document_command_idempotency"):raise
    with UnitOfWork(self.persistence,OperationScope()) as u:return self._replay(u.session,self._receipt(u.session,org,contract.interaction_contract_id,k),f,k)
  def link(self,c,m,p,unlink=False):
+  if not unlink:return self._link(c,m,p)
   n=DI002CommandName.UNLINK if unlink else DI002CommandName.LINK;enforce_command_boundary(command_contracts[n],metadata=m,principal=p);org=_principal_organization_id(p)
   with UnitOfWork(self.persistence,OperationScope()) as u:
    s=u.session;d=self._doc(s,c.document_id,org,True);self._subject(s,c.subject_type,c.subject_id,org)
@@ -243,6 +244,36 @@ class DocumentRegistryService:
     if a: return DocumentAssociationRead.model_validate(a)
     a=DocumentAssociation(organization_id=org,document_id=d.id,subject_type=c.subject_type,subject_id=c.subject_id,linked_by_subject_id=p.actor_id);s.add(a);event="document.associated"
    s.flush();self._event(s,d,event,m,p,{"subject_type":c.subject_type,"subject_id":str(c.subject_id)});r=DocumentAssociationRead.model_validate(a);u.commit();return r
+ def _link(self,c,m,p):
+  contract=command_contracts[DI002CommandName.LINK];enforce_command_boundary(contract,metadata=m,principal=p);org=_principal_organization_id(p);k=key(m);f=sha256(dumps({"contract_id":contract.interaction_contract_id,"organization_id":str(org),"document_id":str(c.document_id),"subject_type":c.subject_type,"subject_id":str(c.subject_id)},sort_keys=True,separators=(",",":")).encode()).hexdigest()
+  try:
+   with UnitOfWork(self.persistence,OperationScope()) as u:
+    s=u.session;receipt=self._receipt(s,org,contract.interaction_contract_id,k)
+    if receipt:
+     if receipt.request_fingerprint!=f:raise err(ApplicationErrorCode.CONFLICT,"idempotency key was previously used for a different document command")
+     association=s.get(DocumentAssociation,receipt.aggregate_id)
+     if association is None:raise err(ApplicationErrorCode.CONFLICT,"idempotency receipt result unavailable")
+     return DocumentAssociationRead.model_validate(association)
+    d=self._doc(s,c.document_id,org,True)
+    receipt=self._receipt(s,org,contract.interaction_contract_id,k)
+    if receipt:
+     if receipt.request_fingerprint!=f:raise err(ApplicationErrorCode.CONFLICT,"idempotency key was previously used for a different document command")
+     association=s.get(DocumentAssociation,receipt.aggregate_id)
+     if association is None:raise err(ApplicationErrorCode.CONFLICT,"idempotency receipt result unavailable")
+     return DocumentAssociationRead.model_validate(association)
+    self._subject(s,c.subject_type,c.subject_id,org)
+    a=s.scalar(select(DocumentAssociation).where(DocumentAssociation.document_id==d.id,DocumentAssociation.subject_type==c.subject_type,DocumentAssociation.subject_id==c.subject_id,DocumentAssociation.unlinked_at.is_(None)).with_for_update())
+    if a:return DocumentAssociationRead.model_validate(a)
+    a=DocumentAssociation(organization_id=org,document_id=d.id,subject_type=c.subject_type,subject_id=c.subject_id,linked_by_subject_id=p.actor_id);s.add(a);s.flush();self._event(s,d,"document.associated",m,p,{"association_id":str(a.id),"subject_type":c.subject_type,"subject_id":str(c.subject_id),"idempotency_key":k})
+    s.add(DocumentCommandIdempotency(organization_id=org,contract_id=contract.interaction_contract_id,idempotency_key=k,request_fingerprint=f,aggregate_id=a.id,response_kind="document_association",response_payload={"association_id":str(a.id)}));r=DocumentAssociationRead.model_validate(a);u.commit();return r
+  except IntegrityError as e:
+   if not(isinstance(e.orig,UniqueViolation) and e.orig.diag.constraint_name=="uq_document_command_idempotency"):raise
+   with UnitOfWork(self.persistence,OperationScope()) as u:
+    receipt=self._receipt(u.session,org,contract.interaction_contract_id,k)
+    if receipt is None or receipt.request_fingerprint!=f:raise err(ApplicationErrorCode.CONFLICT,"idempotency key was previously used for a different document command")
+    association=u.session.get(DocumentAssociation,receipt.aggregate_id)
+    if association is None:raise err(ApplicationErrorCode.CONFLICT,"idempotency receipt result unavailable")
+    return DocumentAssociationRead.model_validate(association)
  def _version(self,s,d,c,p,seq,sup):
   if c.storage_key and (c.storage_key.startswith(("/","\\")) or (len(c.storage_key)>2 and c.storage_key[1]==":") or ".." in c.storage_key.replace("\\","/").split("/")): raise err(ApplicationErrorCode.VALIDATION_FAILED,"storage key must be provider-relative")
   if not c.storage_key and not c.external_reference: raise err(ApplicationErrorCode.VALIDATION_FAILED,"storage key or external reference is required")
@@ -258,6 +289,9 @@ class DocumentRegistryService:
  def _subject(self,s,t,i,o):
   M=_TYPES.get(t)
   if not M:raise nf()
+  if M is Organization:
+   if i!=o or s.get(Organization,i) is None:raise nf()
+   return
   if not s.scalar(select(M).where(M.id==i).where(M.organization_id==o)):raise nf()
  def _event(self,s,d,t,m,p,x): record_event(s,event_type=t,aggregate_type="document",aggregate_id=d.id,organization_id=d.organization_id,correlation_id=UUID(m.correlation_id),causation_id=UUID(m.causation_id) if m.causation_id else None,payload={**x,"actor_subject_id":p.actor_id,"authority_scope":p.authority})
  def _read(self,s,d): return DocumentRead.model_validate(d).model_copy(update={"active_association_count":s.scalar(select(func.count()).select_from(DocumentAssociation).where(DocumentAssociation.document_id==d.id).where(DocumentAssociation.unlinked_at.is_(None))) or 0})
