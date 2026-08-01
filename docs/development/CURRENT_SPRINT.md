@@ -2,47 +2,36 @@
 
 ## Identity
 
-**Work package:** AC-002 — Core Architecture Checkpoint
+**Work package:** DI-002 — Document Registry Foundation
+**Authorization:** [IG-001](../engineering/IG-001_DI002_IMPLEMENTATION_AUTHORIZATION.md), under AR-001 and ADR-001.
 
 ## Goal
 
-Record the implemented Core architecture after Process Runtime, Mission Work/Process
-association, Operational Economics, and the Operational Workspace without changing
-runtime behavior or architectural authority.
+Implement the smallest production-ready Document Registry backend slice: canonical metadata, immutable version lineage, provenance, provider-neutral storage-reference metadata, and governed subject associations.
+
+## Current gate
+
+DI-002 implementation is open. AC-002 is completed historical documentation evidence and is no longer the active gate.
 
 ## Scope
 
-- Core bounded contexts, dependency map, ownership boundaries, event flow, and read
-  model strategy.
-- Mission Work, Process Runtime, Operational Economics, and Operational Workspace
-  implementation evidence.
-- Explicit extension boundaries and non-goals for Tasks, Checklists, Waiting, SLA,
-  Documents, and AI.
-- Alignment of live architecture/navigation documentation and development context.
+- Document aggregate and immutable Document Versions.
+- Provider-neutral storage references without binary I/O.
+- Historical tenant-safe associations to Organization, Site, Project, Mission Work Item, Operational Task, and Process Instance.
+- Governed commands, queries, authority, idempotency, events, migration, tests, and documentation.
 
-## Current Gate
+## Explicitly out of scope
 
-Documentation consistency review. AC-002 makes no API, model, migration, contract,
-or runtime change.
+Binary upload/download/streaming; storage adapters; Gmail/WhatsApp; OCR; malware scanning; sharing; retention automation; AI; frontend UI; Evidence creation; and automatic Task, Process, or Economics creation.
 
-## Entry Criteria
+## Entry criteria
 
-- WS-006A, WS-006C, WS-006D, OV-001, OV-002, WS-006E, and WS-006F are committed.
-- Repository evidence is inspected before making checkpoint claims.
+All IG-001 entry criteria are satisfied.
 
-## Exit Criteria
+## Exit criteria
 
-- The checkpoint identifies implemented, deferred, and deprecated/superseded
-  navigation concepts.
-- Relevant ADR and architecture views are consistent with implemented evidence.
-- Documentation links and Mermaid diagrams are valid, and `git diff --check` passes.
+All IG-001 exit criteria are satisfied, with no deferred scope introduced.
 
-## Explicitly Out of Scope
+## Next package
 
-- Runtime code, migrations, APIs, frontend behavior, roll-ups, lifecycle sync,
-  automation, scheduler, SLA, Tasks, Waiting, Documents, and AI.
-
-## Next Package
-
-TO BE VERIFIED after AC-002 ratification. Any follow-on must be explicitly scoped
-against the extension boundaries recorded in the checkpoint.
+TO BE VERIFIED after DI-002 validation and review.

@@ -37,9 +37,10 @@ flowchart LR
    Structured Workspace hierarchy; it creates no implementation authorization.
 6. **Automation and AI:** only after authority, evidence, event dispatch, and
    execution controls are operational.
-7. **Data intake and documents:** DI-001 defines the proposed preservation-first
-   boundary. DI-002 through DI-006 and connector work remain separately scoped;
-   no connector may create authoritative business state without an owner contract.
+7. **Data intake and documents:** DI-001 is ratified for DI-002 only through
+   [ADR-001](../decisions/ADR-001_RATIFY_DI001_DOCUMENT_ARCHITECTURE.md).
+   DI-003 through DI-006 and connector work remain separately scoped; no connector
+   may create authoritative business state without an owner contract.
 
 ## Technical Debt Register
 

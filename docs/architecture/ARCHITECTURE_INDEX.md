@@ -155,7 +155,9 @@ The pillars operate over the Yarvis Reality Graph (YRG). They do not create comp
 | `ADR-OPERATIONAL-TASK-*.md` | Accepted OE-001 ownership, lifecycle/dependency, and projection/economics decisions for Operational Tasks. | Accepted OE-001 ADRs |
 | `YARVIS_EXPERIENCE_ARCHITECTURE.md` | UX-001 product-experience hierarchy, cellular visual language, accessibility, and non-authoritative projection boundaries. | Proposal; not ratified implementation authority |
 | `OPERATIONAL_WORKSPACE_EXPERIENCE_DISCOVERY.md` | WS-008B repository discovery and future Workspace/Document Registry decision preparation. | Discovery; not ratified implementation authority |
-| `DATA_INTAKE_AND_DOCUMENT_ARCHITECTURE.md` | DI-001 provider-neutral intake, preservation, Document Registry, storage, connector, and Inbox-boundary proposal. | Proposed architecture; documentation only |
+| `DATA_INTAKE_AND_DOCUMENT_ARCHITECTURE.md` | DI-001 provider-neutral intake, preservation, Document Registry, storage, connector, and Inbox boundary. | Ratified for DI-002 by [ADR-001](../decisions/ADR-001_RATIFY_DI001_DOCUMENT_ARCHITECTURE.md) |
+| `AR-001_ARCHITECTURE_RATIFICATION_FRAMEWORK.md` | Permanent lifecycle, review, ADR, and implementation-authority process. | Ratified governance framework |
+| `ADR-001_RATIFY_DI001_DOCUMENT_ARCHITECTURE.md` | Applies AR-001 to ratify DI-001 and authorize DI-002 only. | Accepted; implementation authority record |
 
 ## 5.8 Architectural Decisions
 

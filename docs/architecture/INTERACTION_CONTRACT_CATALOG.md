@@ -173,6 +173,8 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-ECONOMICS-CMD-002 | CMD | Operational Economics / facts | CorrectEconomicFact | C | append-only supersession with reason |
 | IC-ECONOMICS-QRY-001 | QRY | Operational Economics / summary | RetrieveOperationalEconomics | C | direct-subject deterministic metrics by currency |
 | IC-ECONOMICS-QRY-002 | QRY | Operational Economics / facts | RetrieveEconomicFactHistory | C | tenant-scoped append-only fact lineage |
+| IC-DOCUMENT-CMD-001–006 | CMD | Document Registry / document lifecycle | Create, update metadata, add immutable version, archive, link, and unlink historical association | C | governed Document Registry |
+| IC-DOCUMENT-QRY-001–004 | QRY | Document Registry / document views | Retrieve document, versions, associations, and documents by subject | C | tenant-safe Document Registry views |
 | IC-ECONOMICS-EVT-001 | EVT | Operational Economics / facts | EconomicFactRecorded | C | source event for future economics projections |
 | IC-ECONOMICS-EVT-002 | EVT | Operational Economics / facts | EconomicFactCorrected | C | source event for correction lineage |
 | IC-MISSION-QRY-007 | QRY | Mission Control / operational workspace | RetrieveOperationalWorkspace | C | bounded, tenant-safe composition of existing owner read models |
