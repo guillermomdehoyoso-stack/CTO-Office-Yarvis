@@ -129,6 +129,11 @@ class WS007CommandName(StrEnum):
 class WS008QueryName(StrEnum):
     RETRIEVE_OPERATIONAL_WORKSPACE_OVERVIEW = "retrieve_operational_workspace_overview"
 
+class DI002CommandName(StrEnum):
+    CREATE="create_document"; UPDATE="update_document_metadata"; ADD_VERSION="add_document_version"; ARCHIVE="archive_document"; LINK="link_document_association"; UNLINK="unlink_document_association"
+class DI002QueryName(StrEnum):
+    GET="retrieve_document"; VERSIONS="list_document_versions"; ASSOCIATIONS="list_document_associations"; BY_SUBJECT="list_documents_by_subject"
+
 
 class OV002QueryName(StrEnum):
     RETRIEVE_OPERATIONAL_ECONOMICS = "retrieve_operational_economics"
@@ -330,6 +335,7 @@ for name, contract_id, capability, authority in (
 for name, contract_id, capability, authority in (
     (WS007CommandName.CREATE_TASK,"IC-TASK-CMD-001","task_creation","task.create"),(WS007CommandName.UPDATE_TASK,"IC-TASK-CMD-002","task_planning","task.update"),(WS007CommandName.ASSIGN_TASK,"IC-TASK-CMD-003","task_assignment","task.assign"),(WS007CommandName.TRANSITION_TASK,"IC-TASK-CMD-004","task_transition","task.transition"),(WS007CommandName.COMPLETE_TASK,"IC-TASK-CMD-005","task_completion","task.complete"),(WS007CommandName.CANCEL_TASK,"IC-TASK-CMD-006","task_cancellation","task.cancel"),(WS007CommandName.MANAGE_DEPENDENCIES,"IC-TASK-CMD-007","task_dependencies","task.dependency.manage"),
 ): command_contracts[name]=ApplicationContract(contract_id,"operational_execution",capability,True,True,True,authority,True)
+for name,cid,cap,auth in ((DI002CommandName.CREATE,"IC-DOCUMENT-CMD-001","document_create","document.create"),(DI002CommandName.UPDATE,"IC-DOCUMENT-CMD-002","document_metadata","document.metadata.update"),(DI002CommandName.ADD_VERSION,"IC-DOCUMENT-CMD-003","document_version","document.version.add"),(DI002CommandName.ARCHIVE,"IC-DOCUMENT-CMD-004","document_archive","document.archive"),(DI002CommandName.LINK,"IC-DOCUMENT-CMD-005","document_association","document.association.link"),(DI002CommandName.UNLINK,"IC-DOCUMENT-CMD-006","document_association","document.association.unlink")): command_contracts[name]=ApplicationContract(cid,"document_registry",cap,True,True,True,auth,True)
 
 
 query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName | WS008QueryName | OV002QueryName, ApplicationContract] = {
@@ -433,6 +439,7 @@ for name, contract_id, capability in (
 query_contracts[WS008QueryName.RETRIEVE_OPERATIONAL_WORKSPACE_OVERVIEW] = ApplicationContract(
     "IC-WORKSPACE-QRY-001", "mission_control", "operational_workspace_overview", False, True, True, "mission.work.read"
 )
+for name,cid,cap in ((DI002QueryName.GET,"IC-DOCUMENT-QRY-001","document"),(DI002QueryName.VERSIONS,"IC-DOCUMENT-QRY-002","versions"),(DI002QueryName.ASSOCIATIONS,"IC-DOCUMENT-QRY-003","associations"),(DI002QueryName.BY_SUBJECT,"IC-DOCUMENT-QRY-004","documents_by_subject")): query_contracts[name]=ApplicationContract(cid,"document_registry",cap,False,True,True,"document.read")
 
 for name, contract_id, capability in (
     (OV002QueryName.RETRIEVE_OPERATIONAL_ECONOMICS, "IC-ECONOMICS-QRY-001", "economic_summary"),
