@@ -274,6 +274,29 @@ class DocumentRegistryService:
     association=u.session.get(DocumentAssociation,receipt.aggregate_id)
     if association is None:raise err(ApplicationErrorCode.CONFLICT,"idempotency receipt result unavailable")
     return DocumentAssociationRead.model_validate(association)
+ def unlink(self,c,m,p):
+  contract=command_contracts[DI002CommandName.UNLINK];enforce_command_boundary(contract,metadata=m,principal=p);org=_principal_organization_id(p);k=key(m);f=sha256(dumps({"contract_id":contract.interaction_contract_id,"organization_id":str(org),"document_id":str(c.document_id),"association_id":str(c.association_id)},sort_keys=True,separators=(",",":")).encode()).hexdigest()
+  def replay(s,receipt):
+   if receipt is None:raise err(ApplicationErrorCode.CONFLICT,"idempotency receipt unavailable")
+   if receipt.request_fingerprint!=f:raise err(ApplicationErrorCode.CONFLICT,"idempotency key was previously used for a different document command")
+   association=s.get(DocumentAssociation,receipt.aggregate_id)
+   if association is None:raise err(ApplicationErrorCode.CONFLICT,"idempotency receipt result unavailable")
+   return DocumentAssociationRead.model_validate(association)
+  try:
+   with UnitOfWork(self.persistence,OperationScope()) as u:
+    s=u.session;receipt=self._receipt(s,org,contract.interaction_contract_id,k)
+    if receipt:return replay(s,receipt)
+    d=self._doc(s,c.document_id,org,True)
+    receipt=self._receipt(s,org,contract.interaction_contract_id,k)
+    if receipt:return replay(s,receipt)
+    association=s.scalar(select(DocumentAssociation).where(DocumentAssociation.id==c.association_id,DocumentAssociation.document_id==d.id,DocumentAssociation.organization_id==org,DocumentAssociation.unlinked_at.is_(None)).with_for_update())
+    if association is None:raise nf()
+    association.unlinked_at=utc_now();association.unlinked_by_subject_id=p.actor_id
+    self._event(s,d,"document.unassociated",m,p,{"association_id":str(association.id),"subject_type":association.subject_type,"subject_id":str(association.subject_id),"idempotency_key":k})
+    s.add(DocumentCommandIdempotency(organization_id=org,contract_id=contract.interaction_contract_id,idempotency_key=k,request_fingerprint=f,aggregate_id=association.id,response_kind="document_association",response_payload={"association_id":str(association.id)}));r=DocumentAssociationRead.model_validate(association);u.commit();return r
+  except IntegrityError as e:
+   if not(isinstance(e.orig,UniqueViolation) and e.orig.diag.constraint_name=="uq_document_command_idempotency"):raise
+   with UnitOfWork(self.persistence,OperationScope()) as u:return replay(u.session,self._receipt(u.session,org,contract.interaction_contract_id,k))
  def _version(self,s,d,c,p,seq,sup):
   if c.storage_key and (c.storage_key.startswith(("/","\\")) or (len(c.storage_key)>2 and c.storage_key[1]==":") or ".." in c.storage_key.replace("\\","/").split("/")): raise err(ApplicationErrorCode.VALIDATION_FAILED,"storage key must be provider-relative")
   if not c.storage_key and not c.external_reference: raise err(ApplicationErrorCode.VALIDATION_FAILED,"storage key or external reference is required")

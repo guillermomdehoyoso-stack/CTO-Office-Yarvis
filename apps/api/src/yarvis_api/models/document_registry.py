@@ -147,6 +147,7 @@ class DocumentAssociation(Base):
     linked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
     unlinked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     linked_by_subject_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    unlinked_by_subject_id: Mapped[str | None] = mapped_column(String(255))
 
 
 class DocumentCommandIdempotency(Base):

@@ -16,5 +16,5 @@ class DocumentRead(BaseModel):
 class DocumentVersionRead(BaseModel):
  model_config=ConfigDict(from_attributes=True); id:UUID; document_id:UUID; sequence:int; media_type:str; original_filename:str|None; byte_size:int|None; checksum_algorithm:str; checksum_value:str; storage_provider:str; storage_key:str|None; external_reference:str|None; source_kind:str; source_reference:str|None; provenance:dict; created_at:datetime; supersedes_version_id:UUID|None
 class DocumentAssociationRead(BaseModel):
- model_config=ConfigDict(from_attributes=True); id:UUID; document_id:UUID; subject_type:str; subject_id:UUID; linked_at:datetime; unlinked_at:datetime|None
+ model_config=ConfigDict(from_attributes=True); id:UUID; document_id:UUID; subject_type:str; subject_id:UUID; linked_at:datetime; unlinked_at:datetime|None; unlinked_by_subject_id:str|None
 class DocumentPage(BaseModel): items:list[DocumentRead]; total:int; limit:int; offset:int
