@@ -3,6 +3,7 @@ from yarvis_api.models.case import Case
 from yarvis_api.models.checklist import CaseChecklist, CaseType, ChecklistRequirement, ChecklistTemplate, DocumentType, IntakeClassification, RequirementFulfillment
 from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.document_registry import Document, DocumentAssociation, DocumentCommandIdempotency, DocumentVersion
+from yarvis_api.models.opportunity import Opportunity, OpportunityCommandIdempotency
 from yarvis_api.models.conversation import Conversation, ConversationMessage
 from yarvis_api.models.evidence import Evidence
 from yarvis_api.models.intake import IntakeItem
@@ -38,6 +39,8 @@ __all__ = [
 	"DocumentRecord",
 	"DocumentType",
 	"DomainEvent",
+	"Opportunity",
+	"OpportunityCommandIdempotency",
 	"Evidence",
 	"IntakeClassification",
 	"IntakeItem",
