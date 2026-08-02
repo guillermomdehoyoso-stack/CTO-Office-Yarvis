@@ -1,4 +1,9 @@
 from datetime import datetime, timezone
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict
+from hashlib import sha256
+from json import dumps
+from threading import Barrier
 from uuid import uuid4
 import pytest
 from sqlalchemy import func, select
@@ -10,6 +15,10 @@ from yarvis_api.models.document_registry import Document, DocumentCommandIdempot
 from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.organization import Organization
 from yarvis_api.services.document_registry import DocumentRegistryService
+class _FailingCommitRuntime:
+ def __init__(self,runtime):self.runtime=runtime
+ def create_session(self):
+  session=self.runtime.create_session();session.commit=lambda:(_ for _ in ()).throw(RuntimeError("forced commit failure"));return session
 def p(o):return AuthenticatedPrincipal("actor",str(o),(),(),"document.version.add","test",datetime.now(timezone.utc),False)
 def m(k):return RequestMetadata(datetime.now(timezone.utc),str(uuid4()),command_id=str(uuid4()),idempotency_key=k,expected_aggregate_version=1)
 def c(document_id, checksum="a" * 64):
@@ -336,3 +345,176 @@ def test_later_versions_preserve_historical_fields(test_database):
         assert (first_after.checksum_value, first_after.storage_key, first_after.provenance, first_after.original_filename, first_after.byte_size, first_after.created_at, first_after.supersedes_version_id) == snapshot
         assert second.supersedes_version_id == first.id and document.current_version_id == second.id and document.version == 3
         assert [item.sequence for item in session.scalars(select(DocumentVersion).where(DocumentVersion.document_id == document_id).order_by(DocumentVersion.sequence)).all()] == [1, 2]
+
+
+def test_add_version_commit_failure_rolls_back_and_retry_replays(test_database):
+    from yarvis_api.main import app
+
+    oid, document_id = uuid4(), uuid4()
+    with app.state.yarvis.persistence.create_session() as session:
+        session.add(Organization(id=oid, legal_name="DI version rollback", display_name="DI version rollback")); session.flush()
+        session.add(Document(id=document_id, organization_id=oid, title="Document", classification="general", visibility="organization", created_by_subject_id="test")); session.commit()
+    service = DocumentRegistryService(app.state.yarvis.persistence)
+    first = service.add(c(document_id), m("rollback-first"), p(oid))
+    retry_metadata = RequestMetadata(datetime.now(timezone.utc), str(uuid4()), command_id=str(uuid4()), idempotency_key="rollback-second", expected_aggregate_version=2)
+    command = c(document_id, "b" * 64)
+    with app.state.yarvis.persistence.create_session() as session:
+        prior = session.get(DocumentVersion, first.id)
+        snapshot = (prior.sequence, prior.checksum_value, prior.storage_key, prior.provenance, prior.created_at, prior.supersedes_version_id)
+
+    with pytest.raises(RuntimeError, match="forced commit failure"):
+        DocumentRegistryService(_FailingCommitRuntime(app.state.yarvis.persistence)).add(command, retry_metadata, p(oid))
+
+    with app.state.yarvis.persistence.create_session() as session:
+        document = session.get(Document, document_id)
+        prior = session.get(DocumentVersion, first.id)
+        assert document.current_version_id == first.id and document.version == 2
+        assert (prior.sequence, prior.checksum_value, prior.storage_key, prior.provenance, prior.created_at, prior.supersedes_version_id) == snapshot
+        assert session.scalar(select(func.count()).select_from(DocumentVersion).where(DocumentVersion.document_id == document_id)) == 1
+        assert session.scalar(select(func.count()).select_from(DomainEvent).where(DomainEvent.aggregate_id == document_id, DomainEvent.event_type == "document.version_added")) == 1
+        assert session.scalar(select(func.count()).select_from(DocumentCommandIdempotency).where(DocumentCommandIdempotency.idempotency_key == "rollback-second")) == 0
+
+    second = service.add(command, retry_metadata, p(oid))
+    replay = service.add(command, retry_metadata, p(oid))
+    assert replay.id == second.id
+    with app.state.yarvis.persistence.create_session() as session:
+        document = session.get(Document, document_id)
+        assert second.sequence == 2 and second.supersedes_version_id == first.id
+        assert document.current_version_id == second.id and document.version == 3
+        assert session.scalar(select(func.count()).select_from(DocumentVersion).where(DocumentVersion.document_id == document_id)) == 2
+        assert session.scalar(select(func.count()).select_from(DomainEvent).where(DomainEvent.aggregate_id == document_id, DomainEvent.event_type == "document.version_added")) == 2
+        assert session.scalar(select(func.count()).select_from(DocumentCommandIdempotency).where(DocumentCommandIdempotency.idempotency_key == "rollback-second")) == 1
+
+
+def test_matching_concurrent_add_version_replays_winning_receipt(test_database):
+    from yarvis_api.main import app
+
+    oid, document_id = uuid4(), uuid4()
+    with app.state.yarvis.persistence.create_session() as session:
+        session.add(Organization(id=oid, legal_name="DI version matching race", display_name="DI version matching race")); session.flush()
+        session.add(Document(id=document_id, organization_id=oid, title="Document", classification="general", visibility="organization", created_by_subject_id="test")); session.commit()
+    service = DocumentRegistryService(app.state.yarvis.persistence)
+    prior = service.add(c(document_id), m("matching-race-first"), p(oid))
+    command = c(document_id, "b" * 64)
+    request = RequestMetadata(datetime.now(timezone.utc), str(uuid4()), command_id=str(uuid4()), idempotency_key="matching-race-second", expected_aggregate_version=2)
+    barrier = Barrier(2)
+
+    def invoke():
+        barrier.wait()
+        return DocumentRegistryService(app.state.yarvis.persistence).add(command, request, p(oid))
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        first, second = list(pool.map(lambda _: invoke(), range(2)))
+
+    assert first.id == second.id
+    assert service.add(command, request, p(oid)).id == first.id
+    with app.state.yarvis.persistence.create_session() as session:
+        document = session.get(Document, document_id)
+        previous = session.get(DocumentVersion, prior.id)
+        versions = session.scalars(select(DocumentVersion).where(DocumentVersion.document_id == document_id).order_by(DocumentVersion.sequence)).all()
+        assert [version.sequence for version in versions] == [1, 2]
+        assert first.sequence == 2 and first.supersedes_version_id == prior.id
+        assert document.current_version_id == first.id and document.version == 3
+        assert previous.checksum_value == "a" * 64 and previous.supersedes_version_id is None
+        assert session.scalar(select(func.count()).select_from(DomainEvent).where(DomainEvent.aggregate_id == document_id, DomainEvent.event_type == "document.version_added")) == 2
+        assert session.scalar(select(func.count()).select_from(DocumentCommandIdempotency).where(DocumentCommandIdempotency.contract_id == "IC-DOCUMENT-CMD-003", DocumentCommandIdempotency.idempotency_key == "matching-race-second")) == 1
+
+
+def test_mismatched_concurrent_add_version_conflicts_with_winning_receipt(test_database):
+    from yarvis_api.main import app
+
+    oid, document_id = uuid4(), uuid4()
+    with app.state.yarvis.persistence.create_session() as session:
+        session.add(Organization(id=oid, legal_name="DI version mismatch race", display_name="DI version mismatch race")); session.flush()
+        session.add(Document(id=document_id, organization_id=oid, title="Document", classification="general", visibility="organization", created_by_subject_id="test")); session.commit()
+    service = DocumentRegistryService(app.state.yarvis.persistence)
+    prior = service.add(c(document_id), m("mismatch-race-first"), p(oid))
+    key = "mismatch-race-second"
+    request = RequestMetadata(datetime.now(timezone.utc), str(uuid4()), command_id=str(uuid4()), idempotency_key=key, expected_aggregate_version=2)
+    commands = (c(document_id, "b" * 64), c(document_id, "c" * 64))
+    barrier = Barrier(2)
+
+    def invoke(command):
+        barrier.wait()
+        try:
+            return "success", command, DocumentRegistryService(app.state.yarvis.persistence).add(command, request, p(oid))
+        except ApplicationError as error:
+            return "conflict", command, error
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(invoke, commands))
+
+    assert sorted(outcome[0] for outcome in outcomes) == ["conflict", "success"]
+    winner = next(outcome for outcome in outcomes if outcome[0] == "success")
+    loser = next(outcome for outcome in outcomes if outcome[0] == "conflict")
+    assert loser[2].code == ApplicationErrorCode.CONFLICT
+    assert service.add(winner[1], request, p(oid)).id == winner[2].id
+    with pytest.raises(ApplicationError) as error:
+        service.add(loser[1], request, p(oid))
+    assert error.value.code == ApplicationErrorCode.CONFLICT
+
+    expected_fingerprint = sha256(dumps({"contract_id": "IC-DOCUMENT-CMD-003", "organization_id": str(oid), "document_id": str(document_id), "expected_version": 2, "payload": asdict(winner[1])}, sort_keys=True, default=str, separators=(",", ":")).encode()).hexdigest()
+    with app.state.yarvis.persistence.create_session() as session:
+        receipt = session.scalar(select(DocumentCommandIdempotency).where(DocumentCommandIdempotency.organization_id == oid, DocumentCommandIdempotency.contract_id == "IC-DOCUMENT-CMD-003", DocumentCommandIdempotency.idempotency_key == key))
+        document = session.get(Document, document_id)
+        versions = session.scalars(select(DocumentVersion).where(DocumentVersion.document_id == document_id).order_by(DocumentVersion.sequence)).all()
+        assert receipt.request_fingerprint == expected_fingerprint and receipt.aggregate_id == winner[2].id
+        assert [version.sequence for version in versions] == [1, 2]
+        assert winner[2].sequence == 2 and winner[2].supersedes_version_id == prior.id
+        assert document.current_version_id == winner[2].id and document.version == 3
+        assert session.get(DocumentVersion, prior.id).checksum_value == "a" * 64
+        assert session.scalar(select(func.count()).select_from(DomainEvent).where(DomainEvent.aggregate_id == document_id, DomainEvent.event_type == "document.version_added")) == 2
+
+
+def test_different_key_concurrent_add_version_conflicts_when_stale(test_database):
+    from yarvis_api.main import app
+
+    oid, document_id = uuid4(), uuid4()
+    with app.state.yarvis.persistence.create_session() as session:
+        session.add(Organization(id=oid, legal_name="DI version stale race", display_name="DI version stale race")); session.flush()
+        session.add(Document(id=document_id, organization_id=oid, title="Document", classification="general", visibility="organization", created_by_subject_id="test")); session.commit()
+    service = DocumentRegistryService(app.state.yarvis.persistence)
+    prior = service.add(c(document_id), m("stale-race-first"), p(oid))
+    commands = (c(document_id, "b" * 64), c(document_id, "c" * 64))
+    metadata = (
+        RequestMetadata(datetime.now(timezone.utc), str(uuid4()), command_id=str(uuid4()), idempotency_key="stale-race-one", expected_aggregate_version=2),
+        RequestMetadata(datetime.now(timezone.utc), str(uuid4()), command_id=str(uuid4()), idempotency_key="stale-race-two", expected_aggregate_version=2),
+    )
+    barrier = Barrier(2)
+
+    def invoke(index):
+        barrier.wait()
+        try:
+            return "success", index, DocumentRegistryService(app.state.yarvis.persistence).add(commands[index], metadata[index], p(oid))
+        except ApplicationError as error:
+            return "conflict", index, error
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(invoke, range(2)))
+
+    assert sorted(outcome[0] for outcome in outcomes) == ["conflict", "success"]
+    winner = next(outcome for outcome in outcomes if outcome[0] == "success")
+    loser = next(outcome for outcome in outcomes if outcome[0] == "conflict")
+    assert loser[2].code == ApplicationErrorCode.CONFLICT
+    assert service.add(commands[winner[1]], metadata[winner[1]], p(oid)).id == winner[2].id
+    with pytest.raises(ApplicationError) as error:
+        service.add(commands[loser[1]], metadata[loser[1]], p(oid))
+    assert error.value.code == ApplicationErrorCode.CONFLICT
+
+    with app.state.yarvis.persistence.create_session() as session:
+        document = session.get(Document, document_id)
+        versions = session.scalars(select(DocumentVersion).where(DocumentVersion.document_id == document_id).order_by(DocumentVersion.sequence)).all()
+        assert [version.sequence for version in versions] == [1, 2]
+        assert winner[2].sequence == 2 and winner[2].supersedes_version_id == prior.id
+        assert document.current_version_id == winner[2].id and document.version == 3
+        assert session.get(DocumentVersion, prior.id).checksum_value == "a" * 64
+        assert session.scalar(select(func.count()).select_from(DomainEvent).where(DomainEvent.aggregate_id == document_id, DomainEvent.event_type == "document.version_added")) == 2
+        assert session.scalar(select(func.count()).select_from(DocumentCommandIdempotency).where(DocumentCommandIdempotency.idempotency_key == metadata[winner[1]].idempotency_key)) == 1
+        assert session.scalar(select(func.count()).select_from(DocumentCommandIdempotency).where(DocumentCommandIdempotency.idempotency_key == metadata[loser[1]].idempotency_key)) == 0
+
+    fresh_metadata = RequestMetadata(datetime.now(timezone.utc), str(uuid4()), command_id=str(uuid4()), idempotency_key="stale-race-fresh", expected_aggregate_version=3)
+    recovered = service.add(commands[loser[1]], fresh_metadata, p(oid))
+    with app.state.yarvis.persistence.create_session() as session:
+        document = session.get(Document, document_id)
+        assert recovered.sequence == 3 and recovered.supersedes_version_id == winner[2].id
+        assert document.current_version_id == recovered.id and document.version == 4

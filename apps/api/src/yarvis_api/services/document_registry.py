@@ -99,6 +99,30 @@ class DocumentRegistryService:
 
             d = self._doc(s, c.document_id, org, True)
 
+            receipt = self._receipt(
+                s,
+                org,
+                contract.interaction_contract_id,
+                k,
+            )
+
+            if receipt:
+                if receipt.request_fingerprint != f:
+                    raise err(
+                        ApplicationErrorCode.CONFLICT,
+                        "idempotency key was previously used for a different document command",
+                    )
+
+                version = s.get(DocumentVersion, receipt.aggregate_id)
+
+                if version is None:
+                    raise err(
+                        ApplicationErrorCode.CONFLICT,
+                        "idempotency receipt result unavailable",
+                    )
+
+                return version_read(version)
+
             if d.lifecycle_status != "active":
                 raise err(
                     ApplicationErrorCode.CONFLICT,
