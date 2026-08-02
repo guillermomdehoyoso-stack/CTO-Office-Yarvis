@@ -33,6 +33,7 @@ from yarvis_api.services.operational_economics import OperationalEconomicsQueryS
 from yarvis_api.services.operational_workspace import OperationalWorkspaceQueryService
 from yarvis_api.services.operational_workspace_overview import OperationalWorkspaceOverviewQueryService
 from yarvis_api.services.operational_task import OperationalTaskQueryService, OperationalTaskService, TaskMissionWorkTimelineProjector
+from yarvis_api.services.document_registry import DocumentRegistryQueryService, DocumentRegistryService
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
 
@@ -76,6 +77,8 @@ class ApplicationState:
     operational_task_service: OperationalTaskService
     operational_task_query_service: OperationalTaskQueryService
     task_mission_work_timeline_projector: TaskMissionWorkTimelineProjector
+    document_registry_service: DocumentRegistryService
+    document_registry_query_service: DocumentRegistryQueryService
     persistence: PersistenceRuntime
     persistence_owner_token: object
     lifecycle_active: bool = False
@@ -133,6 +136,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         people,
         process,
         process_runtime,
+        document_registry,
         recovery_queue,
         workspace_api,
     )
@@ -153,6 +157,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     app.include_router(mission_work.router)
     app.include_router(process.router)
     app.include_router(process_runtime.router)
+    app.include_router(document_registry.router)
     app.include_router(netpay.router)
     app.include_router(observations.router)
     app.include_router(operational_policies.router)
@@ -215,6 +220,8 @@ def create_app(
     task_mission_work_timeline_projector = TaskMissionWorkTimelineProjector(persistence_runtime)
     operational_task_service = OperationalTaskService(persistence_runtime, task_mission_work_timeline_projector)
     operational_task_query_service = OperationalTaskQueryService()
+    document_registry_service = DocumentRegistryService(persistence_runtime)
+    document_registry_query_service = DocumentRegistryQueryService()
     workspace_platform = WorkspacePlatform(workspace_root)
     persistence_owner_token = object()
     persistence_runtime.transfer_ownership(persistence_owner_token)
@@ -259,6 +266,8 @@ def create_app(
         operational_task_service=operational_task_service,
         operational_task_query_service=operational_task_query_service,
         task_mission_work_timeline_projector=task_mission_work_timeline_projector,
+        document_registry_service=document_registry_service,
+        document_registry_query_service=document_registry_query_service,
         persistence=persistence_runtime,
         persistence_owner_token=persistence_owner_token,
     )

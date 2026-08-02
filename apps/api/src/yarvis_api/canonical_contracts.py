@@ -537,6 +537,13 @@ CANONICAL_CONTRACTS: tuple[ContractDefinition, ...] = (
     ),
 )
 
+CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(interaction_contract_id=contract_id, version="1.0.0", contract_type=contract_type, owner_module_id="document_registry", owning_context="Document Registry", owning_capability=capability, name=name, semantic_purpose=purpose, lifecycle=ContractLifecycle.RATIFIED, operational_status=ContractOperationalStatus.VERIFIED, criticality=ContractCriticality.CORE, primary_consumer_or_use_case="Document Registry")
+    for contract_id, contract_type, capability, name, purpose in (
+        ("IC-DOCUMENT-CMD-001", ContractType.COMMAND, "document creation", "CreateDocument", "Create a governed Document"), ("IC-DOCUMENT-CMD-002", ContractType.COMMAND, "metadata update", "UpdateDocumentMetadata", "Update governed Document metadata"), ("IC-DOCUMENT-CMD-003", ContractType.COMMAND, "version creation", "AddDocumentVersion", "Append immutable Document Version metadata"), ("IC-DOCUMENT-CMD-004", ContractType.COMMAND, "document archival", "ArchiveDocument", "Archive a governed Document"), ("IC-DOCUMENT-CMD-005", ContractType.COMMAND, "association link", "LinkDocumentAssociation", "Link a governed Document association"), ("IC-DOCUMENT-CMD-006", ContractType.COMMAND, "association unlink", "UnlinkDocumentAssociation", "Historically unlink a Document association"), ("IC-DOCUMENT-QRY-001", ContractType.QUERY, "document retrieval", "GetDocument", "Retrieve a tenant-safe Document"), ("IC-DOCUMENT-QRY-002", ContractType.QUERY, "version retrieval", "GetDocumentVersions", "Retrieve immutable Document Versions"), ("IC-DOCUMENT-QRY-003", ContractType.QUERY, "association retrieval", "GetDocumentAssociations", "Retrieve active Document associations"), ("IC-DOCUMENT-QRY-004", ContractType.QUERY, "subject retrieval", "GetDocumentsBySubject", "Retrieve Documents actively associated with a subject"),
+    )
+)
+
 
 def canonical_contracts() -> tuple[ContractDefinition, ...]:
     """Return the immutable, explicit canonical Tier 1 contract baseline."""

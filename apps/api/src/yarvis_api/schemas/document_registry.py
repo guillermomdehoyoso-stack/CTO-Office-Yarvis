@@ -8,7 +8,7 @@ class DocumentCreateRequest(VersionInput):
 class DocumentUpdateRequest(BaseModel):
  model_config=ConfigDict(extra="forbid"); title:str=Field(min_length=1,max_length=255); classification:str; visibility:str; expected_version:int=Field(ge=1); idempotency_key:str=Field(min_length=1); correlation_id:UUID; causation_id:UUID|None=None
 class DocumentVersionRequest(VersionInput):
- idempotency_key:str=Field(min_length=1); correlation_id:UUID; causation_id:UUID|None=None
+ idempotency_key:str=Field(min_length=1); correlation_id:UUID; causation_id:UUID|None=None; expected_version:int|None=Field(default=None,ge=1)
 class AssociationRequest(BaseModel):
  model_config=ConfigDict(extra="forbid"); subject_type:str; subject_id:UUID; idempotency_key:str=Field(min_length=1); correlation_id:UUID; causation_id:UUID|None=None
 class DocumentRead(BaseModel):
@@ -18,3 +18,7 @@ class DocumentVersionRead(BaseModel):
 class DocumentAssociationRead(BaseModel):
  model_config=ConfigDict(from_attributes=True); id:UUID; document_id:UUID; subject_type:str; subject_id:UUID; linked_at:datetime; unlinked_at:datetime|None; unlinked_by_subject_id:str|None
 class DocumentPage(BaseModel): items:list[DocumentRead]; total:int; limit:int; offset:int
+class DocumentArchiveRequest(BaseModel):
+ model_config=ConfigDict(extra="forbid"); idempotency_key:str=Field(min_length=1); correlation_id:UUID; causation_id:UUID|None=None; expected_version:int|None=Field(default=None,ge=1)
+class DocumentUnlinkRequest(BaseModel):
+ model_config=ConfigDict(extra="forbid"); idempotency_key:str=Field(min_length=1); correlation_id:UUID; causation_id:UUID|None=None

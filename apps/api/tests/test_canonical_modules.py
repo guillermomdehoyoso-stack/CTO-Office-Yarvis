@@ -11,6 +11,8 @@ CANONICAL_MODULE_IDS = (
     "knowledge",
     "decision_intelligence",
     "execution",
+    "operational_execution",
+    "document_registry",
     "automation",
     "mission_control",
     "netpay_merchant_operations",
