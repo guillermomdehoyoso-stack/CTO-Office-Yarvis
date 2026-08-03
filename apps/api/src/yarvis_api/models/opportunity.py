@@ -57,3 +57,27 @@ class OpportunityCommandIdempotency(Base):
     response_kind: Mapped[str] = mapped_column(String(32), nullable=False, default="opportunity")
     response_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+
+
+class OpportunityWorkspace(Base):
+    """Minimal persistent context owned by one confirmed Opportunity."""
+
+    __tablename__ = "opportunity_workspaces"
+    __table_args__ = (
+        UniqueConstraint("opportunity_id", name="uq_opportunity_workspaces_opportunity"),
+        ForeignKeyConstraint(("opportunity_id", "organization_id"), ("opportunities.id", "opportunities.organization_id"), name="fk_opportunity_workspaces_opportunity_organization"),
+        CheckConstraint("lifecycle_status IN ('pending','active','closed')", name="ck_opportunity_workspaces_lifecycle"),
+        CheckConstraint("aggregate_version > 0", name="ck_opportunity_workspaces_aggregate_version_positive"),
+        Index("ix_opportunity_workspaces_organization", "organization_id", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    opportunity_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    organization_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    lifecycle_status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    aggregate_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    template_id: Mapped[str | None] = mapped_column(String(64))
+    opportunity_type: Mapped[str | None] = mapped_column(String(32))
+    template_version: Mapped[int | None] = mapped_column(Integer)
+    template_display_name: Mapped[str | None] = mapped_column(String(255))

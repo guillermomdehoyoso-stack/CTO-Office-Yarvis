@@ -13,3 +13,9 @@ class ProposeOpportunityCommand:
 class ConfirmOpportunityCommand:
     opportunity_id: UUID
     expected_version: int
+
+@dataclass(frozen=True, slots=True)
+class AssignOpportunityTemplateCommand:
+    workspace_id: UUID
+    opportunity_type: str
+    expected_version: int

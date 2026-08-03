@@ -11,9 +11,9 @@ from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 from yarvis_api.application.metadata import RequestMetadata
 from yarvis_api.application.opportunity import ConfirmOpportunityCommand, ProposeOpportunityCommand
 from yarvis_api.models.domain_event import DomainEvent
-from yarvis_api.models.opportunity import Opportunity, OpportunityCommandIdempotency
+from yarvis_api.models.opportunity import Opportunity, OpportunityCommandIdempotency, OpportunityWorkspace
 from yarvis_api.models.organization import Organization
-from yarvis_api.services.opportunity import OpportunityQueryService, OpportunityService
+from yarvis_api.services.opportunity import OpportunityQueryService, OpportunityService, OpportunityWorkspaceQueryService
 
 
 class _FailingCommitRuntime:
@@ -92,7 +92,7 @@ def test_confirm_lifecycle_replay_stale_and_tenant_concealment(test_database):
     with pytest.raises(ApplicationError) as foreign:
         service.confirm(ConfirmOpportunityCommand(proposed.id, 1), _metadata("foreign", expected=1), _principal(foreign_organization_id, "opportunity.confirm"))
     assert foreign.value.code == ApplicationErrorCode.RESOURCE_NOT_FOUND
-    assert _counts(app.state.yarvis.persistence, organization_id) == (1, 2, 2)
+    assert _counts(app.state.yarvis.persistence, organization_id) == (1, 3, 2)
 
 
 def test_confirm_commit_failure_rolls_back_and_retry_succeeds(test_database):
@@ -107,6 +107,7 @@ def test_confirm_commit_failure_rolls_back_and_retry_succeeds(test_database):
     with app.state.yarvis.persistence.create_session() as session:
         opportunity = session.get(Opportunity, proposed.id)
         assert opportunity.lifecycle_status == "proposed" and opportunity.aggregate_version == 1 and opportunity.confirmed_at is None
+        assert session.scalar(select(func.count()).select_from(OpportunityWorkspace).where(OpportunityWorkspace.opportunity_id == proposed.id)) == 0
     assert _counts(app.state.yarvis.persistence, organization_id) == (1, 1, 1)
     assert stable.confirm(ConfirmOpportunityCommand(proposed.id, 1), metadata, _principal(organization_id, "opportunity.confirm")).lifecycle_status == "confirmed"
 
@@ -146,7 +147,9 @@ def test_concurrent_matching_and_mismatched_confirmation_are_deterministic(test_
     def matching():
         barrier.wait(); return OpportunityService(app.state.yarvis.persistence).confirm(ConfirmOpportunityCommand(proposed.id, 1), metadata, _principal(organization_id, "opportunity.confirm")).id
     with ThreadPoolExecutor(max_workers=2) as pool: assert len(set(pool.map(lambda _: matching(), range(2)))) == 1
-    assert _counts(app.state.yarvis.persistence, organization_id) == (1, 2, 2)
+    assert _counts(app.state.yarvis.persistence, organization_id) == (1, 3, 2)
+    with app.state.yarvis.persistence.create_session() as session:
+        assert session.scalar(select(func.count()).select_from(OpportunityWorkspace).where(OpportunityWorkspace.opportunity_id == proposed.id)) == 1
     second = service.propose(ProposeOpportunityCommand("Other"), _metadata("p2"), _principal(organization_id, "opportunity.propose"))
     barrier, metadata = Barrier(2), _metadata("mismatch", expected=1)
     def invoke(expected):
@@ -155,7 +158,7 @@ def test_concurrent_matching_and_mismatched_confirmation_are_deterministic(test_
         except ApplicationError as error: return "conflict", error.code
     with ThreadPoolExecutor(max_workers=2) as pool: outcomes = list(pool.map(invoke, (1, 2)))
     assert sorted(item[0] for item in outcomes) == ["conflict", "ok"]
-    assert _counts(app.state.yarvis.persistence, organization_id) == (2, 4, 4)
+    assert _counts(app.state.yarvis.persistence, organization_id) == (2, 6, 4)
 
 
 def test_concurrent_proposal_replay_and_conflict_are_deterministic(test_database):
@@ -186,3 +189,22 @@ def test_idempotency_keys_are_independent_per_organization(test_database):
     assert first.id != second.id
     assert _counts(app.state.yarvis.persistence, first_org) == (1, 1, 1)
     assert _counts(app.state.yarvis.persistence, second_org) == (1, 1, 1)
+
+
+def test_confirmation_creates_one_active_workspace_and_retrieval_is_tenant_safe(test_database):
+    from yarvis_api.main import app
+    organization_id = _organization(app.state.yarvis.persistence, "Workspace owner")
+    foreign_organization_id = _organization(app.state.yarvis.persistence, "Workspace foreign")
+    service = OpportunityService(app.state.yarvis.persistence)
+    opportunity = service.propose(ProposeOpportunityCommand("Workspace intent"), _metadata("workspace-propose"), _principal(organization_id, "opportunity.propose"))
+    service.confirm(ConfirmOpportunityCommand(opportunity.id, 1), _metadata("workspace-confirm", expected=1), _principal(organization_id, "opportunity.confirm"))
+    with app.state.yarvis.persistence.create_session() as session:
+        workspace = session.scalar(select(OpportunityWorkspace).where(OpportunityWorkspace.opportunity_id == opportunity.id))
+        assert workspace is not None and workspace.lifecycle_status == "active" and workspace.aggregate_version == 1
+        read = OpportunityWorkspaceQueryService().get(session, workspace.id, _principal(organization_id, "opportunity.read"), _metadata(None, query=True))
+        assert read.id == workspace.id and read.opportunity_id == opportunity.id
+        with pytest.raises(ApplicationError) as hidden:
+            OpportunityWorkspaceQueryService().get(session, workspace.id, _principal(foreign_organization_id, "opportunity.read"), _metadata(None, query=True))
+        assert hidden.value.code == ApplicationErrorCode.RESOURCE_NOT_FOUND
+        assert session.scalar(select(func.count()).select_from(OpportunityWorkspace).where(OpportunityWorkspace.opportunity_id == opportunity.id)) == 1
+        assert session.scalar(select(func.count()).select_from(DomainEvent).where(DomainEvent.organization_id == organization_id, DomainEvent.event_type == "workspace.created")) == 1
