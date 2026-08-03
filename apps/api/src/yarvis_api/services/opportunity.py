@@ -14,9 +14,9 @@ from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 from yarvis_api.application.service_boundary import enforce_command_boundary, enforce_query_boundary
 from yarvis_api.clock import utc_now
 from yarvis_api.models.domain_event import record_event
-from yarvis_api.models.opportunity import Opportunity, OpportunityCommandIdempotency, OpportunityWorkspace
+from yarvis_api.models.opportunity import Opportunity, OpportunityCommandIdempotency, OpportunityWorkspace, OpportunityDossier
 from yarvis_api.persistence import OperationScope, PersistenceRuntime, UnitOfWork
-from yarvis_api.schemas.opportunity import OpportunityRead, OpportunityWorkspaceRead, OpportunityTemplateRead
+from yarvis_api.schemas.opportunity import OpportunityRead, OpportunityWorkspaceRead, OpportunityTemplateRead, OpportunityDossierRead
 from yarvis_api.services.inbound_intake import _principal_organization_id
 
 
@@ -116,6 +116,7 @@ class OpportunityService:
             if workspace.lifecycle_status!="active" or workspace.aggregate_version!=command.expected_version: raise _error(ApplicationErrorCode.CONFLICT,"workspace version conflict")
             workspace.template_id,workspace.opportunity_type,workspace.template_version,workspace.template_display_name=template[0],command.opportunity_type,template[1],template[2];workspace.aggregate_version+=1
             for event in ("opportunity.specialized","template.assigned"): record_event(session,event_type=event,aggregate_type="opportunity_workspace",aggregate_id=workspace.id,organization_id=org,correlation_id=UUID(metadata.correlation_id),payload={"template_id":workspace.template_id,"opportunity_type":workspace.opportunity_type,"actor_subject_id":principal.actor_id})
+            self._create_dossier(session,workspace,metadata,principal)
             session.add(OpportunityCommandIdempotency(organization_id=org,contract_id=contract.interaction_contract_id,idempotency_key=key,request_fingerprint=fingerprint,aggregate_id=workspace.id,response_kind="opportunity_template",response_payload={"workspace_id":str(workspace.id)}))
             unit.commit(); return OpportunityTemplateRead(template_id=workspace.template_id,business_type=workspace.opportunity_type,version=workspace.template_version,display_name=workspace.template_display_name)
         except IntegrityError as exc:
@@ -173,6 +174,14 @@ class OpportunityService:
         record_event(session, event_type="workspace.created", aggregate_type="opportunity_workspace", aggregate_id=workspace.id, organization_id=workspace.organization_id, correlation_id=UUID(metadata.correlation_id), causation_id=UUID(metadata.causation_id) if metadata.causation_id else None, payload={"opportunity_id": str(opportunity.id), "actor_subject_id": principal.actor_id, "authority_scope": principal.authority, "contract_id": "IC-OPPORTUNITY-WORKSPACE-CMD-001"})
         return workspace
 
+    def _create_dossier(self,session,workspace,metadata,principal):
+        dossier=session.scalar(select(OpportunityDossier).where(OpportunityDossier.workspace_id==workspace.id))
+        if dossier is not None:return dossier
+        dossier=OpportunityDossier(organization_id=workspace.organization_id,opportunity_id=workspace.opportunity_id,workspace_id=workspace.id,template_id=workspace.template_id)
+        session.add(dossier);session.flush()
+        record_event(session,event_type="dossier.created",aggregate_type="opportunity_dossier",aggregate_id=dossier.id,organization_id=dossier.organization_id,correlation_id=UUID(metadata.correlation_id),causation_id=UUID(metadata.causation_id) if metadata.causation_id else None,payload={"workspace_id":str(workspace.id),"template_id":dossier.template_id,"actor_subject_id":principal.actor_id,"contract_id":"IC-OPPORTUNITY-DOSSIER-CMD-001"})
+        return dossier
+
 
 @dataclass(frozen=True, slots=True)
 class OpportunityQueryService:
@@ -195,3 +204,9 @@ class OpportunityWorkspaceQueryService:
         workspace=session.scalar(select(OpportunityWorkspace).where(OpportunityWorkspace.id==workspace_id,OpportunityWorkspace.organization_id==_principal_organization_id(principal)))
         if workspace is None or workspace.template_id is None: raise _error(ApplicationErrorCode.RESOURCE_NOT_FOUND,"opportunity template not found")
         return OpportunityTemplateRead(template_id=workspace.template_id,business_type=workspace.opportunity_type,version=workspace.template_version,display_name=workspace.template_display_name)
+
+    def dossier(self,session,dossier_id,principal,metadata)->OpportunityDossierRead:
+        enforce_query_boundary(query_contracts[DI003QueryName.GET_DOSSIER],metadata=metadata,principal=principal)
+        dossier=session.scalar(select(OpportunityDossier).where(OpportunityDossier.id==dossier_id,OpportunityDossier.organization_id==_principal_organization_id(principal)))
+        if dossier is None:raise _error(ApplicationErrorCode.RESOURCE_NOT_FOUND,"opportunity dossier not found")
+        return OpportunityDossierRead.model_validate(dossier)

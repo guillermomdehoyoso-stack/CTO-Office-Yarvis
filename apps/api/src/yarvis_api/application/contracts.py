@@ -135,9 +135,9 @@ class DI002QueryName(StrEnum):
     GET="retrieve_document"; VERSIONS="list_document_versions"; ASSOCIATIONS="list_document_associations"; BY_SUBJECT="list_documents_by_subject"
 
 class DI003CommandName(StrEnum):
-    PROPOSE="propose_opportunity"; CONFIRM="confirm_opportunity"; CREATE_WORKSPACE="create_opportunity_workspace"; ASSIGN_TEMPLATE="assign_opportunity_template"
+    PROPOSE="propose_opportunity"; CONFIRM="confirm_opportunity"; CREATE_WORKSPACE="create_opportunity_workspace"; ASSIGN_TEMPLATE="assign_opportunity_template"; CREATE_DOSSIER="create_opportunity_dossier"
 class DI003QueryName(StrEnum):
-    GET="get_opportunity"; GET_WORKSPACE="get_opportunity_workspace"; GET_TEMPLATE="get_opportunity_template"
+    GET="get_opportunity"; GET_WORKSPACE="get_opportunity_workspace"; GET_TEMPLATE="get_opportunity_template"; GET_DOSSIER="get_opportunity_dossier"
 
 
 class OV002QueryName(StrEnum):
@@ -344,6 +344,7 @@ for name,cid,cap,auth in ((DI002CommandName.CREATE,"IC-DOCUMENT-CMD-001","docume
 for name,cid,cap,auth in ((DI003CommandName.PROPOSE,"IC-OPPORTUNITY-CMD-001","opportunity_proposal","opportunity.propose"),(DI003CommandName.CONFIRM,"IC-OPPORTUNITY-CMD-002","opportunity_confirmation","opportunity.confirm")): command_contracts[name]=ApplicationContract(cid,"opportunity",cap,True,True,True,auth,True)
 command_contracts[DI003CommandName.CREATE_WORKSPACE]=ApplicationContract("IC-OPPORTUNITY-WORKSPACE-CMD-001","opportunity","workspace_genesis",True,True,True,"opportunity.confirm")
 command_contracts[DI003CommandName.ASSIGN_TEMPLATE]=ApplicationContract("IC-OPPORTUNITY-TEMPLATE-CMD-001","opportunity","specialization",True,True,True,"opportunity.specialize",True)
+command_contracts[DI003CommandName.CREATE_DOSSIER]=ApplicationContract("IC-OPPORTUNITY-DOSSIER-CMD-001","opportunity","dossier_bootstrap",True,True,True,"opportunity.specialize")
 
 
 query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName | WS008QueryName | OV002QueryName, ApplicationContract] = {
@@ -451,6 +452,7 @@ for name,cid,cap in ((DI002QueryName.GET,"IC-DOCUMENT-QRY-001","document"),(DI00
 query_contracts[DI003QueryName.GET]=ApplicationContract("IC-OPPORTUNITY-QRY-001","opportunity","opportunity",False,True,True,"opportunity.read")
 query_contracts[DI003QueryName.GET_WORKSPACE]=ApplicationContract("IC-OPPORTUNITY-WORKSPACE-QRY-001","opportunity","workspace",False,True,True,"opportunity.read")
 query_contracts[DI003QueryName.GET_TEMPLATE]=ApplicationContract("IC-OPPORTUNITY-TEMPLATE-QRY-001","opportunity","specialization",False,True,True,"opportunity.read")
+query_contracts[DI003QueryName.GET_DOSSIER]=ApplicationContract("IC-OPPORTUNITY-DOSSIER-QRY-001","opportunity","dossier",False,True,True,"opportunity.read")
 
 for name, contract_id, capability in (
     (OV002QueryName.RETRIEVE_OPERATIONAL_ECONOMICS, "IC-ECONOMICS-QRY-001", "economic_summary"),

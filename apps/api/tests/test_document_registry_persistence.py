@@ -196,7 +196,7 @@ def test_document_registry_schema_and_migration_round_trip(test_database) -> Non
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260802_26"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260802_27"
             assert {"documents", "document_versions", "document_associations"}.issubset(inspector.get_table_names())
             assert {column["name"]: column["nullable"] for column in inspector.get_columns("documents")}["current_version_id"]
             assert {"fk_documents_organization", "fk_documents_current_version_document_organization"}.issubset({item["name"] for item in inspector.get_foreign_keys("documents")})
@@ -214,7 +214,7 @@ def test_document_registry_schema_and_migration_round_trip(test_database) -> Non
             assert not {"documents", "document_versions", "document_associations"}.intersection(inspect(connection).get_table_names())
         command.upgrade(config, "head")
         with engine.connect() as connection:
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260802_26"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260802_27"
     finally:
         engine.dispose()
         with psycopg.connect(ADMIN_URL, autocommit=True) as connection:

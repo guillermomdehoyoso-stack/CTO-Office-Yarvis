@@ -33,3 +33,7 @@ class OpportunityTemplateRead(BaseModel):
     business_type: str
     version: int
     display_name: str
+
+class OpportunityDossierRead(BaseModel):
+    model_config=ConfigDict(from_attributes=True)
+    id: UUID; organization_id: UUID; opportunity_id: UUID; workspace_id: UUID; template_id: str; lifecycle_status: str; aggregate_version: int; created_at: datetime

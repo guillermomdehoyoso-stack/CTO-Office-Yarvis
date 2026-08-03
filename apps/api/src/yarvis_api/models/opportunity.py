@@ -81,3 +81,21 @@ class OpportunityWorkspace(Base):
     opportunity_type: Mapped[str | None] = mapped_column(String(32))
     template_version: Mapped[int | None] = mapped_column(Integer)
     template_display_name: Mapped[str | None] = mapped_column(String(255))
+
+class OpportunityDossier(Base):
+    __tablename__="opportunity_dossiers"
+    __table_args__=(
+        UniqueConstraint("workspace_id",name="uq_opportunity_dossiers_workspace"),
+        ForeignKeyConstraint(("workspace_id",),("opportunity_workspaces.id",),name="fk_opportunity_dossiers_workspace"),
+        ForeignKeyConstraint(("opportunity_id","organization_id"),("opportunities.id","opportunities.organization_id"),name="fk_opportunity_dossiers_opportunity_organization"),
+        CheckConstraint("lifecycle_status IN ('pending','active','closed')",name="ck_opportunity_dossiers_lifecycle"),
+        CheckConstraint("aggregate_version > 0",name="ck_opportunity_dossiers_aggregate_version_positive"),
+    )
+    id: Mapped[UUID]=mapped_column(PG_UUID(as_uuid=True),primary_key=True,default=uuid4)
+    organization_id: Mapped[UUID]=mapped_column(PG_UUID(as_uuid=True),nullable=False)
+    opportunity_id: Mapped[UUID]=mapped_column(PG_UUID(as_uuid=True),nullable=False)
+    workspace_id: Mapped[UUID]=mapped_column(PG_UUID(as_uuid=True),nullable=False)
+    template_id: Mapped[str]=mapped_column(String(64),nullable=False)
+    lifecycle_status: Mapped[str]=mapped_column(String(16),nullable=False,default="active")
+    aggregate_version: Mapped[int]=mapped_column(Integer,nullable=False,default=1)
+    created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False,default=utc_now)
