@@ -99,3 +99,29 @@ class OpportunityDossier(Base):
     lifecycle_status: Mapped[str]=mapped_column(String(16),nullable=False,default="active")
     aggregate_version: Mapped[int]=mapped_column(Integer,nullable=False,default=1)
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),nullable=False,default=utc_now)
+
+
+class DossierTemplateVersion(Base):
+    """One immutable, published business-process blueprint version."""
+
+    __tablename__ = "dossier_template_versions"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "stable_key", "business_version", name="uq_dossier_template_versions_business_identity"),
+        ForeignKeyConstraint(("organization_id",), ("organizations.id",), name="fk_dossier_template_versions_organization"),
+        CheckConstraint("status IN ('published','retired')", name="ck_dossier_template_versions_status"),
+        CheckConstraint("business_version > 0", name="ck_dossier_template_versions_business_version_positive"),
+        CheckConstraint("aggregate_version > 0", name="ck_dossier_template_versions_aggregate_version_positive"),
+        CheckConstraint("(status = 'published' AND retired_at IS NULL) OR (status = 'retired' AND retired_at IS NOT NULL)", name="ck_dossier_template_versions_retirement_state"),
+        Index("ix_dossier_template_versions_published_lookup", "organization_id", "stable_key", "business_version"),
+    )
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    stable_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    business_type: Mapped[str] = mapped_column(String(128), nullable=False)
+    business_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="published")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    aggregate_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)

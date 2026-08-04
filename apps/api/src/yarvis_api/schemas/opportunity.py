@@ -37,3 +37,18 @@ class OpportunityTemplateRead(BaseModel):
 class OpportunityDossierRead(BaseModel):
     model_config=ConfigDict(from_attributes=True)
     id: UUID; organization_id: UUID; opportunity_id: UUID; workspace_id: UUID; template_id: str; lifecycle_status: str; aggregate_version: int; created_at: datetime
+
+
+class DossierTemplateVersionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    organization_id: UUID
+    stable_key: str
+    business_type: str
+    business_version: int
+    display_name: str
+    status: str
+    created_at: datetime
+    published_at: datetime
+    retired_at: datetime | None
+    aggregate_version: int

@@ -19,3 +19,17 @@ class AssignOpportunityTemplateCommand:
     workspace_id: UUID
     opportunity_type: str
     expected_version: int
+
+
+@dataclass(frozen=True, slots=True)
+class PublishDossierTemplateVersionCommand:
+    stable_key: str
+    business_type: str
+    business_version: int
+    display_name: str
+
+
+@dataclass(frozen=True, slots=True)
+class RetireDossierTemplateVersionCommand:
+    template_id: UUID
+    expected_version: int
