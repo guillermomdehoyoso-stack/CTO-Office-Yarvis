@@ -136,3 +136,31 @@ readiness for the minimum documentary baseline.
 **Implementation status:** No code, tests, migrations, configuration, architecture, roadmap ordering, or dependency graph were modified.
 
 **Next action:** Prepare and execute the WS-000 bootstrap implementation prompt.
+
+## 2026-08-04 - Amendment 003 Dependency-Path Ratification
+
+**Objective:** Complete the focused engineering review and formal ratification
+of the minimum correction required by the Amendment 002 review.
+
+**Documents created:**
+`docs/engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_003_REVIEW.md`.
+
+**Documents modified:**
+`docs/engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_003.md`,
+`docs/development/CURRENT_STATE.md`, `docs/development/CURRENT_SPRINT.md`,
+`docs/development/DECISION_REGISTER.md`, `docs/engineering/C06_REQUIREMENT_DEFINITION_CLOSURE.md`,
+and this log.
+
+**Engineering decision:** Amendment 003 is ratified only for the mandatory
+Foundation completion path `F-012 -> F-013 -> F-011 -> F-016 -> F-017 -> F-010
+-> F-014 -> F-015`. The review recorded no BLOCKER, MAJOR, or MINOR finding.
+The ratification does not authorize implementation and does not ratify broader
+still-proposed Amendment 001 or Amendment 002 content.
+
+**Implementation status:** No production code, tests, migrations, contracts,
+architecture, or feature work was modified. C06 remains closed at
+`0fc8d615c85f42645ea61a85881309c9311fb3e1`; C07-C09 remain deferred.
+
+**Next action:** Resolve and validate FOUNDATION-DEBT-001, then obtain an
+independent implementation authorization before F-016 or any successor feature
+may begin.

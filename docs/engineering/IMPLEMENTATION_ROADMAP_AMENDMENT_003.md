@@ -3,10 +3,10 @@
 
 ## Status
 
-**Proposed for Engineering Review**
+**RATIFIED**
 
-This amendment is not ratified. It is an append-only corrective amendment that
-supplements `IMPLEMENTATION_ROADMAP_AMENDMENT_001.md` and
+This is a ratified append-only corrective amendment that supplements
+`IMPLEMENTATION_ROADMAP_AMENDMENT_001.md` and
 `IMPLEMENTATION_ROADMAP_AMENDMENT_002.md` only within the scope stated here.
 It does not replace any higher-authority artifact and introduces no
 implementation authority.
@@ -47,14 +47,15 @@ must not weaken this completion dependency path.
 
 ## 3. Interpretation of Amendments 001-003
 
-Until roadmap ratification and consolidation:
+For roadmap interpretation pending a consolidated roadmap baseline:
 
 - Amendment 001 provides the original post-F-009 planning correction and
   Foundation sequencing intent.
-- Amendment 002 provides accepted corrective clarifications for dependencies,
-  observability exit criteria, domain-extension controls, and consolidation
-  governance.
-- Amendment 003 corrects only the remaining F-016 completion-path defect
+- Amendment 002 provides the reviewed corrective clarifications for
+  dependencies, observability exit criteria, domain-extension controls, and
+  consolidation governance that this narrow correction preserves. Amendment 003
+  does not itself ratify any broader still-proposed statement in Amendment 002.
+- Amendment 003 ratifies only the remaining F-016 completion-path correction
   identified by the Amendment 002 review.
 
 These amendments are interpreted together as append-only planning lineage.
@@ -63,12 +64,15 @@ defect it corrects; unchanged statements remain in force.
 
 ## 4. Authority and Ratification Constraint
 
-Ratification remains pending an independent Engineering Review of this
-amendment. This document cannot ratify itself, cannot approve its own
-correction, and cannot authorize product implementation.
+Independent Engineering Review is recorded in
+`IMPLEMENTATION_ROADMAP_AMENDMENT_003_REVIEW.md`. Its approval and the formal
+ratification recorded here apply only to the dependency-path correction. This
+document cannot authorize product implementation.
 
-No roadmap baseline may be created from this amendment until review is complete
-with required findings disposition under the established ratification criteria.
+`FOUNDATION-DEBT-001` remains open and must be corrected and validated before
+F-016 Query Dispatch is authorized or started. Ratification does not create a
+roadmap baseline, authorize F-016, F-017, F-015, or any other feature, or alter
+the requirement for a separate implementation authorization.
 
 ## 5. Closing Statement
 

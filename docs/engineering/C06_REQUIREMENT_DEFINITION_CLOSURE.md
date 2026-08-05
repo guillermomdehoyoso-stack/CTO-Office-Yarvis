@@ -82,4 +82,11 @@ This debt does not block C06 closure and must not be resolved by reopening C06. 
 
 ## 8. Next Governance Decision
 
-No implementation successor is opened by this closure. The next decision is to reconcile the active engineering gate and, separately, obtain the required review and ratification evidence before authorizing any Foundation increment. `IMPLEMENTATION_ROADMAP_AMENDMENT_003.md` remains proposed and is not treated as implementation authority.
+No implementation successor is opened by this closure. The next decision is to
+reconcile the active engineering gate and, separately, obtain the required
+implementation authorization before authorizing any Foundation increment.
+
+Amendment 003 was subsequently ratified as a Foundation dependency-graph
+correction only. That later documentary action does not reopen C06, which
+remains closed at commit `0fc8d615c85f42645ea61a85881309c9311fb3e1`; it does
+not authorize F-016 or another successor capability.

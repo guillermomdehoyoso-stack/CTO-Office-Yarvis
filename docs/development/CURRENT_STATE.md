@@ -1,6 +1,6 @@
 # Current Engineering State
 
-**Last updated:** 2026-08-04 — C06 Requirement Definition Catalog closure
+**Last updated:** 2026-08-04 — Amendment 003 dependency-path ratification
 
 | Field | Current value |
 | --- | --- |
@@ -10,7 +10,7 @@
 | Current engineering gate | [IG-004](../engineering/IG-004_REQUIREMENT_DEFINITION_IMPLEMENTATION_AUTHORIZATION.md) C06 implementation and technical validation are complete; this closure records the evidence. |
 | Current work package | None. No successor implementation capability is authorized. |
 | Current blocker count | 0 C06 implementation blockers; 1 independent Foundation debt. |
-| Next mandatory action | Human governance decision on the next authorized package; do not infer authority from proposed roadmap amendments. |
+| Next mandatory action | Resolve FOUNDATION-DEBT-001 and obtain an independent implementation authorization for any successor package; do not infer authority from roadmap ratification. |
 | Current repository health | C06 is complete within its authorized scope. Global Contract Registry health is not declared while FOUNDATION-DEBT-001 remains open. |
 
 ## Current runtime evidence
@@ -32,4 +32,8 @@
 
 ## Next allowed action
 
-C07–C09 remain deferred and unauthorized. F-012, F-016, and every other feature remain closed until the applicable governance and implementation authorization are complete. `IMPLEMENTATION_ROADMAP_AMENDMENT_003.md` remains proposed; it does not authorize implementation.
+C07–C09 remain deferred and unauthorized. Amendment 003 is ratified solely as
+the Foundation completion-path correction; it does not authorize F-016, F-017,
+F-015, or another feature. F-016 remains ineligible for authorization or start
+until FOUNDATION-DEBT-001 is corrected and validated, followed by an
+independent implementation authorization.

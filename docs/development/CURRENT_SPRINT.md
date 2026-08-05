@@ -39,4 +39,8 @@ FOUNDATION-DEBT-001 remains open: the canonical Tier-1 contract test expects 37 
 
 ## Next package
 
-No implementation package is currently authorized. Do not treat the proposed `IMPLEMENTATION_ROADMAP_AMENDMENT_003.md` dependency correction as authorization. The next action is a governance decision that establishes the applicable gate before any successor implementation begins.
+No implementation package is currently authorized. Amendment 003 is ratified
+only as a dependency-graph correction; it does not authorize implementation.
+FOUNDATION-DEBT-001 must be corrected and validated before F-016 can be
+authorized or started, and every successor package requires an independent
+implementation authorization.
