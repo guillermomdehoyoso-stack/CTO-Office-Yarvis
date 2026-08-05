@@ -40,7 +40,10 @@ Operational status is Planned, Implemented, Verified, Production, Suspended,
 or Removed. Criticality is Critical, Core, Operational, or Informational.
 Lifecycle and operational status are independently represented.
 
-The Tier 1 baseline contains exactly 37 explicit definitions. Their catalog
+The Tier 1 baseline contains exactly 55 explicit definitions: 37 historic,
+7 Task, 10 Document Registry, and 1 Workspace definition. Its V1 composition
+is governed by the ratified
+`CONTRACT_REGISTRY_BASELINE_RECONCILIATION_AMENDMENT_001.md`. Their catalog
 text is preserved in `primary_consumer_or_use_case`; it is not parsed into
 authorization, consumer, or use-case semantics. Steward assignment and
 detailed traceability remain optional future governance enrichment.
@@ -54,7 +57,7 @@ dynamic discovery, import-time registration, or service-locator behavior.
 `create_app(settings=None, modules=None, contracts=None)` composes settings,
 Module Registry, Contract Registry, application state, and routes in that
 order. `modules=None` uses the canonical ten modules; `contracts=None` uses the
-canonical 37 Tier 1 contracts. Explicit iterables replace their respective
+canonical 55 Tier 1 contracts. Explicit iterables replace their respective
 baselines for one application, and explicit empty iterables create sealed empty
 registries. Registries are isolated per application and reject mutation after
 sealing.

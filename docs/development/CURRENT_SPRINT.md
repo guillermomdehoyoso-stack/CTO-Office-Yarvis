@@ -33,14 +33,16 @@ C06B2A, C06B2B-1, and C06B2B-2 are complete. C06 implementation and technical va
 
 C07 Requirement Instance Bootstrap, C08 Requirement Dependency Readiness, C09 Artifact/Document Association Intake, Milestones, Evidence, Commercial behavior, Proposal generation, AI, OCR, integrations, listing/search, update/delete/purge, and Dossier rebinding remain unauthorized.
 
-## Independent debt
+## Resolved Foundation debt
 
-FOUNDATION-DEBT-001 remains open: the canonical Tier-1 contract test expects 37 contracts while the current projection returns 55, including prior Document Registry work. It is owned by the Engineering Foundation steward for F-006/F-013, is not a C06 regression, and does not block this closure. It must be corrected and validated before F-016 is authorized or started.
+FOUNDATION-DEBT-001 is closed by the accepted F-006/F-013 reconciliation. The
+canonical projection and conformance test now validate the ratified 55-member
+Runtime Baseline V1. This was not a C06 regression. See the [Foundation Debt
+001 Closure](../engineering/FOUNDATION_DEBT_001_CLOSURE.md).
 
 ## Next package
 
 No implementation package is currently authorized. Amendment 003 is ratified
 only as a dependency-graph correction; it does not authorize implementation.
-FOUNDATION-DEBT-001 must be corrected and validated before F-016 can be
-authorized or started, and every successor package requires an independent
-implementation authorization.
+F-016 may be considered only through an independent implementation
+authorization, and every successor package requires its own authorization.

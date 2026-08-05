@@ -87,6 +87,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | ID | Type | Owner / capability | Name and semantic purpose | Criticality | Primary consumer/use case |
 | --- | --- | --- | --- | --- | --- |
 | IC-TASK-CMD-001â€“007 | CMD | Operational Execution / Task lifecycle | Create, plan, assign, transition, complete, cancel, and manage direct Task dependencies | Co | governed Mission Work commitments |
+| IC-WORKSPACE-QRY-001 | QRY | Mission Control / operational workspace overview | RetrieveOperationalWorkspaceOverview: retrieve tenant-safe operational workspace composition | Co | Operational Workspace |
 | IC-IDENTITY-CMD-001 | CMD | Identity / resolution | ResolveSubjectCandidate: resolve or propose canonical Party/PartyGroup reference | C | intake association |
 | IC-IDENTITY-QRY-001 | QRY | Identity / canonical reference | RetrieveCanonicalIdentity | C | all Tier 1 association |
 | IC-IDENTITY-EVT-001 | EVT | Identity / resolution | IdentityResolutionRecorded | C | O&E, Netpay, MC |
@@ -188,7 +189,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 totals:** 88 contracts — 35 Commands, 25 Queries, 26 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
+**Tier 1 totals:** 116 contracts — 51 Commands, 33 Queries, 30 Events, and 2 Notifications. Each has an owner, capability, consumer/use case, steward, traceability requirement, and planned conformance obligations.
 
 ### 7.1 Verified WS-001 Inbox Binding
 

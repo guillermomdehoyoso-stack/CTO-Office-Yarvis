@@ -1,6 +1,6 @@
 # Current Engineering State
 
-**Last updated:** 2026-08-04 — Amendment 003 dependency-path ratification
+**Last updated:** 2026-08-05 — FOUNDATION-DEBT-001 closure
 
 | Field | Current value |
 | --- | --- |
@@ -9,9 +9,9 @@
 | Current sprint | DI-003 C06 — Requirement Definition Catalog (completed). |
 | Current engineering gate | [IG-004](../engineering/IG-004_REQUIREMENT_DEFINITION_IMPLEMENTATION_AUTHORIZATION.md) C06 implementation and technical validation are complete; this closure records the evidence. |
 | Current work package | None. No successor implementation capability is authorized. |
-| Current blocker count | 0 C06 implementation blockers; 1 independent Foundation debt. |
-| Next mandatory action | Resolve FOUNDATION-DEBT-001 and obtain an independent implementation authorization for any successor package; do not infer authority from roadmap ratification. |
-| Current repository health | C06 is complete within its authorized scope. Global Contract Registry health is not declared while FOUNDATION-DEBT-001 remains open. |
+| Current blocker count | 0 known blockers. |
+| Next mandatory action | Obtain an independent implementation authorization before any successor package; do not infer authority from roadmap ratification. |
+| Current repository health | C06 is complete within its authorized scope; the F-006/F-013 Canonical Runtime Baseline V1 reconciliation is validated. |
 
 ## Current runtime evidence
 
@@ -19,9 +19,9 @@
 - C06 migration lineage extends from `20260803_28` to `20260804_29`; upgrade, downgrade, and re-upgrade were validated against PostgreSQL.
 - The technical closure evidence is recorded in [C06 Requirement Definition Catalog Closure](../engineering/C06_REQUIREMENT_DEFINITION_CLOSURE.md).
 
-## Independent technical debt
+## Resolved Foundation debt
 
-- **FOUNDATION-DEBT-001:** `tests/test_canonical_contracts.py` expects 37 Tier-1 contracts while the canonical projection returns 55, including prior Document Registry work. Owner: Engineering Foundation steward for F-006 Contract Registry and F-013 Test and Conformance Foundation. This is not a C06 regression and does not block C06 closure. It must be corrected and validated before F-016 Query Dispatch is authorized or started. See the [C06 closure record](../engineering/C06_REQUIREMENT_DEFINITION_CLOSURE.md#7-independent-technical-debt--canonical-contract-projection).
+- **FOUNDATION-DEBT-001:** Closed by the accepted F-006/F-013 reconciliation. The canonical projection and its conformance evidence now validate the ratified 55-member Runtime Baseline V1. See the [Foundation Debt 001 Closure](../engineering/FOUNDATION_DEBT_001_CLOSURE.md).
 
 ## Current authoritative inputs
 
@@ -34,6 +34,5 @@
 
 C07–C09 remain deferred and unauthorized. Amendment 003 is ratified solely as
 the Foundation completion-path correction; it does not authorize F-016, F-017,
-F-015, or another feature. F-016 remains ineligible for authorization or start
-until FOUNDATION-DEBT-001 is corrected and validated, followed by an
-independent implementation authorization.
+F-015, or another feature. F-016 is eligible only for a separate independent
+implementation authorization; it is not authorized or started by this closure.
