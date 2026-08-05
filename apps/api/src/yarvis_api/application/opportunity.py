@@ -33,3 +33,16 @@ class PublishDossierTemplateVersionCommand:
 class RetireDossierTemplateVersionCommand:
     template_id: UUID
     expected_version: int
+
+
+@dataclass(frozen=True, slots=True)
+class RegisterRequirementDefinitionCommand:
+    dossier_template_version_id: UUID
+    semantic_key: str
+    title: str
+    purpose: str
+    semantic_subject: str
+    fulfillment_mode: str
+    classification: str
+    provenance: str
+    dependency_ids: tuple[UUID, ...] = ()

@@ -52,3 +52,9 @@ class DossierTemplateVersionRead(BaseModel):
     published_at: datetime
     retired_at: datetime | None
     aggregate_version: int
+
+
+class RequirementDefinitionRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID; organization_id: UUID; dossier_template_version_id: UUID; semantic_key: str; title: str; purpose: str; semantic_subject: str; fulfillment_mode: str; classification: str; provenance: str; created_at: datetime; aggregate_version: int
+    dependency_ids: tuple[UUID, ...] = ()

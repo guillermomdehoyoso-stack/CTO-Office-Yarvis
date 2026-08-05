@@ -135,9 +135,9 @@ class DI002QueryName(StrEnum):
     GET="retrieve_document"; VERSIONS="list_document_versions"; ASSOCIATIONS="list_document_associations"; BY_SUBJECT="list_documents_by_subject"
 
 class DI003CommandName(StrEnum):
-    PROPOSE="propose_opportunity"; CONFIRM="confirm_opportunity"; CREATE_WORKSPACE="create_opportunity_workspace"; ASSIGN_TEMPLATE="assign_opportunity_template"; CREATE_DOSSIER="create_opportunity_dossier"; PUBLISH_DOSSIER_TEMPLATE="publish_dossier_template"; RETIRE_DOSSIER_TEMPLATE="retire_dossier_template"
+    PROPOSE="propose_opportunity"; CONFIRM="confirm_opportunity"; CREATE_WORKSPACE="create_opportunity_workspace"; ASSIGN_TEMPLATE="assign_opportunity_template"; CREATE_DOSSIER="create_opportunity_dossier"; PUBLISH_DOSSIER_TEMPLATE="publish_dossier_template"; RETIRE_DOSSIER_TEMPLATE="retire_dossier_template"; REGISTER_REQUIREMENT_DEFINITION="register_requirement_definition"
 class DI003QueryName(StrEnum):
-    GET="get_opportunity"; GET_WORKSPACE="get_opportunity_workspace"; GET_TEMPLATE="get_opportunity_template"; GET_DOSSIER="get_opportunity_dossier"; GET_DOSSIER_TEMPLATE="get_dossier_template"; GET_PUBLISHED_DOSSIER_TEMPLATE="get_published_dossier_template"
+    GET="get_opportunity"; GET_WORKSPACE="get_opportunity_workspace"; GET_TEMPLATE="get_opportunity_template"; GET_DOSSIER="get_opportunity_dossier"; GET_DOSSIER_TEMPLATE="get_dossier_template"; GET_PUBLISHED_DOSSIER_TEMPLATE="get_published_dossier_template"; GET_REQUIREMENT_DEFINITION="get_requirement_definition"; GET_REQUIREMENT_DEFINITION_BY_KEY="get_requirement_definition_by_key"
 
 
 class OV002QueryName(StrEnum):
@@ -347,6 +347,7 @@ command_contracts[DI003CommandName.ASSIGN_TEMPLATE]=ApplicationContract("IC-OPPO
 command_contracts[DI003CommandName.CREATE_DOSSIER]=ApplicationContract("IC-OPPORTUNITY-DOSSIER-CMD-001","opportunity","dossier_bootstrap",True,True,True,"opportunity.specialize")
 command_contracts[DI003CommandName.PUBLISH_DOSSIER_TEMPLATE]=ApplicationContract("IC-DOSSIER-TEMPLATE-CMD-001","process_engine","dossier_template",True,True,True,"dossier.template.publish",True)
 command_contracts[DI003CommandName.RETIRE_DOSSIER_TEMPLATE]=ApplicationContract("IC-DOSSIER-TEMPLATE-CMD-002","process_engine","dossier_template",True,True,True,"dossier.template.retire",True)
+command_contracts[DI003CommandName.REGISTER_REQUIREMENT_DEFINITION]=ApplicationContract("IC-REQUIREMENT-DEFINITION-CMD-001","process_engine","requirement_definition",True,True,True,"requirement.definition.register",True)
 
 
 query_contracts: dict[WS001QueryName | WS002QueryName | WS003QueryName | WS004QueryName | WS005QueryName | WS006QueryName | WS008QueryName | OV002QueryName, ApplicationContract] = {
@@ -457,6 +458,8 @@ query_contracts[DI003QueryName.GET_TEMPLATE]=ApplicationContract("IC-OPPORTUNITY
 query_contracts[DI003QueryName.GET_DOSSIER]=ApplicationContract("IC-OPPORTUNITY-DOSSIER-QRY-001","opportunity","dossier",False,True,True,"opportunity.read")
 query_contracts[DI003QueryName.GET_DOSSIER_TEMPLATE]=ApplicationContract("IC-DOSSIER-TEMPLATE-QRY-001","process_engine","dossier_template",False,True,True,"dossier.template.read")
 query_contracts[DI003QueryName.GET_PUBLISHED_DOSSIER_TEMPLATE]=ApplicationContract("IC-DOSSIER-TEMPLATE-QRY-002","process_engine","dossier_template",False,True,True,"dossier.template.read")
+query_contracts[DI003QueryName.GET_REQUIREMENT_DEFINITION]=ApplicationContract("IC-REQUIREMENT-DEFINITION-QRY-001","process_engine","requirement_definition",False,True,True,"requirement.definition.read")
+query_contracts[DI003QueryName.GET_REQUIREMENT_DEFINITION_BY_KEY]=ApplicationContract("IC-REQUIREMENT-DEFINITION-QRY-002","process_engine","requirement_definition",False,True,True,"requirement.definition.read")
 
 for name, contract_id, capability in (
     (OV002QueryName.RETRIEVE_OPERATIONAL_ECONOMICS, "IC-ECONOMICS-QRY-001", "economic_summary"),

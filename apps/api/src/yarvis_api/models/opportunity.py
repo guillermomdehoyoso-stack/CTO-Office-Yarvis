@@ -125,3 +125,43 @@ class DossierTemplateVersion(Base):
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
     retired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     aggregate_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class RequirementDefinition(Base):
+    """Immutable semantic business obligation for one published template version."""
+    __tablename__ = "requirement_definitions"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "dossier_template_version_id", "semantic_key", name="uq_requirement_definitions_template_key"),
+        ForeignKeyConstraint(("organization_id",), ("organizations.id",), name="fk_requirement_definitions_organization"),
+        ForeignKeyConstraint(("dossier_template_version_id",), ("dossier_template_versions.id",), name="fk_requirement_definitions_template"),
+        CheckConstraint("semantic_subject IN ('identity','evidence','business_data','derived_knowledge','human_decision')", name="ck_requirement_definitions_subject"),
+        CheckConstraint("fulfillment_mode IN ('provided','derived','verified','confirmed')", name="ck_requirement_definitions_mode"),
+        CheckConstraint("classification IN ('required','optional')", name="ck_requirement_definitions_classification"),
+        CheckConstraint("aggregate_version > 0", name="ck_requirement_definitions_aggregate_version_positive"),
+        Index("ix_requirement_definitions_template_key", "organization_id", "dossier_template_version_id", "semantic_key"),
+    )
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    dossier_template_version_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    semantic_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    purpose: Mapped[str] = mapped_column(Text, nullable=False)
+    semantic_subject: Mapped[str] = mapped_column(String(32), nullable=False)
+    fulfillment_mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    classification: Mapped[str] = mapped_column(String(16), nullable=False)
+    provenance: Mapped[str] = mapped_column(String(255), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    aggregate_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class RequirementDefinitionDependency(Base):
+    __tablename__ = "requirement_definition_dependencies"
+    __table_args__ = (
+        UniqueConstraint("requirement_definition_id", "depends_on_definition_id", name="uq_requirement_definition_dependency"),
+        ForeignKeyConstraint(("requirement_definition_id",), ("requirement_definitions.id",), name="fk_requirement_definition_dependencies_definition"),
+        ForeignKeyConstraint(("depends_on_definition_id",), ("requirement_definitions.id",), name="fk_requirement_definition_dependencies_depends_on"),
+        CheckConstraint("requirement_definition_id <> depends_on_definition_id", name="ck_requirement_definition_dependencies_not_self"),
+    )
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    requirement_definition_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    depends_on_definition_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)

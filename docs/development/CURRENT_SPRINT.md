@@ -2,36 +2,41 @@
 
 ## Identity
 
-**Work package:** DI-002 - Document Registry Foundation (completed)
-**Authorization:** [IG-001](../engineering/IG-001_DI002_IMPLEMENTATION_AUTHORIZATION.md), under AR-001 and ADR-001.
+**Work package:** DI-003 C06 — Requirement Definition Catalog (completed)
+**Authorization:** [IG-004](../engineering/IG-004_REQUIREMENT_DEFINITION_IMPLEMENTATION_AUTHORIZATION.md), under AR-005, DR-002, and EP-001.
 
 ## Goal
 
-Implemented and validated the production-ready Document Registry backend slice: canonical metadata, immutable version lineage, provenance, provider-neutral storage-reference metadata, governed subject associations, runtime registration, and API routes.
+Deliver immutable, tenant-local, Published Dossier Template Version-bound Requirement Definitions with governed registration, authoritative retrieval, semantic dependencies, durable idempotency, and PostgreSQL-backed historical protection.
 
-## Current gate
+## Closure status
 
-DI-002 implementation is complete. AC-002 remains completed historical documentation evidence. DI-003 is the next planned package and requires its own authorization before implementation.
+C06B2A, C06B2B-1, and C06B2B-2 are complete. C06 implementation and technical validation are closed by [C06 Requirement Definition Catalog Closure](../engineering/C06_REQUIREMENT_DEFINITION_CLOSURE.md).
 
-## Scope
+## Completed scope
 
-- Document aggregate and immutable Document Versions.
-- Provider-neutral storage references without binary I/O.
-- Historical tenant-safe associations to Organization, Site, Project, Mission Work Item, Operational Task, and Process Instance.
-- Governed commands, queries, authority, idempotency, events, migration, tests, and documentation.
+- Requirement Definition and same-version dependency persistence.
+- Registration command and two authoritative retrieval queries.
+- Exact authority, tenant concealment, Published Template eligibility, receipts, replay/conflict, rollback, and concurrency behavior.
+- Immutable Definition and dependency protection, including late-insert prevention.
+- Linear migration `20260804_29` with validated downgrade/re-upgrade.
 
-## Explicitly out of scope
+## Validation evidence
 
-Binary upload/download/streaming; storage adapters; Gmail/WhatsApp; OCR; malware scanning; sharing; retention automation; AI; frontend UI; Evidence creation; and automatic Task, Process, or Economics creation.
+- C06 focused suite: 18 passed.
+- Affected regression: 38 passed.
+- Migration round trip: `20260803_28 -> 20260804_29 -> 20260803_28 -> 20260804_29`.
+- PostgreSQL verification: two tables, one index, 13 constraints, three triggers, and three protection functions.
+- Docker compilation and `git diff --check` passed.
 
-## Entry criteria
+## Explicitly deferred
 
-All IG-001 entry criteria are satisfied.
+C07 Requirement Instance Bootstrap, C08 Requirement Dependency Readiness, C09 Artifact/Document Association Intake, Milestones, Evidence, Commercial behavior, Proposal generation, AI, OCR, integrations, listing/search, update/delete/purge, and Dossier rebinding remain unauthorized.
 
-## Exit criteria
+## Independent debt
 
-All IG-001 exit criteria are satisfied, with no deferred scope introduced.
+FOUNDATION-DEBT-001 remains open: the canonical Tier-1 contract test expects 37 contracts while the current projection returns 55, including prior Document Registry work. It is owned by the Engineering Foundation steward for F-006/F-013, is not a C06 regression, and does not block this closure. It must be corrected and validated before F-016 is authorized or started.
 
 ## Next package
 
-DI-003 is the next planned package. DI-002 does not authorize DI-003; a new ratified authorization is required before implementation proceeds.
+No implementation package is currently authorized. Do not treat the proposed `IMPLEMENTATION_ROADMAP_AMENDMENT_003.md` dependency correction as authorization. The next action is a governance decision that establishes the applicable gate before any successor implementation begins.

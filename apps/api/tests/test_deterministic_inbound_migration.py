@@ -70,7 +70,7 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.begin() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260803_28"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260804_29"
             assert "mission_work_items" in inspector.get_table_names()
             assert "mission_work_events" in inspector.get_table_names()
             assert {
@@ -150,7 +150,7 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             assert "mission_work_items" in inspect(connection).get_table_names()
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260803_28"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260804_29"
     finally:
         engine.dispose()
         _drop_temp_database(database_name)
@@ -171,7 +171,7 @@ def test_process_runtime_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260803_28"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260804_29"
             assert {"process_instances", "process_instance_events"}.issubset(inspector.get_table_names())
             assert "process_instance_work_links" in inspector.get_table_names()
             assert "source_domain_event_id" in {column["name"] for column in inspector.get_columns("mission_work_events")}
@@ -271,7 +271,7 @@ def test_deterministic_inbound_migration_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260803_28"
+            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260804_29"
             assert "messages" in inspector.get_table_names()
             message_columns = {column["name"] for column in inspector.get_columns("messages")}
             assert {
