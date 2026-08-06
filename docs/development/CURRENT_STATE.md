@@ -1,17 +1,17 @@
 # Current Engineering State
 
-**Last updated:** 2026-08-05 — F-012 Application Trace Observability closure
+**Last updated:** 2026-08-06 — F-013 Test and Conformance Foundation closure
 
 | Field | Current value |
 | --- | --- |
 | Current branch | Verify at session start. |
 | Current HEAD | Verify at session start. |
-| Current sprint | F-012 — Errors, Traces, Logs, Metrics (closed). |
-| Current engineering gate | F-012 is closed following approved implementation, integral validation, and independent review; no successor implementation is authorized by this closure. |
+| Current sprint | F-013 — Test and Conformance Foundation (closed). |
+| Current engineering gate | F-013 is closed following approved implementation, final validation, and focused review; no successor implementation is authorized by this closure. |
 | Current work package | No successor work package is initiated. |
 | Current blocker count | 0 known blockers. |
 | Next mandatory action | Obtain a separate authorized engineering gate before initiating any successor work package. |
-| Current repository health | C06 is complete, the F-006/F-013 Canonical Runtime Baseline V1 reconciliation is validated, and F-012 technical observability is closed. |
+| Current repository health | C06 is complete, the F-006/F-013 Canonical Runtime Baseline V1 reconciliation is validated, F-012 technical observability is closed, and F-013 Foundation conformance controls are closed. |
 
 ## Current runtime evidence
 
@@ -32,14 +32,15 @@
 
 ## Active authorized package
 
-- F-012 implemented typed errors, sanitization, append-only technical traces,
-  structured redacted logging, readiness/liveness, in-memory metrics, and the
-  Intake reference integration. Its closure evidence is recorded in
-  [F-012 Application Trace Observability Closure](../engineering/F-012_APPLICATION_TRACE_OBSERVABILITY_CLOSURE.md).
+- F-013 implemented deterministic Foundation conformance controls for explicit
+  registry ownership, architectural import boundaries, F-012 observability
+  isolation, and the synchronous Intake reference integration. Its closure
+  evidence is recorded in
+  [F-013 Test and Conformance Foundation Closure](../engineering/F-013_TEST_AND_CONFORMANCE_FOUNDATION_CLOSURE.md).
 
 ## Next allowed action
 
-C07–C09 remain deferred and unauthorized. F-013 is not initiated. Amendment
+C07–C09 remain deferred and unauthorized. F-011 is not initiated. Amendment
 003 is ratified solely as the Foundation completion-path correction; it does
 not authorize F-016, F-017, F-015, or another feature. F-016 remains ineligible
 until the prerequisite order is completed and a separate independent
