@@ -29,6 +29,9 @@
 - [AR-005](../architecture/AR-005_REQUIREMENT_SEMANTIC_ARCHITECTURE_RATIFICATION.md) and [DR-002](../design/DR-002_REQUIREMENT_DEFINITION_SEMANTIC_MODEL.md).
 - [IG-004](../engineering/IG-004_REQUIREMENT_DEFINITION_IMPLEMENTATION_AUTHORIZATION.md).
 - [EP-001](../engineering/EP-001_ENGINEERING_GOVERNANCE_AND_DEVELOPMENT_PRACTICES.md).
+- Ratified F-011 architecture: [F-011 Amendment 001](../engineering/F-011_IDENTITY_AUTHORITY_ENVELOPES_ARCHITECTURE_AMENDMENT_001.md),
+  [ADR-014](../decisions/ADR-014_PRINCIPAL_MEMBERSHIP_ACTIVE_ORGANIZATION_AUTHORITY.md),
+  and [Governance Contract Amendment 001](../engineering/F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md).
 
 ## Active authorized package
 
@@ -43,7 +46,11 @@
 
 ## Next allowed action
 
-C07–C09 remain deferred and unauthorized. F-011 is not initiated. Amendment
+C07–C09 remain deferred and unauthorized. F-011 architecture and its two
+Governance contract profiles and the implementation design are ratified/reviewed,
+but F-011 is not initiated or authorized: IG-006 remains Proposed pending
+explicit state/sprint opening, authorization of Slices A-I, and separate
+implementation mandate. Amendment
 003 is ratified solely as the Foundation completion-path correction; it does
 not authorize F-016, F-017, F-015, or another feature. F-016 remains ineligible
 until the prerequisite order is completed and a separate independent

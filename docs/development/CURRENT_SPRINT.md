@@ -3,7 +3,9 @@
 ## Identity
 
 **Current work package:** Netpay Operational Radar — executive-priority manual operational vertical.
-**Current authorization:** bounded RADAR execution only; F-011, F-016 and F-017 remain unstarted.
+**Current authorization:** bounded RADAR execution only; F-011 architecture and
+its Governance contract profiles are ratified, but F-011, F-016 and F-017 remain
+unstarted and no F-011 implementation gate is authorized.
 
 **Work package:** F-013 — Test and Conformance Foundation (closed)
 **Authorization:** Technical Blueprint, Architectural Decision Trace, F-013 design, and EP-001.
@@ -49,12 +51,15 @@ F-011, F-016, or successors. The closure evidence is recorded in
 
 ## Explicitly deferred
 
-F-011, F-016, F-017, F-010, F-014, F-015, C07–C09, workers,
+F-011 implementation, F-016, F-017, F-010, F-014, F-015, C07–C09, workers,
 queues, Event Dispatch, Notification Dispatch, Data Governance retention, and
-all business capabilities remain unauthorized.
+all business capabilities remain unauthorized. F-011's ratified architecture
+does not open IG-006 or runtime work.
 
 ## Next package
 
-No successor package is initiated. F-011 remains unstarted. Any future package
-requires its own authorized engineering gate. Amendment 003 remains a
+No successor package is initiated. F-011 remains unstarted. Its reviewed and
+approved implementation design is complete; its next gate is explicit
+state/sprint opening, authorization of Slices A-I, and a separate
+implementation mandate under IG-006. Amendment 003 remains a
 dependency-graph correction only and does not independently authorize F-016.

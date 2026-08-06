@@ -161,6 +161,11 @@ The pillars operate over the Yarvis Reality Graph (YRG). They do not create comp
 | `NETPAY_DI003_C09_AMENDMENT_001.md` | Bounded Netpay DI-003 Manual Document Intake and C09 typed Radar Document Association design. | Ratified architectural design; no implementation authority |
 | `ADR-013_NETPAY_DOCUMENT_INTAKE_ORGANIZATIONAL_AUTHORITY.md` | Ratifies the Netpay document design and requires F-011 organizational authority before implementation. | Accepted; no implementation authority |
 | `IG-005_NETPAY_DOCUMENT_INTAKE_IMPLEMENTATION_AUTHORIZATION.md` | Candidate gate for the ratified Netpay document design. | Proposed; explicitly not authorized |
+| `F-011_IDENTITY_AUTHORITY_ENVELOPES_ARCHITECTURE_AMENDMENT_001.md` | Principal, Membership, active-Organization, authority-envelope, and Radar-migration design. | Ratified architectural design; no implementation authority |
+| `ADR-014_PRINCIPAL_MEMBERSHIP_ACTIVE_ORGANIZATION_AUTHORITY.md` | Ownership and authority decision for F-011. | Accepted; no implementation authority |
+| `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md` | Compatible F-011 profiles for Governance authority evaluation and authority-change contracts. | Ratified contract amendment; Planned runtime |
+| `F-011_IDENTITY_AUTHORITY_ENVELOPES_IMPLEMENTATION_DESIGN.md` | Reviewed F-011 persistence, authority-resolution, Radar-transition, migration, and test design. | Approved implementation design; no implementation authority |
+| `IG-006_F011_IDENTITY_AUTHORITY_ENVELOPES_IMPLEMENTATION_AUTHORIZATION.md` | Candidate F-011 implementation gate. | Proposed; explicitly not authorized |
 
 ## 5.8 Architectural Decisions
 

@@ -82,7 +82,7 @@ Conformance rules: one owner and one capability per contract; no reused identifi
 
 ## 7. Tier 1 Ratification Baseline — Contract Master Registry
 
-All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Planned`, and have an architectural steward. `C` is Critical, `Co` Core, `O` Operational, `I` Informational.
+All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Planned`, and have an architectural steward, except where a later ratified contract amendment records a compatible, versioned profile without changing stable identity or owner. `C` is Critical, `Co` Core, `O` Operational, `I` Informational.
 
 | ID | Type | Owner / capability | Name and semantic purpose | Criticality | Primary consumer/use case |
 | --- | --- | --- | --- | --- | --- |
@@ -91,9 +91,9 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-IDENTITY-CMD-001 | CMD | Identity / resolution | ResolveSubjectCandidate: resolve or propose canonical Party/PartyGroup reference | C | intake association |
 | IC-IDENTITY-QRY-001 | QRY | Identity / canonical reference | RetrieveCanonicalIdentity | C | all Tier 1 association |
 | IC-IDENTITY-EVT-001 | EVT | Identity / resolution | IdentityResolutionRecorded | C | O&E, Netpay, MC |
-| IC-GOVERNANCE-QRY-001 | QRY | Governance / authority | EvaluateAuthority | C | target-command authorization |
+| IC-GOVERNANCE-QRY-001 | QRY | Governance / authority | EvaluateAuthority; F-011 profile `1.1.0` ratified by `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md` | C | target-command authorization |
 | IC-GOVERNANCE-QRY-002 | QRY | Governance / policy/delegation | RetrieveApplicableDelegation | Co | work assignment |
-| IC-GOVERNANCE-EVT-001 | EVT | Governance / authority | AuthorityChanged | C | Execution, MC |
+| IC-GOVERNANCE-EVT-001 | EVT | Governance / authority | AuthorityChanged; F-011 profile `1.1.0` ratified by `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md` | C | Execution, MC |
 | IC-RELATIONSHIP-CMD-001 | CMD | Relationship / association | EstablishCasePartyRelationship | Co | merchant/case association |
 | IC-RELATIONSHIP-QRY-001 | QRY | Relationship / association | RetrieveCaseRelationships | Co | case view |
 | IC-RELATIONSHIP-EVT-001 | EVT | Relationship / association | RelationshipRecorded | Co | Netpay, MC |
@@ -259,7 +259,7 @@ Tier 2 contains **6 Draft candidate families**, not ratified contracts: (1) Deci
 
 Dependencies follow greater architectural stability: Netpay depends on platform contracts; platform semantics do not depend on Netpay. Critical contracts are Identity resolution/reference, authority evaluation/change, evidence capture/validation, pending-action lifecycle, Netpay candidate/case/checklist/state, and their events. Critical contracts require trace propagation, evidence/provenance where applicable, compatibility assessment, and observability/conformance records.
 
-All Tier 1 entries are Proposed/Planned and initially compatible only with their own `1.0.0` semantic baseline. No replacement exists. A later compatibility/replacement matrix must state producer/consumer versions, change class, migration, deprecation window, and replacement identifier. No dependency cycle is accepted; no version may be embedded in an identifier.
+All Tier 1 entries are Proposed/Planned and initially compatible only with their own `1.0.0` semantic baseline, except the ratified `1.1.0` F-011 profiles of `IC-GOVERNANCE-QRY-001` and `IC-GOVERNANCE-EVT-001` recorded by `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md`. No replacement exists. A later compatibility/replacement matrix must state producer/consumer versions, change class, migration, deprecation window, and replacement identifier. No dependency cycle is accepted; no version may be embedded in an identifier.
 
 ## 12. Derived Non-Authoritative Views
 
