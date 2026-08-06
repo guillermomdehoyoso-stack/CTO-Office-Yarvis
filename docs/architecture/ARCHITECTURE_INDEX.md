@@ -158,6 +158,9 @@ The pillars operate over the Yarvis Reality Graph (YRG). They do not create comp
 | `DATA_INTAKE_AND_DOCUMENT_ARCHITECTURE.md` | DI-001 provider-neutral intake, preservation, Document Registry, storage, connector, and Inbox boundary. | Ratified for DI-002 by [ADR-001](../decisions/ADR-001_RATIFY_DI001_DOCUMENT_ARCHITECTURE.md) |
 | `AR-001_ARCHITECTURE_RATIFICATION_FRAMEWORK.md` | Permanent lifecycle, review, ADR, and implementation-authority process. | Ratified governance framework |
 | `ADR-001_RATIFY_DI001_DOCUMENT_ARCHITECTURE.md` | Applies AR-001 to ratify DI-001 and authorize DI-002 only. | Accepted; implementation authority record |
+| `NETPAY_DI003_C09_AMENDMENT_001.md` | Bounded Netpay DI-003 Manual Document Intake and C09 typed Radar Document Association design. | Ratified architectural design; no implementation authority |
+| `ADR-013_NETPAY_DOCUMENT_INTAKE_ORGANIZATIONAL_AUTHORITY.md` | Ratifies the Netpay document design and requires F-011 organizational authority before implementation. | Accepted; no implementation authority |
+| `IG-005_NETPAY_DOCUMENT_INTAKE_IMPLEMENTATION_AUTHORIZATION.md` | Candidate gate for the ratified Netpay document design. | Proposed; explicitly not authorized |
 
 ## 5.8 Architectural Decisions
 
