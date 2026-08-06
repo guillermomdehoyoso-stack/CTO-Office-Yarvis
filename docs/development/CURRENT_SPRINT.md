@@ -2,10 +2,18 @@
 
 ## Identity
 
+**Current work package:** Netpay Operational Radar — executive-priority manual operational vertical.
+**Current authorization:** bounded RADAR execution only; F-011, F-016 and F-017 remain unstarted.
+
 **Work package:** F-013 — Test and Conformance Foundation (closed)
 **Authorization:** Technical Blueprint, Architectural Decision Trace, F-013 design, and EP-001.
 
 ## Goal
+
+The active goal is the usable, synchronous and workspace-scoped Netpay Radar:
+merchant registration, manual pasted-text requests, checklists, PENDIENTE ON/OFF,
+filters and append-only operational history. See
+[Netpay Operational Radar](../engineering/NETPAY_OPERATIONAL_RADAR.md).
 
 Deliver deterministic Foundation conformance controls for explicit registry
 ownership, architectural import boundaries, F-012 observability isolation, and

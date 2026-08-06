@@ -150,6 +150,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         people,
         process,
         process_runtime,
+        radar,
         document_registry,
         recovery_queue,
         workspace_api,
@@ -191,6 +192,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     app.include_router(process_runtime.router)
     app.include_router(document_registry.router)
     app.include_router(netpay.router)
+    app.include_router(radar.router)
     app.include_router(observations.router)
     app.include_router(operational_policies.router)
     app.include_router(operational_economics.router)

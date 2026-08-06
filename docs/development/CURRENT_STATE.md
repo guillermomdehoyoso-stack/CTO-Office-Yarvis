@@ -8,9 +8,9 @@
 | Current HEAD | Verify at session start. |
 | Current sprint | F-013 — Test and Conformance Foundation (closed). |
 | Current engineering gate | F-013 is closed following approved implementation, final validation, and focused review; no successor implementation is authorized by this closure. |
-| Current work package | No successor work package is initiated. |
+| Current work package | Workspace-scoped merchant request radar with persistent PostgreSQL records and React operator view. |
 | Current blocker count | 0 known blockers. |
-| Next mandatory action | Obtain a separate authorized engineering gate before initiating any successor work package. |
+| Next mandatory action | Complete RADAR validation evidence; no Foundation successor is opened. |
 | Current repository health | C06 is complete, the F-006/F-013 Canonical Runtime Baseline V1 reconciliation is validated, F-012 technical observability is closed, and F-013 Foundation conformance controls are closed. |
 
 ## Current runtime evidence
@@ -31,6 +31,9 @@
 - [EP-001](../engineering/EP-001_ENGINEERING_GOVERNANCE_AND_DEVELOPMENT_PRACTICES.md).
 
 ## Active authorized package
+
+- The executive-priority [Netpay Operational Radar](../engineering/NETPAY_OPERATIONAL_RADAR.md)
+  is the sole active implementation package. It is not a Foundation package.
 
 - F-013 implemented deterministic Foundation conformance controls for explicit
   registry ownership, architectural import boundaries, F-012 observability

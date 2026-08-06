@@ -13,6 +13,7 @@ from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.message import Message
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
+from yarvis_api.models.radar import RadarActivity, RadarChecklistItem, RadarMerchant, RadarRequest
 from yarvis_api.models.observation_engine import (
 	AttentionItem,
 	DocumentRecord,
@@ -58,6 +59,10 @@ __all__ = [
 	"NetpayDeviceAssignment",
 	"NetpayServiceCase",
 	"NetpayShipment",
+	"RadarActivity",
+	"RadarChecklistItem",
+	"RadarMerchant",
+	"RadarRequest",
 	"Observation",
 	"OperationalPolicy",
 	"Organization",

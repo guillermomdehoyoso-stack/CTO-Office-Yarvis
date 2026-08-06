@@ -8,6 +8,7 @@ import {MissionControlStoreIntelligenceCard} from './components/store-intelligen
 import { WorkspaceShell } from './workspace-shell/WorkspaceShell';
 import { MissionWorkQueue } from './components/mission-work/MissionWorkQueue';
 import { OperationalWorkspace } from './components/mission-work/OperationalWorkspace';
+import { OperationalRadar } from './components/radar/OperationalRadar';
 
 const api = 'http://localhost:8000';
 
@@ -52,6 +53,7 @@ function Layout() {
         <Link to="/organizations">Organización</Link>
         <Link to="/people">Personas</Link>
         <Link to="/netpay-intake">NetPay XLSX</Link>
+        <Link to="/radar-netpay">Radar Netpay</Link>
         <Link to="/recovery-queue">Cola de recuperación</Link>
         <Link to="/workspace">Development Workspace</Link>
         <Link to="/mission-work">Mission Work</Link>
@@ -64,6 +66,7 @@ function Layout() {
         <Route path="/organizations" element={<OrganizationsPage />} />
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/netpay-intake" element={<NetPayIntakePage />} />
+        <Route path="/radar-netpay" element={<OperationalRadar />} />
         <Route path="/recovery-queue" element={<RecoveryQueuePage />} />
         <Route path="/workspace/*" element={<WorkspaceShell />} />
         <Route path="/mission-work" element={<MissionWorkQueue />} />
