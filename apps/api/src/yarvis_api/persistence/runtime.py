@@ -44,6 +44,12 @@ class PersistenceRuntime:
     _owner_token: object | None = field(default=None, init=False, repr=False)
     _disposed: bool = field(default=False, init=False, repr=False)
 
+    @property
+    def is_disposed(self) -> bool:
+        """Expose only the safe readiness state; never the underlying Engine."""
+
+        return self._disposed
+
     def transfer_ownership(self, owner_token: object) -> None:
         """Transfer this runtime to exactly one application composition root."""
 

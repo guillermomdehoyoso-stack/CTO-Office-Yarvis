@@ -1,4 +1,5 @@
 from yarvis_api.models.base import Base
+from yarvis_api.models.application_trace import ApplicationTrace
 from yarvis_api.models.case import Case
 from yarvis_api.models.checklist import CaseChecklist, CaseType, ChecklistRequirement, ChecklistTemplate, DocumentType, IntakeClassification, RequirementFulfillment
 from yarvis_api.models.domain_event import DomainEvent
@@ -31,6 +32,7 @@ from yarvis_api.models.process import ProcessDefinition, ProcessInstance, Proces
 
 __all__ = [
 	"Base",
+	"ApplicationTrace",
 	"Case",
 	"CaseChecklist",
 	"CaseType",

@@ -22,6 +22,7 @@ from yarvis_api.models.intake import DETERMINISTIC_INTAKE_MODE, IntakeItem
 from yarvis_api.models.message import Message
 from yarvis_api.models.organization import Organization
 from yarvis_api.persistence import OperationScope, PersistenceRuntime, UnitOfWork
+from yarvis_api.observability.tracing import TraceAuthorizationDecision, TraceContext, TraceRecorder, TraceReference
 from yarvis_api.schemas.event import DomainEventRead
 from yarvis_api.schemas.intake import IntakeDetailRead, MessageRead
 
@@ -51,6 +52,7 @@ def _principal_organization_id(principal: AuthenticatedPrincipal) -> UUID:
 @dataclass(slots=True)
 class InboundIntakeService:
     persistence: PersistenceRuntime
+    trace_recorder: TraceRecorder | None = None
 
     def submit(self, submission: InboundIntakeSubmission) -> UUID:
         enforce_command_boundary(
@@ -67,6 +69,21 @@ class InboundIntakeService:
             )
         idempotency_fingerprint = self._idempotency_fingerprint(submission)
         organization_id = _principal_organization_id(submission.principal)
+        trace = self.trace_recorder.begin(
+            TraceContext(
+                interaction_contract_id=RECEIVE_INTAKE_CONTRACT.interaction_contract_id,
+                contract_version="1.0.0",
+                owner_module_id="observation_evidence",
+                owning_context="Intake",
+                correlation_id=str(submission.metadata.correlation_id),
+                causation_id=str(submission.metadata.causation_id) if submission.metadata.causation_id is not None else None,
+                actor_id=submission.principal.actor_id,
+                organization_id=organization_id,
+                authorization_decision=TraceAuthorizationDecision.NOT_EVALUATED,
+                object_reference=TraceReference("intake_item", owner_context="Intake"),
+                provenance_references=(TraceReference("external_source", reference_id=submission.fixture.external_source),),
+            )
+        ) if self.trace_recorder is not None else None
 
         try:
             with UnitOfWork(self.persistence, OperationScope()) as unit_of_work:
@@ -79,25 +96,39 @@ class InboundIntakeService:
                     )
                 existing = self._find_by_idempotency_key(session, organization_id, idempotency_key)
                 if existing is not None:
-                    return self._replay_intake_id(existing, idempotency_key, idempotency_fingerprint)
-
-                intake = self._create_intake(
-                    session=session,
-                    fixture=submission.fixture,
-                    submission=submission,
-                    organization_id=organization_id,
-                    idempotency_key=idempotency_key,
-                    idempotency_fingerprint=idempotency_fingerprint,
-                )
-                message = self._create_message(session=session, fixture=submission.fixture, submission=submission, intake=intake)
-                self._record_events(session=session, intake=intake, message=message, submission=submission)
-                intake_id = intake.id
-                unit_of_work.commit()
+                    intake_id = self._replay_intake_id(existing, idempotency_key, idempotency_fingerprint)
+                    replayed = True
+                else:
+                    intake = self._create_intake(
+                        session=session,
+                        fixture=submission.fixture,
+                        submission=submission,
+                        organization_id=organization_id,
+                        idempotency_key=idempotency_key,
+                        idempotency_fingerprint=idempotency_fingerprint,
+                    )
+                    message = self._create_message(session=session, fixture=submission.fixture, submission=submission, intake=intake)
+                    self._record_events(session=session, intake=intake, message=message, submission=submission)
+                    intake_id = intake.id
+                    replayed = False
+                    unit_of_work.commit()
         except IntegrityError as error:
             if not self._is_idempotency_unique_violation(error):
+                if trace is not None:
+                    trace.fail(error)
                 raise
-            return self._resolve_concurrent_replay(error, organization_id, idempotency_key, idempotency_fingerprint)
+            intake_id = self._resolve_concurrent_replay(error, organization_id, idempotency_key, idempotency_fingerprint)
+            replayed = True
+        except BaseException as error:
+            if trace is not None:
+                trace.fail(error)
+            raise
 
+        if trace is not None:
+            trace.succeed(
+                result_reference=TraceReference("intake_item", reference_id=str(intake_id), relation="replay" if replayed else "created"),
+                event_references=() if replayed else (TraceReference("domain_event", contract_id="intake.received"), TraceReference("domain_event", contract_id="message.registered")),
+            )
         return intake_id
 
     def load_detail(self, session: Session, intake_id: UUID) -> IntakeDetailRead:

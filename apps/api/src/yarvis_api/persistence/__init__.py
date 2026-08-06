@@ -7,6 +7,7 @@ from yarvis_api.persistence.runtime import (
     build_persistence_runtime,
     sqlalchemy_url,
 )
+from yarvis_api.persistence.application_trace_store import ApplicationTraceStore
 from yarvis_api.persistence.unit_of_work import (
     NestedUnitOfWorkError,
     OperationScope,
@@ -20,6 +21,7 @@ from yarvis_api.persistence.unit_of_work import (
 
 __all__ = [
     "PersistenceRuntime",
+    "ApplicationTraceStore",
     "PersistenceRuntimeDisposedError",
     "PersistenceRuntimeOwnershipError",
     "build_persistence_runtime",

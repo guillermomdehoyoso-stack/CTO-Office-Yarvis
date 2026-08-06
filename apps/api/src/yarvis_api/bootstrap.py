@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from yarvis_api.api.authentication import DeterministicAuthenticationProvider
-from yarvis_api.api.errors import application_error_handler
+from yarvis_api.api.errors import application_error_handler, unhandled_application_exception_handler
 from yarvis_api.application.errors import ApplicationError
 from yarvis_api.application.ports import AuthenticationPort
 from yarvis_api.canonical_contracts import canonical_contracts
@@ -23,6 +23,15 @@ from yarvis_api.dispatch import Dispatcher, HandlerDefinition, HandlerRegistry, 
 from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
 from yarvis_api.modules.deterministic_inbound import DeterministicInboundInboxAdapter
 from yarvis_api.persistence import PersistenceRuntime, build_persistence_runtime
+from yarvis_api.persistence.application_trace_store import ApplicationTraceStore
+from yarvis_api.observability.logging import configure_structured_logging
+from yarvis_api.observability.metrics import ObservabilityMetrics
+from yarvis_api.observability.readiness import ReadinessProbe
+from yarvis_api.observability.tracing import (
+    DenyAllTraceInspectionAuthorizer,
+    TraceInspectionService,
+    TraceRecorder,
+)
 from yarvis_api.services.inbound_intake import InboundIntakeQueryService, InboundIntakeService
 from yarvis_api.services.operational_context import IntakeOperationalContextAssociationService, IntakeOperationalContextQueryService
 from yarvis_api.services.mission_inbox import MissionInboxProjectionService, MissionInboxQueryService
@@ -52,6 +61,10 @@ class ApplicationState:
     contract_registry: ContractRegistry
     handler_registry: HandlerRegistry
     dispatcher: Dispatcher
+    observability_metrics: ObservabilityMetrics
+    trace_recorder: TraceRecorder
+    trace_inspection_service: TraceInspectionService
+    readiness_probe: ReadinessProbe
     workspace_platform: WorkspacePlatform
     authentication: AuthenticationPort
     deterministic_inbound_adapter: DeterministicInboundInboxAdapter
@@ -113,6 +126,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     """Register central application-layer error translation."""
 
     app.add_exception_handler(ApplicationError, application_error_handler)
+    app.add_exception_handler(Exception, unhandled_application_exception_handler)
 
 
 def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
@@ -144,6 +158,24 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     @app.get("/health", tags=["technical"])
     def health() -> dict[str, str]:
         return {"status": "ok", "service": "yarvis-api"}
+
+    @app.get("/ready", tags=["technical"])
+    def ready() -> dict[str, str]:
+        state: ApplicationState = app.state.yarvis
+        report = state.readiness_probe.check(
+            lifecycle_active=state.lifecycle_active,
+            registries_sealed=(state.module_registry.is_sealed and state.contract_registry.is_sealed and state.handler_registry.is_sealed),
+        )
+        state.observability_metrics.set_gauge("yarvis_readiness_ready", int(report.ready))
+        if not report.ready:
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=503, detail={"code": "DEPENDENCY_UNAVAILABLE", "message": "service is not ready"})
+        return {"status": "ready", "service": "yarvis-api"}
+
+    @app.get("/metrics", tags=["technical"])
+    def metrics() -> dict[str, object]:
+        return app.state.yarvis.observability_metrics.snapshot()
 
     app.include_router(organizations.router)
     app.include_router(people.router)
@@ -197,8 +229,18 @@ def create_app(
         () if handlers is None else handlers,
     )
     dispatcher = Dispatcher(contract_registry, handler_registry, persistence_runtime)
+    observability_metrics = ObservabilityMetrics()
+    observability_metrics.set_gauge("yarvis_health_ready", 1)
+    trace_store = ApplicationTraceStore(persistence_runtime)
+    trace_recorder = TraceRecorder(
+        trace_store,
+        observability_metrics,
+        configure_structured_logging(composed_settings.log_level),
+    )
+    trace_inspection_service = TraceInspectionService(trace_store, DenyAllTraceInspectionAuthorizer())
+    readiness_probe = ReadinessProbe(persistence_runtime)
     deterministic_inbound_adapter = DeterministicInboundInboxAdapter()
-    inbound_intake_service = InboundIntakeService(persistence_runtime)
+    inbound_intake_service = InboundIntakeService(persistence_runtime, trace_recorder)
     inbound_intake_query_service = InboundIntakeQueryService(inbound_intake_service)
     intake_operational_context_association_service = IntakeOperationalContextAssociationService(persistence_runtime)
     intake_operational_context_query_service = IntakeOperationalContextQueryService()
@@ -241,6 +283,10 @@ def create_app(
         contract_registry=contract_registry,
         handler_registry=handler_registry,
         dispatcher=dispatcher,
+        observability_metrics=observability_metrics,
+        trace_recorder=trace_recorder,
+        trace_inspection_service=trace_inspection_service,
+        readiness_probe=readiness_probe,
         workspace_platform=workspace_platform,
         authentication=authentication,
         deterministic_inbound_adapter=deterministic_inbound_adapter,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Protocol
+from uuid import UUID
 
 from yarvis_api.application.authentication import AuthenticatedPrincipal, TransportAuthenticationRequest
 
@@ -20,6 +21,12 @@ class GovernancePort(Protocol):
 
 class AuthenticationPort(Protocol):
     def authenticate(self, request: TransportAuthenticationRequest) -> AuthenticatedPrincipal: ...
+
+
+class TraceInspectionAuthorizer(Protocol):
+    """F-012 inspection boundary; F-011 will supply target-authority policy."""
+
+    def may_inspect(self, *, trace_id: UUID | None, correlation_id: str | None) -> bool: ...
 
 
 class IdentityPort(Protocol):
@@ -40,3 +47,16 @@ class MissionControlPort(Protocol):
 
 class NetpayOperationsPort(Protocol):
     def open_case(self, *, merchant_candidate_id: str, channel: str) -> str: ...
+
+
+__all__ = [
+    "AuthenticationPort",
+    "AuthorityEvaluation",
+    "ExecutionPort",
+    "GovernancePort",
+    "IdentityPort",
+    "MissionControlPort",
+    "NetpayOperationsPort",
+    "ObservationEvidencePort",
+    "TraceInspectionAuthorizer",
+]
