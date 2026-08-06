@@ -37,12 +37,28 @@ Alcance propuesto, no implementado:
   RFC, Estado, Días abierta, Fecha de solicitud, Siguiente acción y Faltantes;
 - `target_at` como dato secundario y fuente del indicador Vencidos.
 
+Contacto solicitante por requisición, también propuesto y no implementado:
+
+- `requester_contact_id`, `requester_name`, `requester_phone`,
+  `requester_email`, `requester_role`, `source_channel` y
+  `preferred_contact_channel` pertenecen a la requisición; el solicitante
+  externo no es necesariamente el contacto principal del comercio ni el
+  responsable interno;
+- un comercio puede tener múltiples contactos y una persona puede originar
+  múltiples requisiciones;
+- `request_received_at` sigue siendo la fecha/hora efectiva de recepción;
+- la futura búsqueda debe cubrir nombre, teléfono y correo del solicitante;
+- el diseño futuro debe conservar referencia al contacto y una instantánea
+  histórica mínima de sus datos al recibir la solicitud;
+- teléfono y correo son PII: requieren aislamiento organizacional, acceso
+  autorizado y exclusión de logs y eventos innecesarios.
+
 No se permite inferir RFC ni fechas reales, ni ejecutar backfill, hasta definir
-el tratamiento de datos históricos, la normalización y unicidad del RFC, y el
-tratamiento de solicitudes cuya fecha de recepción sea desconocida. La futura
-autorización deberá evaluar PII, aislamiento organizacional, contratos/endpoints
-afectados y su relación con F-011 sin realizar cutover de identidad u
-organización.
+el tratamiento de datos históricos, la normalización y unicidad del RFC, el
+tratamiento de solicitudes cuya fecha de recepción sea desconocida o cuyos
+contactos sean incompletos. La futura autorización deberá evaluar PII,
+aislamiento organizacional, contratos/endpoints afectados y su relación con
+F-011 sin realizar cutover de identidad u organización.
 
 ### EPIC-PROC-001 — Supplier Catalog Intelligence
 - Consultar DM Solar.
