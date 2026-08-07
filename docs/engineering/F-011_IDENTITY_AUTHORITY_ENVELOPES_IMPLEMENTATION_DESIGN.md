@@ -7,9 +7,11 @@
 
 **Date:** 2026-08-06
 **Reviewed and approved by:** Guillermo de Hoyos
-**Approval scope:** technical implementation design only; no runtime authority.
-**Scope:** implementation design for the ratified F-011 architecture only. This
-document does not open F-011, activate IG-006, or authorize runtime work.
+**Approval scope:** technical implementation design; IG-006 and Amendment 002
+authorize Slices A–I only under their stated gates and exclusions.
+**Scope:** implementation design for the ratified F-011 architecture only. It
+does not itself open F-011 or expand the authority granted by IG-006 and
+Amendment 002.
 
 **Authority:** [F-011 Architecture Amendment 001](F-011_IDENTITY_AUTHORITY_ENVELOPES_ARCHITECTURE_AMENDMENT_001.md),
 [ADR-014](../decisions/ADR-014_PRINCIPAL_MEMBERSHIP_ACTIVE_ORGANIZATION_AUTHORITY.md),

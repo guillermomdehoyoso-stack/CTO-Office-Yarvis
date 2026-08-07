@@ -7,10 +7,10 @@
 | Current branch | Verify at session start. |
 | Current HEAD | Verify at session start. |
 | Current sprint | F-013 — Test and Conformance Foundation (closed). |
-| Current engineering gate | F-013 is closed following approved implementation, final validation, and focused review; no successor implementation is authorized by this closure. |
+| Current engineering gate | IG-006 is active for F-011 Slices A–I under Amendment 002; E–G remain subject to the mandatory mapping, preflight, backfill and cutover gates. |
 | Current work package | Workspace-scoped merchant request radar with persistent PostgreSQL records and React operator view. |
 | Current blocker count | 0 known blockers. |
-| Next mandatory action | Complete RADAR validation evidence; no Foundation successor is opened. |
+| Next mandatory action | Complete and validate F-011 A–D, then progress E–I only in Amendment 002 gate order; do not start a successor feature. |
 | Current repository health | C06 is complete, the F-006/F-013 Canonical Runtime Baseline V1 reconciliation is validated, F-012 technical observability is closed, and F-013 Foundation conformance controls are closed. |
 
 ## Current runtime evidence
@@ -47,10 +47,11 @@
 ## Next allowed action
 
 C07–C09 remain deferred and unauthorized. F-011 architecture and its two
-Governance contract profiles and the implementation design are ratified/reviewed,
-but F-011 is not initiated or authorized: IG-006 remains Proposed pending
-explicit state/sprint opening, authorization of Slices A-I, and separate
-implementation mandate. Amendment
+Governance contract profiles and the implementation design are ratified/reviewed.
+F-011 is In Progress for Slices A–I under active IG-006 as clarified by
+Amendment 002. E–G may only migrate authority for the existing Radar after
+their mapping/preflight gates are green; new Radar capabilities remain closed.
+Amendment
 003 is ratified solely as the Foundation completion-path correction; it does
 not authorize F-016, F-017, F-015, or another feature. F-016 remains ineligible
 until the prerequisite order is completed and a separate independent
