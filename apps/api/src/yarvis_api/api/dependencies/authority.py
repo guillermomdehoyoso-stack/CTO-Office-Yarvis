@@ -11,7 +11,7 @@ from yarvis_api.services.authority_resolution import AuthorityResolutionService
 def authority_envelope(
     request: Request,
     db: Session = Depends(get_db),
-    selector: str | None = Header(default=None, alias="X-Yarvis-Workspace"),
+    selector: str | None = Header(default=None, alias="X-Yarvis-Organization-Selector"),
     subject: str = Header(..., alias="X-Yarvis-Subject", min_length=1, max_length=255),
 ):
     authenticated = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))

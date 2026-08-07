@@ -15,6 +15,7 @@ class RadarMerchant(TimestampedUUIDMixin, Base):
     __table_args__ = (UniqueConstraint("workspace_id", "store_id", name="uq_radar_merchants_workspace_store"),)
 
     workspace_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    organization_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)
     trade_name: Mapped[str] = mapped_column(String(255), nullable=False)
     legal_name: Mapped[str | None] = mapped_column(String(255))
     store_id: Mapped[str | None] = mapped_column(String(100))
@@ -33,6 +34,7 @@ class RadarRequest(TimestampedUUIDMixin, Base):
     )
 
     workspace_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    organization_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)
     merchant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("radar_merchants.id"), nullable=False, index=True)
     free_text: Mapped[str] = mapped_column(Text, nullable=False)
     classification: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
@@ -68,6 +70,7 @@ class RadarActivity(Base):
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
     workspace_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    organization_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)
     merchant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("radar_merchants.id"), nullable=False, index=True)
     request_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("radar_requests.id"), index=True)
     event_type: Mapped[str] = mapped_column(String(64), nullable=False)
