@@ -163,6 +163,7 @@ The pillars operate over the Yarvis Reality Graph (YRG). They do not create comp
 | `IG-005_NETPAY_DOCUMENT_INTAKE_IMPLEMENTATION_AUTHORIZATION.md` | Candidate gate for the ratified Netpay document design. | Proposed; explicitly not authorized |
 | `F-011_IDENTITY_AUTHORITY_ENVELOPES_ARCHITECTURE_AMENDMENT_001.md` | Principal, Membership, active-Organization, authority-envelope, and Radar-migration design. | Ratified architectural design; no implementation authority |
 | `F-011_IDENTITY_AUTHORITY_ENVELOPES_ARCHITECTURE_AMENDMENT_002.md` | Resolves E–I authorization conflict for the existing Radar authority migration. | Ratified scope clarification; no new product capability |
+| `F-011_IDENTITY_AUTHORITY_ENVELOPES_ARCHITECTURE_AMENDMENT_003.md` | Authorizes the minimal atomic E/F Radar tenancy transition. | Ratified; E/F only, no backfill or new capability |
 | `ADR-014_PRINCIPAL_MEMBERSHIP_ACTIVE_ORGANIZATION_AUTHORITY.md` | Ownership and authority decision for F-011. | Accepted; no implementation authority |
 | `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md` | Compatible F-011 profiles for Governance authority evaluation and authority-change contracts. | Ratified contract amendment; Planned runtime |
 | `F-011_IDENTITY_AUTHORITY_ENVELOPES_IMPLEMENTATION_DESIGN.md` | Reviewed F-011 persistence, authority-resolution, Radar-transition, migration, and test design. | Approved implementation design; no implementation authority |

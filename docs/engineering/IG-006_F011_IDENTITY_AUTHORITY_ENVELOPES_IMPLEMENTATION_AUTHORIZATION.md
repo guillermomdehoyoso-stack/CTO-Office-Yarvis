@@ -83,3 +83,6 @@ green; H requires completed E–G; I requires completed A–H. It authorizes no 
 product capability or Foundation dependency graph change.
 DI-003/C09 remains blocked until real F-011 closure plus an expressly Approved
 IG-005 and separate mandate.
+
+Amendment 003 additionally authorizes only the minimum F tenancy persistence
+required to make E reads usable; it does not complete F or authorize G/H.
