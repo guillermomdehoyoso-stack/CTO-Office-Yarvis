@@ -77,3 +77,43 @@ class RadarActivity(Base):
     summary: Mapped[str] = mapped_column(Text, nullable=False)
     actor: Mapped[str] = mapped_column(String(255), nullable=False)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now(), index=True)
+
+
+class RadarCommandReceipt(Base):
+    """Durable, organization-scoped replay receipt for future Radar commands.
+
+    F1 intentionally stores a safe result reference rather than a command payload
+    or a serialized public response.  Future handlers own response hydration.
+    """
+
+    __tablename__ = "radar_command_receipts"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id",
+            "command_type",
+            "idempotency_key",
+            name="uq_radar_command_receipts_organization_command_key",
+        ),
+        CheckConstraint("char_length(request_fingerprint) = 64", name="ck_radar_command_receipts_fingerprint"),
+        CheckConstraint("status = 'succeeded'", name="ck_radar_command_receipts_status"),
+    )
+
+    command_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True)
+    organization_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False
+    )
+    command_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    contract_version: Mapped[str] = mapped_column(String(20), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor_principal_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("principals.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    correlation_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False, index=True)
+    causation_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
+    result_status_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    result_resource_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    result_resource_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="succeeded")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    completed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
