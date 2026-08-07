@@ -19,6 +19,7 @@ def _transport_request(headers: dict[str, str]) -> TransportAuthenticationReques
 def _trusted_headers() -> dict[str, str]:
     return {
         "x-yarvis-actor": "connector:test",
+        "x-yarvis-subject": "connector:test",
         "x-yarvis-organization": "org-123",
         "x-yarvis-authority": "inbound.intake",
         "x-yarvis-auth-token": "deterministic-inbound-intake",
@@ -54,17 +55,18 @@ def test_development_provider_builds_authenticated_principal() -> None:
     principal = provider.authenticate(_transport_request(_trusted_headers()))
 
     assert principal.actor_id == "connector:test"
-    assert principal.organization_id == "org-123"
-    assert principal.authority == "inbound.intake"
+    assert principal.organization_id is None
+    assert principal.authority == "deterministic-subject"
     assert principal.authentication_method == "trusted-header-dev"
-    assert principal.roles == ("connector", "system")
-    assert principal.permissions == ("intake:receive", "intake:message")
+    assert principal.roles == ()
+    assert principal.permissions == ()
 
 
 def test_development_provider_rejects_missing_actor() -> None:
     provider = DeterministicAuthenticationProvider(Settings(environment="test"))
     headers = _trusted_headers()
     headers.pop("x-yarvis-actor")
+    headers.pop("x-yarvis-subject")
 
     try:
         provider.authenticate(_transport_request(headers))
@@ -73,28 +75,20 @@ def test_development_provider_rejects_missing_actor() -> None:
         assert getattr(error, "code", None) == ApplicationErrorCode.AUTHORIZATION_DENIED
 
 
-def test_development_provider_rejects_missing_authority() -> None:
+def test_development_provider_ignores_authority_headers() -> None:
     provider = DeterministicAuthenticationProvider(Settings(environment="test"))
     headers = _trusted_headers()
     headers.pop("x-yarvis-authority")
 
-    try:
-        provider.authenticate(_transport_request(headers))
-        assert False, "expected authentication failure"
-    except Exception as error:
-        assert getattr(error, "code", None) == ApplicationErrorCode.AUTHORIZATION_DENIED
+    assert provider.authenticate(_transport_request(headers)).authority == "deterministic-subject"
 
 
-def test_development_provider_rejects_invalid_headers() -> None:
+def test_development_provider_ignores_invalid_legacy_authority_headers() -> None:
     provider = DeterministicAuthenticationProvider(Settings(environment="test"))
     headers = _trusted_headers()
     headers["x-yarvis-roles"] = "connector,connector"
 
-    try:
-        provider.authenticate(_transport_request(headers))
-        assert False, "expected authentication failure"
-    except Exception as error:
-        assert getattr(error, "code", None) == ApplicationErrorCode.AUTHORIZATION_DENIED
+    assert provider.authenticate(_transport_request(headers)).permissions == ()
 
 
 def test_production_mode_rejects_deterministic_provider() -> None:

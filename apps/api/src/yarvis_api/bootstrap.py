@@ -153,6 +153,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         radar,
         document_registry,
         recovery_queue,
+        governance,
         workspace_api,
     )
 
@@ -199,6 +200,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     app.include_router(operational_task.router)
     app.include_router(operational_workspace.router)
     app.include_router(recovery_queue.router)
+    app.include_router(governance.router)
     app.include_router(workspace_api.router)
     for module in module_registry.modules:
         if module.register_routes is not None:

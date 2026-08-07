@@ -65,9 +65,7 @@ class DeterministicAuthenticationProvider(AuthenticationPort):
             )
 
         headers = {key.lower(): value for key, value in request.headers.items()}
-        actor_id = headers.get("x-yarvis-actor") or headers.get("x-yarvis-actor-id")
-        authority = headers.get("x-yarvis-authority") or headers.get("x-yarvis-authority-scope")
-        organization_id = headers.get("x-yarvis-organization") or headers.get("x-yarvis-authority-organization-id")
+        actor_id = headers.get("x-yarvis-subject") or headers.get("x-yarvis-actor") or headers.get("x-yarvis-actor-id")
         trusted_token = headers.get("x-yarvis-auth-token") or headers.get("x-yarvis-authority-token")
 
         if not actor_id:
@@ -76,12 +74,6 @@ class DeterministicAuthenticationProvider(AuthenticationPort):
                 message="missing trusted principal actor",
                 details={"missing": "actor"},
             )
-        if not authority:
-            raise ApplicationError(
-                code=ApplicationErrorCode.AUTHORIZATION_DENIED,
-                message="missing trusted principal authority",
-                details={"missing": "authority"},
-            )
         if trusted_token != _TRUSTED_TOKEN:
             raise ApplicationError(
                 code=ApplicationErrorCode.AUTHORIZATION_DENIED,
@@ -89,18 +81,20 @@ class DeterministicAuthenticationProvider(AuthenticationPort):
                 details={"reason": "invalid_token"},
             )
 
-        roles = _parse_list(headers.get("x-yarvis-roles"))
-        permissions = _parse_list(headers.get("x-yarvis-permissions"))
-        is_system_actor = _parse_bool(headers.get("x-yarvis-system-actor"))
+        # These legacy headers are deliberately not authority inputs. F-011
+        # handlers re-resolve membership, organization and permissions.
+        roles: tuple[str, ...] = ()
+        permissions: tuple[str, ...] = ()
+        is_system_actor = False
         correlation_id = headers.get("x-yarvis-correlation-id") or headers.get("x-correlation-id")
         auth_method = headers.get("x-yarvis-auth-method") or "trusted-header-dev"
 
         return AuthenticatedPrincipal(
             actor_id=actor_id,
-            organization_id=organization_id,
+            organization_id=None,
             roles=roles,
             permissions=permissions,
-            authority=authority,
+            authority="deterministic-subject",
             authentication_method=auth_method,
             authenticated_at=utc_now(),
             is_system_actor=is_system_actor,

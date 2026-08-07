@@ -36,7 +36,7 @@ def clean_database(test_database):
     from yarvis_api.main import app
 
     with app.state.yarvis.persistence.create_session() as session:
-        session.connection().exec_driver_sql("TRUNCATE TABLE application_traces, radar_activities, radar_checklist_items, radar_requests, radar_merchants, domain_events, attention_items, policy_evaluations, operational_policies, resolution_decisions, observations, document_records, source_records, netpay_device_assignments, netpay_shipments, netpay_service_cases, next_action_suggestions, operational_alerts, requirement_fulfillments, intake_classifications, case_checklists, evidence, intake_items, checklist_requirements, checklist_templates, cases, people, organizations, document_types, case_types RESTART IDENTITY CASCADE")
+        session.connection().exec_driver_sql("TRUNCATE TABLE application_traces, radar_activities, radar_checklist_items, radar_requests, radar_merchants, domain_events, principal_memberships, principals, attention_items, policy_evaluations, operational_policies, resolution_decisions, observations, document_records, source_records, netpay_device_assignments, netpay_shipments, netpay_service_cases, next_action_suggestions, operational_alerts, requirement_fulfillments, intake_classifications, case_checklists, evidence, intake_items, checklist_requirements, checklist_templates, cases, people, organizations, document_types, case_types RESTART IDENTITY CASCADE")
         session.commit()
         load_catalogs(session)
         session.commit()

@@ -29,6 +29,7 @@ from yarvis_api.models.operational_economics import EconomicFact
 from yarvis_api.models.operational_task import OperationalTask, OperationalTaskEvent, TaskDependency
 from yarvis_api.models.operational import NextActionSuggestion, OperationalAlert
 from yarvis_api.models.person import Person
+from yarvis_api.models.principal import Principal, PrincipalMembership, PrincipalMembershipCommand
 from yarvis_api.models.process import ProcessDefinition, ProcessInstance, ProcessInstanceEvent, ProcessInstanceWorkLink, ProcessStage, ProcessTransition
 
 __all__ = [
@@ -75,6 +76,9 @@ __all__ = [
 	"OperationalTaskEvent",
 	"Site",
 	"Person",
+	"Principal",
+	"PrincipalMembership",
+	"PrincipalMembershipCommand",
 	"ProcessDefinition",
 	"ProcessInstance",
 	"ProcessInstanceEvent",
