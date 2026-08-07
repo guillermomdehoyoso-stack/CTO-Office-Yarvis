@@ -86,3 +86,7 @@ IG-005 and separate mandate.
 
 Amendment 003 additionally authorizes only the minimum F tenancy persistence
 required to make E reads usable; it does not complete F or authorize G/H.
+
+Amendment 004 ratifies the remaining F command/event design only. A separate
+implementation mandate remains required before receipts, Radar events or their
+metadata persistence may be built.
