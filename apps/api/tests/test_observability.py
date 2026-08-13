@@ -15,6 +15,7 @@ from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 from yarvis_api.main import app
 from yarvis_api.models.application_trace import ApplicationTrace
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 from yarvis_api.observability.metrics import ObservabilityMetrics
 from yarvis_api.observability.logging import StructuredLogFormatter
 from yarvis_api.observability.readiness import ReadinessReport
@@ -350,6 +351,11 @@ def test_intake_reference_flow_records_trace_without_changing_idempotency(clean_
     organization_id = uuid4()
     with app.state.yarvis.persistence.create_session() as session:
         session.add(Organization(id=organization_id, legal_name="F012 Intake", display_name="F012 Intake"))
+        session.flush()
+        principal = Principal(external_subject="connector:f012", status="active")
+        session.add(principal)
+        session.flush()
+        session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role="inbound_operator"))
         session.commit()
 
     correlation_id = uuid4()
@@ -361,9 +367,9 @@ def test_intake_reference_flow_records_trace_without_changing_idempotency(clean_
         "correlation_id": str(correlation_id), "idempotency_key": "f012-intake-key",
     }
     headers = {
-        "x-yarvis-actor": "connector:f012", "x-yarvis-organization": str(organization_id),
-        "x-yarvis-authority": "inbound.intake", "x-yarvis-auth-token": "deterministic-inbound-intake", "x-yarvis-roles": "connector",
-        "x-yarvis-permissions": "intake:receive,intake:message",
+        "x-yarvis-subject": "connector:f012", "x-yarvis-actor": "forged-observability-actor",
+        "x-yarvis-organization": str(uuid4()), "x-yarvis-authority": "forged.authority",
+        "x-yarvis-auth-token": "deterministic-inbound-intake",
     }
     client = TestClient(app)
     first = client.post("/intake/deterministic", json=payload, headers=headers)
