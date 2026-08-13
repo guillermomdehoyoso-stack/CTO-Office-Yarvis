@@ -148,8 +148,9 @@ def associate_deterministic_intake_operational_context(
     intake_id: UUID,
     payload: AssociateIntakeOperationalContextCreate,
     request: Request,
+    db: Session = Depends(get_db),
 ):
-    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    principal = _resolved_intake_principal(request, db, required_scope="inbound.context.associate")
     result = request.app.state.yarvis.intake_operational_context_association_service.associate(
         AssociateIntakeOperationalContextCommand(
             intake_item_id=intake_id,
@@ -175,7 +176,7 @@ def associate_deterministic_intake_operational_context(
     response_model=IntakeOperationalContextAssociationRead,
 )
 def get_deterministic_intake_operational_context(intake_id: UUID, request: Request, db: Session = Depends(get_db)):
-    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    principal = _resolved_intake_principal(request, db, required_scope="inbound.read")
     return request.app.state.yarvis.intake_operational_context_query_service.retrieve(
         db,
         intake_id,

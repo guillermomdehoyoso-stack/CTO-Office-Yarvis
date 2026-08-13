@@ -8,10 +8,12 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
 from yarvis_api.api.authentication import transport_authentication_request
+from yarvis_api.application.intake_authority import intake_principal_from_envelope
 from yarvis_api.application.metadata import RequestMetadata
 from yarvis_api.application.mission_inbox import MissionInboxFilters
 from yarvis_api.clock import utc_now
 from yarvis_api.database import get_db
+from yarvis_api.services.authority_resolution import AuthorityResolutionService
 from yarvis_api.schemas.mission_inbox import MissionInboxItemRead, MissionInboxPage
 
 
@@ -24,6 +26,18 @@ def _metadata(principal_correlation_id: str | None, query_id: str) -> RequestMet
         correlation_id=principal_correlation_id or str(uuid4()),
         query_id=query_id,
     )
+
+
+def _resolved_mission_inbox_principal(request: Request, db: Session):
+    authenticated = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    envelope = AuthorityResolutionService().resolve(
+        db,
+        external_subject=authenticated.actor_id,
+        selector=None,
+        authentication_source=authenticated.authentication_method,
+        correlation_id=authenticated.correlation_id or str(uuid4()),
+    )
+    return intake_principal_from_envelope(envelope, required_scope="mission.inbox.read")
 
 
 @router.get("", response_model=MissionInboxPage)
@@ -39,7 +53,7 @@ def list_mission_inbox(
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ) -> MissionInboxPage:
-    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    principal = _resolved_mission_inbox_principal(request, db)
     return request.app.state.yarvis.mission_inbox_query_service.list(
         db,
         principal,
@@ -50,7 +64,7 @@ def list_mission_inbox(
 
 @router.get("/{inbox_item_id}", response_model=MissionInboxItemRead)
 def retrieve_mission_inbox_item(inbox_item_id: UUID, request: Request, db: Session = Depends(get_db)) -> MissionInboxItemRead:
-    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    principal = _resolved_mission_inbox_principal(request, db)
     return request.app.state.yarvis.mission_inbox_query_service.retrieve(
         db,
         inbox_item_id,

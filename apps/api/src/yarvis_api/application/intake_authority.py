@@ -5,7 +5,7 @@ from yarvis_api.application.authority import IdentityAuthorityEnvelope
 from yarvis_api.clock import utc_now
 
 
-_INTAKE_SCOPES = frozenset({"inbound.intake", "inbound.read"})
+_INTAKE_SCOPES = frozenset({"inbound.intake", "inbound.read", "inbound.context.associate", "mission.inbox.read"})
 
 
 def intake_principal_from_envelope(

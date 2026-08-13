@@ -11,6 +11,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "foundation_membership_operator": frozenset({"governance.membership.create", "governance.membership.revoke"}),
     "inbound_viewer": frozenset({"inbound.read"}),
     "inbound_operator": frozenset({"inbound.read", "inbound.intake"}),
+    "inbound_context_operator": frozenset({"inbound.context.associate"}),
+    "mission_inbox_viewer": frozenset({"mission.inbox.read"}),
 }
 
 

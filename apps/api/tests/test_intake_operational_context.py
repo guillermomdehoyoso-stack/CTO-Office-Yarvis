@@ -16,6 +16,7 @@ from yarvis_api.models.operational_context import (
     Site,
 )
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 
 
 client = TestClient(app)
@@ -30,7 +31,10 @@ ASSOCIATE_HEADERS = {
 
 
 def _headers(*, organization_id: UUID = ORGANIZATION_ID, authority: str = "inbound.context.associate") -> dict[str, str]:
-    return {**ASSOCIATE_HEADERS, "x-yarvis-organization": str(organization_id), "x-yarvis-authority": authority}
+    subject = "operator:context-01" if authority == "inbound.context.associate" else "operator:intake-01"
+    if organization_id == OTHER_ORGANIZATION_ID:
+        subject += "-other"
+    return {**ASSOCIATE_HEADERS, "x-yarvis-subject": subject, "x-yarvis-organization": str(organization_id), "x-yarvis-authority": authority}
 
 
 @pytest.fixture(autouse=True)
@@ -42,6 +46,16 @@ def organizations(clean_database) -> None:
                 Organization(id=OTHER_ORGANIZATION_ID, legal_name="WS002A Other", display_name="WS002A Other"),
             )
         )
+        session.flush()
+        for subject, organization_id, role in (
+            ("operator:context-01", ORGANIZATION_ID, "inbound_context_operator"),
+            ("operator:intake-01", ORGANIZATION_ID, "inbound_operator"),
+            ("operator:context-01-other", OTHER_ORGANIZATION_ID, "inbound_context_operator"),
+            ("operator:intake-01-other", OTHER_ORGANIZATION_ID, "inbound_operator"),
+        ):
+            principal = Principal(external_subject=subject, status="active")
+            session.add(principal); session.flush()
+            session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role=role))
         session.commit()
 
 
@@ -271,7 +285,7 @@ def test_command_requires_exact_authority_and_query_returns_same_tenant_associat
 
 
 @pytest.mark.parametrize("header", ("x-yarvis-actor", "x-yarvis-authority", "x-yarvis-organization"))
-def test_command_rejects_missing_trusted_principal_context(header: str) -> None:
+def test_command_uses_resolved_subject_not_legacy_headers(header: str) -> None:
     intake_id = _create_intake()
     site_id, project_id, _ = _seed_context()
     headers = _headers()
@@ -281,8 +295,7 @@ def test_command_rejects_missing_trusted_principal_context(header: str) -> None:
         json=_association_payload(site_id, project_id),
         headers=headers,
     )
-    assert response.status_code == 403
-    assert response.json()["code"] == "AUTHORIZATION_DENIED"
+    assert response.status_code == 201
 
 
 def test_same_idempotency_key_is_isolated_by_organization() -> None:

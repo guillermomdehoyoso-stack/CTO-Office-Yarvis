@@ -11,6 +11,7 @@ from yarvis_api.models.mission_inbox import MissionInboxItem, ProjectionCheckpoi
 from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.operational_context import ConnectorMapping, Project, Site
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 from yarvis_api.services.mission_inbox import MISSION_INBOX_PROJECTION, MissionInboxProjectionService
 
 
@@ -20,8 +21,12 @@ OTHER_ORGANIZATION_ID = uuid4()
 
 
 def _headers(*, organization_id: UUID = ORGANIZATION_ID, authority: str = "inbound.intake") -> dict[str, str]:
+    subject = {"inbound.intake": "operator:mission-intake", "inbound.context.associate": "operator:mission-context", "mission.inbox.read": "operator:mission-inbox"}.get(authority, "operator:mission-intake")
+    if organization_id == OTHER_ORGANIZATION_ID:
+        subject += "-other"
     return {
-        "x-yarvis-actor": "operator:mission-inbox",
+        "x-yarvis-subject": subject,
+        "x-yarvis-actor": subject,
         "x-yarvis-organization": str(organization_id),
         "x-yarvis-authority": authority,
         "x-yarvis-auth-token": "deterministic-inbound-intake",
@@ -37,6 +42,18 @@ def organizations(clean_database) -> None:
                 Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other Mission Inbox", display_name="Other Mission Inbox"),
             )
         )
+        session.flush()
+        for subject, organization_id, role in (
+            ("operator:mission-intake", ORGANIZATION_ID, "inbound_operator"),
+            ("operator:mission-context", ORGANIZATION_ID, "inbound_context_operator"),
+            ("operator:mission-inbox", ORGANIZATION_ID, "mission_inbox_viewer"),
+            ("operator:mission-intake-other", OTHER_ORGANIZATION_ID, "inbound_operator"),
+            ("operator:mission-context-other", OTHER_ORGANIZATION_ID, "inbound_context_operator"),
+            ("operator:mission-inbox-other", OTHER_ORGANIZATION_ID, "mission_inbox_viewer"),
+        ):
+            principal = Principal(external_subject=subject, status="active")
+            session.add(principal); session.flush()
+            session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role=role))
         session.commit()
 
 
@@ -283,19 +300,20 @@ def test_read_model_database_constraints_are_enforced() -> None:
 
 
 @pytest.mark.parametrize(
-    "headers",
+    "headers, expected_status",
     (
-        {},
-        {key: value for key, value in _headers(authority="mission.inbox.read").items() if key != "x-yarvis-actor"},
-        {key: value for key, value in _headers(authority="mission.inbox.read").items() if key != "x-yarvis-authority"},
-        _headers(authority="inbound.read"),
+        ({}, 403),
+        ({key: value for key, value in _headers(authority="mission.inbox.read").items() if key != "x-yarvis-actor"}, 200),
+        ({key: value for key, value in _headers(authority="mission.inbox.read").items() if key != "x-yarvis-authority"}, 200),
+        (_headers(authority="inbound.read"), 403),
     ),
 )
-def test_mission_inbox_requires_governed_read_authority(headers: dict[str, str]) -> None:
+def test_mission_inbox_requires_governed_read_authority(headers: dict[str, str], expected_status: int) -> None:
     response = client.get("/mission/inbox", headers=headers)
 
-    assert response.status_code == 403
-    assert response.json()["code"] == "AUTHORIZATION_DENIED"
+    assert response.status_code == expected_status
+    if expected_status == 403:
+        assert response.json()["code"] == "AUTHORIZATION_DENIED"
 
 
 def test_detail_has_governed_fields_and_matches_missing_item_concealment() -> None:
