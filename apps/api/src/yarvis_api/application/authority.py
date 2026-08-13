@@ -29,6 +29,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "economics_fact_recorder": frozenset({"economics.fact.record"}),
     "economics_fact_corrector": frozenset({"economics.fact.correct"}),
     "economics_viewer": frozenset({"economics.read"}),
+    "task_planner": frozenset({"task.create", "task.update"}),
+    "task_assigner": frozenset({"task.assign"}),
+    "task_lifecycle_operator": frozenset({"task.transition", "task.complete", "task.cancel"}),
+    "task_dependency_manager": frozenset({"task.dependency.manage"}),
 }
 
 

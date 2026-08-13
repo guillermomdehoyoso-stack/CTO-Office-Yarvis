@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 import pytest
@@ -12,6 +13,7 @@ from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.operational_task import OperationalTask, OperationalTaskEvent
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 from yarvis_api.persistence import UnitOfWork
 from yarvis_api.services.operational_task import TaskMissionWorkTimelineProjector
 
@@ -21,11 +23,21 @@ ORGANIZATION_ID = uuid4()
 OTHER_ORGANIZATION_ID = uuid4()
 
 
-def _headers(authority: str, organization_id: UUID = ORGANIZATION_ID, *, include_authority: bool = True) -> dict[str, str]:
+_SUBJECTS = {
+    "task.create": "planner", "task.update": "planner", "task.assign": "assigner",
+    "task.transition": "lifecycle", "task.complete": "lifecycle", "task.cancel": "lifecycle",
+    "task.dependency.manage": "dependency",
+}
+
+
+def _headers(authority: str, organization_id: UUID = ORGANIZATION_ID, *, include_authority: bool = True, subject: str | None = None, **forged_headers: str) -> dict[str, str]:
+    subject = subject or _SUBJECTS.get(authority, "unmapped")
+    if organization_id == OTHER_ORGANIZATION_ID:
+        subject += "-other"
     headers = {
-        "x-yarvis-actor": "operator:task",
-        "x-yarvis-organization": str(organization_id),
+        "x-yarvis-subject": f"operator:task:{subject}",
         "x-yarvis-auth-token": "deterministic-inbound-intake",
+        **forged_headers,
     }
     if include_authority:
         headers["x-yarvis-authority"] = authority
@@ -39,6 +51,18 @@ def organizations(clean_database) -> None:
             Organization(id=ORGANIZATION_ID, legal_name="Tasks", display_name="Tasks"),
             Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other Tasks", display_name="Other Tasks"),
         ))
+        for organization_id, subject, role in (
+            (ORGANIZATION_ID, "operator:task:planner", "task_planner"),
+            (ORGANIZATION_ID, "operator:task:assigner", "task_assigner"),
+            (ORGANIZATION_ID, "operator:task:lifecycle", "task_lifecycle_operator"),
+            (ORGANIZATION_ID, "operator:task:dependency", "task_dependency_manager"),
+            (ORGANIZATION_ID, "operator:task:foreign", "economics_viewer"),
+            (OTHER_ORGANIZATION_ID, "operator:task:planner-other", "task_planner"),
+        ):
+            principal = Principal(external_subject=subject, status="active")
+            session.add(principal)
+            session.flush()
+            session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role=role))
         session.commit()
 
 
@@ -78,8 +102,8 @@ def test_all_task_command_authorities_are_exact_and_missing_context_is_denied() 
     for expected, call in calls:
         assert call("wrong.authority").status_code == 403
         assert call(expected).status_code != 403
-    missing = client.post("/mission/tasks", json={"mission_work_item_id": str(work_id), "title": "No authority", "idempotency_key": uuid4().hex, "correlation_id": str(uuid4())}, headers=_headers("task.create", include_authority=False))
-    assert missing.status_code == 403
+    no_header = client.post("/mission/tasks", json={"mission_work_item_id": str(work_id), "title": "No authority header", "idempotency_key": uuid4().hex, "correlation_id": str(uuid4())}, headers=_headers("task.create", include_authority=False))
+    assert no_header.status_code == 201
 
 
 def test_create_replay_conflict_and_organization_scope() -> None:
@@ -91,6 +115,42 @@ def test_create_replay_conflict_and_organization_scope() -> None:
     assert first.status_code == replay.status_code == other.status_code == 201
     assert first.json()["id"] == replay.json()["id"] and first.json()["id"] != other.json()["id"]
     assert conflict.status_code == 409
+
+
+def test_task_authority_is_persisted_and_revocation_precedes_replay() -> None:
+    work_id = _work()
+    key = "revoked-task-replay"
+    created = _create(work_id, key=key)
+    assert created.status_code == 201
+    forged_assignment = client.post(
+        f"/mission/tasks/{created.json()['id']}/assignment",
+        json={"assignee_subject_id": "operator:two", "expected_version": 1, "idempotency_key": uuid4().hex, "correlation_id": str(uuid4())},
+        headers=_headers("task.create", **{"x-yarvis-authority": "task.assign"}),
+    )
+    assert forged_assignment.status_code == 403
+    foreign_role = client.post(
+        "/mission/tasks", json={"mission_work_item_id": str(work_id), "title": "Foreign role", "idempotency_key": uuid4().hex, "correlation_id": str(uuid4())},
+        headers=_headers("task.create", subject="foreign", **{"x-yarvis-authority": "task.create"}),
+    )
+    assert foreign_role.status_code == 403
+    forged_organization = client.post(
+        "/mission/tasks", json={"mission_work_item_id": str(work_id), "title": "Header organization", "idempotency_key": uuid4().hex, "correlation_id": str(uuid4())},
+        headers=_headers("task.create", **{"x-yarvis-organization": str(OTHER_ORGANIZATION_ID)}),
+    )
+    assert forged_organization.status_code == 201
+    forged_token = client.post(
+        "/mission/tasks", json={"mission_work_item_id": str(work_id), "title": "Forged token", "idempotency_key": uuid4().hex, "correlation_id": str(uuid4())},
+        headers=_headers("task.create", **{"x-yarvis-auth-token": "forged"}),
+    )
+    assert forged_token.status_code == 403
+    with app.state.yarvis.persistence.create_session() as session:
+        membership = session.scalar(select(PrincipalMembership).join(Principal).where(Principal.external_subject == "operator:task:planner"))
+        assert membership is not None
+        membership.status = "revoked"
+        membership.revoked_at = datetime.now(timezone.utc)
+        session.commit()
+    denied_replay = _create(work_id, key=key)
+    assert denied_replay.status_code == 403
 
 
 def test_mutation_and_dependency_replays_do_not_duplicate_events_or_versions() -> None:
@@ -245,4 +305,4 @@ def test_cross_organization_task_is_concealed_and_migration_constraints_exist() 
         event_constraints = {item["name"] for item in inspect(session.bind).get_unique_constraints("operational_task_events")}
     assert "uq_operational_tasks_create_idempotency" in constraints
     assert "uq_operational_task_events_idempotency" in event_constraints
-    assert ScriptDirectory.from_config(Config("alembic.ini")).get_heads() == ["20260805_30"]
+    assert ScriptDirectory.from_config(Config("alembic.ini")).get_heads() == ["20260813_36"]
