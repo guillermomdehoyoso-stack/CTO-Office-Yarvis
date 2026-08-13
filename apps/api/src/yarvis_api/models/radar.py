@@ -12,7 +12,7 @@ from yarvis_api.models.base import Base, TimestampedUUIDMixin
 
 class RadarMerchant(TimestampedUUIDMixin, Base):
     __tablename__ = "radar_merchants"
-    __table_args__ = (UniqueConstraint("workspace_id", "store_id", name="uq_radar_merchants_workspace_store"),)
+    __table_args__ = (UniqueConstraint("organization_id", "store_id", name="uq_radar_merchants_organization_store"),)
 
     workspace_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     organization_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)

@@ -12,12 +12,11 @@ def authority_envelope(
     request: Request,
     db: Session = Depends(get_db),
     selector: str | None = Header(default=None, alias="X-Yarvis-Organization-Selector"),
-    subject: str = Header(..., alias="X-Yarvis-Subject", min_length=1, max_length=255),
 ):
     authenticated = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
     return AuthorityResolutionService().resolve(
         db,
-        external_subject=subject,
+        external_subject=authenticated.actor_id,
         selector=selector,
         authentication_source=authenticated.authentication_method,
         correlation_id=authenticated.correlation_id or "00000000-0000-0000-0000-000000000000",

@@ -11,11 +11,13 @@ from sqlalchemy.orm import Session
 from yarvis_api.database import get_db
 from yarvis_api.api.dependencies.authority import authority_envelope
 from yarvis_api.application.authority import IdentityAuthorityEnvelope
+from yarvis_api.models.domain_event import record_event
 from yarvis_api.models.radar import RadarActivity, RadarChecklistItem, RadarMerchant, RadarRequest
 from yarvis_api.schemas.radar import (
     ActivityRead, ChecklistRead, ChecklistUpdate, CloseRequest, DashboardRead, MerchantCreate,
     MerchantDetail, MerchantRead, NextActionUpdate, NoteCreate, ReopenRequest, RequestCreate, RequestRead,
 )
+from yarvis_api.services.radar_command_receipts import CommandResultReference, RadarCommandReceiptService
 
 router = APIRouter(prefix="/radar", tags=["radar operativo netpay"])
 DEFAULT_TIMEZONE = "America/Mexico_City"
@@ -98,50 +100,156 @@ def merchant_read(db: Session, merchant: RadarMerchant) -> MerchantRead:
 
 
 @router.post("/merchants", response_model=MerchantRead, status_code=status.HTTP_201_CREATED)
-def create_merchant(payload: MerchantCreate, db: Session = Depends(get_db), workspace: str = Depends(workspace_id), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
-    envelope.require("radar.merchant.create")
-    merchant = RadarMerchant(workspace_id=workspace, organization_id=envelope.organization_id, **payload.model_dump(exclude={"actor"}))
-    db.add(merchant)
-    db.flush()
-    activity(db, merchant, None, "merchant_created", "Comercio registrado", str(envelope.principal_id))
+def create_merchant(
+    payload: MerchantCreate,
+    response: Response,
+    idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255),
+    db: Session = Depends(get_db),
+    workspace: str = Depends(workspace_id),
+    envelope: IdentityAuthorityEnvelope = Depends(authority_envelope),
+):
+    def mutation(context):
+        if payload.store_id and db.scalar(
+            select(RadarMerchant.id).where(
+                RadarMerchant.organization_id == context.envelope.organization_id,
+                RadarMerchant.store_id == payload.store_id,
+            )
+        ):
+            raise HTTPException(status_code=409, detail="store id already exists in organization")
+        merchant = RadarMerchant(
+            workspace_id=workspace,
+            organization_id=context.envelope.organization_id,
+            **payload.model_dump(exclude={"actor"}),
+        )
+        db.add(merchant)
+        db.flush()
+        activity(db, merchant, None, "merchant_created", "Comercio registrado", str(context.envelope.principal_id))
+        record_event(
+            db,
+            event_type="radar.merchant_created",
+            aggregate_type="radar_merchant",
+            aggregate_id=merchant.id,
+            organization_id=context.envelope.organization_id,
+            correlation_id=context.correlation_id,
+            causation_id=context.command_id,
+            payload={"event_version": "1.0.0", "actor_principal_id": str(context.envelope.principal_id), "command_id": str(context.command_id)},
+        )
+        return CommandResultReference("radar_merchant", merchant.id, status.HTTP_201_CREATED)
+
+    result = RadarCommandReceiptService().execute(
+        db,
+        resolve_authority=lambda: envelope.require("radar.merchant.create") or envelope,
+        command_type="radar.merchant.create",
+        contract_version="1.0.0",
+        idempotency_key=idempotency_key,
+        functional_payload=payload.model_dump(exclude={"actor"}, mode="python"),
+        mutation=mutation,
+    )
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="store id already exists in workspace")
+        raise
+    merchant = db.scalar(
+        select(RadarMerchant).where(
+            RadarMerchant.id == result.result.resource_id,
+            RadarMerchant.organization_id == envelope.organization_id,
+        )
+    )
+    if merchant is None:
+        raise HTTPException(status_code=404, detail="not found")
+    response.status_code = result.result.status_code
     return merchant_read(db, merchant)
 
 
 @router.post("/requests", response_model=RequestRead, status_code=status.HTTP_201_CREATED)
-def create_request(payload: RequestCreate, response: Response, idempotency_key: str | None = Header(default=None, alias="Idempotency-Key", max_length=255), db: Session = Depends(get_db), workspace: str = Depends(workspace_id), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
-    envelope.require("radar.request.create")
-    if idempotency_key:
-        existing = db.scalar(select(RadarRequest).where(RadarRequest.organization_id == envelope.organization_id, RadarRequest.idempotency_key == idempotency_key))
-        if existing:
-            response.status_code = status.HTTP_200_OK
-            return request_read(db, existing)
-    merchant = db.scalar(select(RadarMerchant).where(RadarMerchant.id == payload.merchant_id, RadarMerchant.organization_id == envelope.organization_id)) if payload.merchant_id else RadarMerchant(workspace_id=workspace, organization_id=envelope.organization_id, **payload.merchant.model_dump())
-    if merchant is None: raise HTTPException(status_code=404, detail="not found")
-    if payload.merchant:
-        db.add(merchant)
+def create_request(
+    payload: RequestCreate,
+    response: Response,
+    idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255),
+    db: Session = Depends(get_db),
+    workspace: str = Depends(workspace_id),
+    envelope: IdentityAuthorityEnvelope = Depends(authority_envelope),
+):
+    def mutation(context):
+        merchant = (
+            db.scalar(
+                select(RadarMerchant).where(
+                    RadarMerchant.id == payload.merchant_id,
+                    RadarMerchant.organization_id == context.envelope.organization_id,
+                )
+            )
+            if payload.merchant_id
+            else RadarMerchant(
+                workspace_id=workspace,
+                organization_id=context.envelope.organization_id,
+                **payload.merchant.model_dump(),
+            )
+        )
+        if merchant is None:
+            raise HTTPException(status_code=404, detail="not found")
+        if payload.merchant:
+            db.add(merchant)
+            db.flush()
+            activity(db, merchant, None, "merchant_created", "Comercio registrado al crear solicitud", str(context.envelope.principal_id))
+        request = RadarRequest(
+            workspace_id=workspace,
+            organization_id=context.envelope.organization_id,
+            merchant_id=merchant.id,
+            free_text=payload.free_text,
+            classification=payload.classification,
+            priority=payload.priority,
+            owner=payload.owner,
+            next_action=payload.next_action,
+            due_at=payload.due_at,
+            idempotency_key=idempotency_key.strip(),
+        )
+        db.add(request)
         db.flush()
-        activity(db, merchant, None, "merchant_created", "Comercio registrado al crear solicitud", str(envelope.principal_id))
-    request = RadarRequest(workspace_id=workspace, organization_id=envelope.organization_id, merchant_id=merchant.id, free_text=payload.free_text, classification=payload.classification, priority=payload.priority, owner=payload.owner, next_action=payload.next_action, due_at=payload.due_at, idempotency_key=idempotency_key)
-    db.add(request)
-    db.flush()
-    for position, (code, label) in enumerate(template_for(payload.classification), 1):
-        db.add(RadarChecklistItem(request_id=request.id, item_code=code, label=label, position=position))
-    activity(db, merchant, request, "request_created", "Solicitud creada y clasificada como " + payload.classification, str(envelope.principal_id))
+        for position, (code, label) in enumerate(template_for(payload.classification), 1):
+            db.add(RadarChecklistItem(request_id=request.id, item_code=code, label=label, position=position))
+        activity(db, merchant, request, "request_created", "Solicitud creada y clasificada como " + payload.classification, str(context.envelope.principal_id))
+        record_event(
+            db,
+            event_type="radar.request_created",
+            aggregate_type="radar_request",
+            aggregate_id=request.id,
+            organization_id=context.envelope.organization_id,
+            correlation_id=context.correlation_id,
+            causation_id=context.command_id,
+            payload={
+                "event_version": "1.0.0",
+                "actor_principal_id": str(context.envelope.principal_id),
+                "command_id": str(context.command_id),
+                "merchant_id": str(merchant.id),
+                "classification": request.classification,
+            },
+        )
+        return CommandResultReference("radar_request", request.id, status.HTTP_201_CREATED)
+
+    result = RadarCommandReceiptService().execute(
+        db,
+        resolve_authority=lambda: envelope.require("radar.request.create") or envelope,
+        command_type="radar.request.create",
+        contract_version="1.0.0",
+        idempotency_key=idempotency_key,
+        functional_payload=payload.model_dump(exclude={"actor"}, mode="python"),
+        mutation=mutation,
+    )
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-        if idempotency_key:
-            existing = db.scalar(select(RadarRequest).where(RadarRequest.organization_id == envelope.organization_id, RadarRequest.idempotency_key == idempotency_key))
-            if existing:
-                response.status_code = status.HTTP_200_OK
-                return request_read(db, existing)
         raise
+    request = db.scalar(
+        select(RadarRequest).where(
+            RadarRequest.id == result.result.resource_id,
+            RadarRequest.organization_id == envelope.organization_id,
+        )
+    )
+    if request is None:
+        raise HTTPException(status_code=404, detail="not found")
+    response.status_code = result.result.status_code
     return request_read(db, request)
 
 

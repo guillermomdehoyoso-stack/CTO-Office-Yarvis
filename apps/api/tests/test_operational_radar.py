@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from sqlalchemy import text
@@ -22,7 +23,7 @@ def canonical_context():
 
 def create_request(classification="alta_ecommerce", **extra):
     payload = {"merchant": {"trade_name": "Comercio Radar", "products": ["ecommerce"]}, "free_text": "Solicitud manual", "classification": classification, "actor": "ana", **extra}
-    response = client.post("/radar/requests", headers=HEADERS, json=payload)
+    response = client.post("/radar/requests", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json=payload)
     assert response.status_code == 201, response.text
     return response.json()
 
@@ -32,7 +33,7 @@ def test_request_templates_pending_and_idempotency():
     key = "same-click"
     first = client.post("/radar/requests", headers={**HEADERS, "Idempotency-Key": key}, json={"merchant": {"trade_name": "Gasolinera", "products": ["tpv", "ecommerce"]}, "free_text": "Alta", "classification": "alta_ecommerce", "actor": "ana"})
     second = client.post("/radar/requests", headers={**HEADERS, "Idempotency-Key": key}, json={"merchant": {"trade_name": "Gasolinera", "products": ["tpv", "ecommerce"]}, "free_text": "Alta", "classification": "alta_ecommerce", "actor": "ana"})
-    assert first.status_code == 201 and second.status_code == 200
+    assert first.status_code == 201 and second.status_code == 201
     assert first.json()["id"] == second.json()["id"]
     assert len(first.json()["checklist"]) == 7
     board = client.get("/radar/dashboard", headers=HEADERS).json()
@@ -95,7 +96,7 @@ def test_resolve_next_action_and_close_are_atomic_and_persistent():
 def test_clearing_next_action_persists_and_another_open_request_keeps_pending_on():
     canonical_context()
     first = create_request("soporte", next_action="Resolver hoy")
-    second = client.post("/radar/requests", headers=HEADERS, json={"merchant_id": first["merchant_id"], "free_text": "Otra solicitud", "classification": "soporte", "actor": "ana"}).json()
+    second = client.post("/radar/requests", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"merchant_id": first["merchant_id"], "free_text": "Otra solicitud", "classification": "soporte", "actor": "ana"}).json()
     cleared = client.patch(f"/radar/requests/{first['id']}/next-action", headers=HEADERS, json={"next_action": "", "actor": "ana"})
     assert cleared.status_code == 200 and cleared.json()["next_action"] is None
     assert client.get(f"/radar/merchants/{first['merchant_id']}", headers=HEADERS).json()["requests"][1]["next_action"] is None

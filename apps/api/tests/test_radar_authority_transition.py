@@ -27,7 +27,7 @@ def context():
 
 def test_canonical_commands_reads_cross_org_and_revocation_are_effective():
     org_a, org_b, radar_a, _radar_b, governor = context()
-    created = client.post("/radar/requests", headers=headers("radar-a", "forged-workspace", **{"X-Yarvis-Authority": "admin", "X-Yarvis-Organization": str(org_b), "X-Yarvis-Permissions": "*"}), json={"merchant": {"trade_name": "Canonical", "products": ["tpv"]}, "free_text": "request", "classification": "alta_tpv", "actor": "forged"})
+    created = client.post("/radar/requests", headers=headers("radar-a", "forged-workspace", **{"Idempotency-Key": "canonical-create", "X-Yarvis-Authority": "admin", "X-Yarvis-Organization": str(org_b), "X-Yarvis-Permissions": "*"}), json={"merchant": {"trade_name": "Canonical", "products": ["tpv"]}, "free_text": "request", "classification": "alta_tpv", "actor": "forged"})
     assert created.status_code == 201, created.text
     request = created.json(); merchant_id = request["merchant_id"]
     assert client.get("/radar/dashboard", headers=headers("radar-a", "another-forged-workspace")).json()["merchants"][0]["id"] == merchant_id
@@ -36,7 +36,7 @@ def test_canonical_commands_reads_cross_org_and_revocation_are_effective():
     before = None
     with app.state.yarvis.persistence.create_session() as db:
         before = db.scalar(select(func.count()).select_from(RadarActivity))
-    assert client.post("/radar/requests", headers=headers("radar-b"), json={"merchant_id": merchant_id, "free_text": "foreign", "classification": "soporte"}).status_code == 404
+    assert client.post("/radar/requests", headers=headers("radar-b", **{"Idempotency-Key": "foreign-create"}), json={"merchant_id": merchant_id, "free_text": "foreign", "classification": "soporte"}).status_code == 404
     assert client.patch(f"/radar/requests/{request['id']}/checklist/{request['checklist'][0]['id']}", headers=headers("radar-b"), json={"received": True}).status_code == 404
     assert client.patch(f"/radar/requests/{request['id']}/next-action", headers=headers("radar-b"), json={"next_action": "foreign"}).status_code == 404
     assert client.post(f"/radar/requests/{request['id']}/notes", headers=headers("radar-b"), json={"note": "foreign"}).status_code == 404
