@@ -7,3 +7,4 @@ def test_radar_migration_round_trip():
     command.downgrade(config, "20260805_30")
     command.upgrade(config, "20260806_31")
     command.current(config)
+    command.upgrade(config, "head")
