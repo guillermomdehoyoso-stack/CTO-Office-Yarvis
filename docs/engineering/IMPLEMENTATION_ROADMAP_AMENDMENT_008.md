@@ -3,11 +3,11 @@
 
 ## Status
 
-**PROPOSED — PENDING INDEPENDENT REVIEW AND RATIFICATION**
+**RATIFIED**
 
-This is a narrow F-011 authority proposal. It supplements Amendments 004–007
-only for the existing Mission Work authority gap described here. It does not
-authorize implementation.
+This is a ratified narrow authority amendment. It supplements Amendments 004–007
+only within the Mission Work authority scope stated here and does not authorize
+implementation.
 
 ## 1. Demonstrated Contractual Gap
 
@@ -90,6 +90,6 @@ Document Registry, migrations, routes, contracts, historical records, or
 `authentication.py`. It authorizes no profiles encoded in tokens, header-based
 authority, fixed organization identifiers, backfill, push, or merge.
 
-The next step is independent review and ratification. Only a subsequent,
-bounded implementation mandate may add roles, adapters, fixtures, tests, or
-route changes and then resume G4/G5.
+A separate bounded implementation mandate is required before roles, any
+transitional adapter, fixtures, tests, or route changes may be implemented and
+before G4/G5 resumes.
