@@ -6,6 +6,7 @@ import psycopg
 import pytest
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from psycopg import sql
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import DBAPIError, IntegrityError
@@ -18,6 +19,10 @@ from yarvis_api.models.organization import Organization
 ADMIN_URL = "postgresql://yarvis:yarvis@postgres:5432/postgres"
 ALEMBIC_INI = Path(__file__).resolve().parents[1] / "alembic.ini"
 BASE_URL = "postgresql+psycopg://yarvis:yarvis@postgres:5432/{}"
+
+
+def _current_alembic_head(config: Config) -> str:
+    return ScriptDirectory.from_config(config).get_current_head()
 
 
 def _document(organization_id, **overrides):
@@ -196,7 +201,7 @@ def test_document_registry_schema_and_migration_round_trip(test_database) -> Non
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260805_30"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == _current_alembic_head(config)
             assert {"documents", "document_versions", "document_associations"}.issubset(inspector.get_table_names())
             assert {column["name"]: column["nullable"] for column in inspector.get_columns("documents")}["current_version_id"]
             assert {"fk_documents_organization", "fk_documents_current_version_document_organization"}.issubset({item["name"] for item in inspector.get_foreign_keys("documents")})
@@ -214,7 +219,7 @@ def test_document_registry_schema_and_migration_round_trip(test_database) -> Non
             assert not {"documents", "document_versions", "document_associations"}.intersection(inspect(connection).get_table_names())
         command.upgrade(config, "head")
         with engine.connect() as connection:
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260805_30"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == _current_alembic_head(config)
     finally:
         engine.dispose()
         with psycopg.connect(ADMIN_URL, autocommit=True) as connection:

@@ -13,6 +13,16 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "inbound_operator": frozenset({"inbound.read", "inbound.intake"}),
     "inbound_context_operator": frozenset({"inbound.context.associate"}),
     "mission_inbox_viewer": frozenset({"mission.inbox.read"}),
+    "document_viewer": frozenset({"document.read"}),
+    "document_contributor": frozenset({
+        "document.read",
+        "document.create",
+        "document.metadata.update",
+        "document.version.add",
+        "document.association.link",
+        "document.association.unlink",
+    }),
+    "document_archivist": frozenset({"document.read", "document.archive"}),
 }
 
 

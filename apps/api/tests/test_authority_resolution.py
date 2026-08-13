@@ -25,6 +25,20 @@ def test_closed_role_matrix_and_unknown_role_denial():
     assert error.value.code == ApplicationErrorCode.AUTHORIZATION_DENIED
 
 
+def test_document_registry_roles_are_closed_and_separated():
+    assert permissions_for_role("document_viewer") == frozenset({"document.read"})
+    assert permissions_for_role("document_contributor") == frozenset({
+        "document.read",
+        "document.create",
+        "document.metadata.update",
+        "document.version.add",
+        "document.association.link",
+        "document.association.unlink",
+    })
+    assert permissions_for_role("document_archivist") == frozenset({"document.read", "document.archive"})
+    assert "document.read" not in permissions_for_role("inbound_operator")
+
+
 def test_resolver_selects_persisted_membership_and_ignores_header_claims():
     from yarvis_api.main import app
     with app.state.yarvis.persistence.create_session() as session:

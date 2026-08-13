@@ -2,8 +2,10 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
+from yarvis_api.clock import utc_now
 from yarvis_api.main import app
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 
 
 client = TestClient(app)
@@ -11,8 +13,28 @@ ORGANIZATION_ID = uuid4()
 OTHER_ORGANIZATION_ID = uuid4()
 
 
-def headers(authority, organization_id=ORGANIZATION_ID):
-    return {"x-yarvis-actor": "document-route-test", "x-yarvis-organization": str(organization_id), "x-yarvis-authority": authority, "x-yarvis-auth-token": "deterministic-inbound-intake"}
+_SUBJECTS = {
+    "document.read": "document:viewer",
+    "document.create": "document:contributor",
+    "document.metadata.update": "document:contributor",
+    "document.version.add": "document:contributor",
+    "document.association.link": "document:contributor",
+    "document.association.unlink": "document:contributor",
+    "document.archive": "document:archivist",
+}
+
+
+def headers(authority, organization_id=ORGANIZATION_ID, *, subject=None):
+    resolved_subject = subject or _SUBJECTS[authority]
+    if organization_id == OTHER_ORGANIZATION_ID:
+        resolved_subject += "-other"
+    return {
+        "x-yarvis-subject": resolved_subject,
+        "x-yarvis-actor": "forged-document-actor",
+        "x-yarvis-organization": str(organization_id),
+        "x-yarvis-authority": authority,
+        "x-yarvis-auth-token": "deterministic-inbound-intake",
+    }
 
 
 def request_payload(key, **changes):
@@ -24,6 +46,20 @@ def request_payload(key, **changes):
 def setup_organizations(clean_database):
     with app.state.yarvis.persistence.create_session() as session:
         session.add_all([Organization(id=ORGANIZATION_ID, legal_name="Route documents", display_name="Route documents"), Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other route documents", display_name="Other route documents")])
+        session.flush()
+        for subject, organization_id, role in (
+            ("document:viewer", ORGANIZATION_ID, "document_viewer"),
+            ("document:contributor", ORGANIZATION_ID, "document_contributor"),
+            ("document:archivist", ORGANIZATION_ID, "document_archivist"),
+            ("document:other-domain", ORGANIZATION_ID, "inbound_operator"),
+            ("document:viewer-other", OTHER_ORGANIZATION_ID, "document_viewer"),
+            ("document:contributor-other", OTHER_ORGANIZATION_ID, "document_contributor"),
+            ("document:archivist-other", OTHER_ORGANIZATION_ID, "document_archivist"),
+        ):
+            principal = Principal(external_subject=subject, status="active")
+            session.add(principal)
+            session.flush()
+            session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role=role))
         session.commit()
 
 
@@ -71,7 +107,10 @@ def test_document_routes_conceal_tenants_and_register_openapi(clean_database):
     missing = client.get(f"/documents/{uuid4()}", headers=headers("document.read"))
     assert (foreign.status_code, foreign.json()["message"]) == (404, "document not found")
     assert (missing.status_code, missing.json()["message"]) == (404, "document not found")
-    denied = client.get(f"/documents/{created.json()['id']}", headers=headers("document.create", OTHER_ORGANIZATION_ID))
+    denied = client.get(
+        f"/documents/{created.json()['id']}",
+        headers=headers("document.read", subject="document:other-domain"),
+    )
     assert denied.status_code == 403
     schema = client.get("/openapi.json").json()
     paths = schema["paths"]
@@ -81,3 +120,39 @@ def test_document_routes_conceal_tenants_and_register_openapi(clean_database):
     contract_ids = {contract.interaction_contract_id for contract in app.state.yarvis.contract_registry.list()}
     assert {f"IC-DOCUMENT-CMD-00{number}" for number in range(1, 7)} | {f"IC-DOCUMENT-QRY-00{number}" for number in range(1, 5)} <= contract_ids
     assert [module.module_id for module in app.state.yarvis.module_registry.modules].count("document_registry") == 1
+
+
+def test_document_route_authority_is_persisted_and_revocation_takes_effect(clean_database):
+    setup_organizations(clean_database)
+    forged_elevation = client.post(
+        "/documents",
+        json=request_payload("forged-elevation"),
+        headers=headers("document.create", subject="document:viewer"),
+    )
+    assert forged_elevation.status_code == 403
+
+    created = client.post(
+        "/documents",
+        json=request_payload("persisted-contributor"),
+        headers=headers("document.archive", subject="document:contributor"),
+    )
+    assert created.status_code == 201
+    document_id = created.json()["id"]
+
+    forged_organization_headers = headers("document.read")
+    forged_organization_headers["x-yarvis-organization"] = str(OTHER_ORGANIZATION_ID)
+    forged_organization = client.get(f"/documents/{document_id}", headers=forged_organization_headers)
+    assert forged_organization.status_code == 200
+
+    with app.state.yarvis.persistence.create_session() as session:
+        membership = session.query(PrincipalMembership).join(Principal).filter(
+            Principal.external_subject == "document:viewer"
+        ).one()
+        membership.status = "revoked"
+        membership.revoked_at = utc_now()
+        session.commit()
+
+    replay_after_revocation = client.get(
+        f"/documents/{document_id}", headers=headers("document.read")
+    )
+    assert replay_after_revocation.status_code == 403
