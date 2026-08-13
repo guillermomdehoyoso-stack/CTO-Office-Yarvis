@@ -5,6 +5,7 @@ from uuid import uuid4
 import psycopg
 from alembic import command
 from alembic.config import Config
+from alembic.script import ScriptDirectory
 from psycopg import sql
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
@@ -15,6 +16,10 @@ from yarvis_api.persistence.alembic import resolve_migration_database_url
 ADMIN_URL = "postgresql://yarvis:yarvis@postgres:5432/postgres"
 ALembic_ini = Path(__file__).resolve().parents[1] / "alembic.ini"
 BASE_URL = "postgresql+psycopg://yarvis:yarvis@postgres:5432/{}"
+
+
+def _current_alembic_head(config: Config) -> str:
+    return ScriptDirectory.from_config(config).get_current_head()
 
 
 def test_migration_url_uses_settings_when_alembic_url_is_absent() -> None:
@@ -70,7 +75,7 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.begin() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260805_30"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == _current_alembic_head(config)
             assert "mission_work_items" in inspector.get_table_names()
             assert "mission_work_events" in inspector.get_table_names()
             assert {
@@ -150,7 +155,7 @@ def test_mission_work_queue_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             assert "mission_work_items" in inspect(connection).get_table_names()
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260805_30"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == _current_alembic_head(config)
     finally:
         engine.dispose()
         _drop_temp_database(database_name)
@@ -221,7 +226,7 @@ def test_process_runtime_migration_contract_and_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "20260805_30"
+            assert connection.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == _current_alembic_head(config)
             assert {"process_instances", "process_instance_events"}.issubset(inspector.get_table_names())
             assert "process_instance_work_links" in inspector.get_table_names()
             assert "source_domain_event_id" in {column["name"] for column in inspector.get_columns("mission_work_events")}
@@ -321,7 +326,7 @@ def test_deterministic_inbound_migration_round_trip() -> None:
         command.upgrade(config, "head")
         with engine.connect() as connection:
             inspector = inspect(connection)
-            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == "20260805_30"
+            assert connection.execute(text("select version_num from alembic_version")).scalar_one() == _current_alembic_head(config)
             assert "messages" in inspector.get_table_names()
             message_columns = {column["name"] for column in inspector.get_columns("messages")}
             assert {
