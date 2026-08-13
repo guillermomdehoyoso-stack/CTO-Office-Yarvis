@@ -3,7 +3,11 @@
 
 ## Status
 
-**PROPOSED — PENDING INDEPENDENT REVIEW AND RATIFICATION**
+**RATIFIED**
+
+This is a ratified consolidated authority amendment. It supplements Amendments
+004–009 only within the Economics, Operational Task, and Process authority
+scope stated here and does not authorize implementation.
 
 ## 1. Demonstrated Contractual Gaps
 
@@ -116,5 +120,6 @@ This proposal authorizes no roles, adapters, routes, tests, fixtures,
 migrations, historical-record changes, F2, G/H/I, push, or merge. It does not
 modify Amendments 004–009 or `authentication.py`.
 
-The next step is independent review and ratification; implementation requires
-a separate bounded mandate after ratification.
+A separate bounded implementation mandate is required before adding these
+roles, resolving authority canonically, migrating fixtures, adapting routes,
+or resuming the affected regression evidence.
