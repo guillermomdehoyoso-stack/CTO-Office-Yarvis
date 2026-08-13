@@ -9,6 +9,7 @@ from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 from yarvis_api.models.process import ProcessInstanceWorkLink
 from yarvis_api.models.process import ProcessInstance, ProcessTransition
 
@@ -19,9 +20,10 @@ OTHER_ORGANIZATION_ID = uuid4()
 
 
 def _headers(organization_id: UUID = ORGANIZATION_ID, authority: str = "process.instance.work.link") -> dict[str, str]:
+    subject = {"process.definition.manage":"definition-manager","process.instance.start":"instance-operator","process.instance.transition":"instance-operator","process.instance.cancel":"instance-operator","process.instance.work.link":"link-coordinator","process.instance.work.unlink":"link-coordinator","process.instance.read":"instance-viewer","mission.work.read":"mission-viewer"}.get(authority,"unmapped")
+    if organization_id == OTHER_ORGANIZATION_ID: subject += "-other"
     return {
-        "x-yarvis-actor": "operator:process-work-link",
-        "x-yarvis-organization": str(organization_id),
+        "x-yarvis-subject": f"process:{subject}",
         "x-yarvis-authority": authority,
         "x-yarvis-auth-token": "deterministic-inbound-intake",
     }
@@ -31,6 +33,8 @@ def _headers(organization_id: UUID = ORGANIZATION_ID, authority: str = "process.
 def organizations(clean_database) -> None:
     with app.state.yarvis.persistence.create_session() as session:
         session.add_all((Organization(id=ORGANIZATION_ID, legal_name="Association", display_name="Association"), Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other", display_name="Other")))
+        for org, subject, role in ((ORGANIZATION_ID,"process:definition-manager","process_definition_manager"),(ORGANIZATION_ID,"process:instance-operator","process_instance_operator"),(ORGANIZATION_ID,"process:link-coordinator","process_work_link_coordinator"),(ORGANIZATION_ID,"process:instance-viewer","process_instance_viewer"),(ORGANIZATION_ID,"process:mission-viewer","mission_work_viewer"),(OTHER_ORGANIZATION_ID,"process:definition-manager-other","process_definition_manager"),(OTHER_ORGANIZATION_ID,"process:instance-operator-other","process_instance_operator"),(OTHER_ORGANIZATION_ID,"process:link-coordinator-other","process_work_link_coordinator")):
+            principal=Principal(external_subject=subject,status="active");session.add(principal);session.flush();session.add(PrincipalMembership(principal_id=principal.id,organization_id=org,role=role))
         session.commit()
 
 

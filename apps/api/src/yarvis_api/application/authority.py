@@ -33,6 +33,11 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "task_assigner": frozenset({"task.assign"}),
     "task_lifecycle_operator": frozenset({"task.transition", "task.complete", "task.cancel"}),
     "task_dependency_manager": frozenset({"task.dependency.manage"}),
+    "process_definition_viewer": frozenset({"process.definition.read"}),
+    "process_definition_manager": frozenset({"process.definition.manage"}),
+    "process_instance_viewer": frozenset({"process.instance.read"}),
+    "process_instance_operator": frozenset({"process.instance.start", "process.instance.transition", "process.instance.cancel"}),
+    "process_work_link_coordinator": frozenset({"process.instance.work.link", "process.instance.work.unlink"}),
 }
 
 

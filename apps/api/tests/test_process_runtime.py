@@ -9,6 +9,7 @@ from sqlalchemy.exc import DBAPIError
 from yarvis_api.main import app
 from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 from yarvis_api.models.process import ProcessInstanceEvent
 
 
@@ -18,9 +19,10 @@ OTHER_ORGANIZATION_ID = uuid4()
 
 
 def _headers(organization_id: UUID = ORGANIZATION_ID, authority: str = "process.definition.manage") -> dict[str, str]:
+    subject = {"process.definition.manage":"definition-manager","process.instance.start":"instance-operator","process.instance.transition":"instance-operator","process.instance.cancel":"instance-operator","process.instance.read":"instance-viewer"}.get(authority,"unmapped")
+    if organization_id == OTHER_ORGANIZATION_ID: subject += "-other"
     return {
-        "x-yarvis-actor": "operator:process-runtime",
-        "x-yarvis-organization": str(organization_id),
+        "x-yarvis-subject": f"process:{subject}",
         "x-yarvis-authority": authority,
         "x-yarvis-auth-token": "deterministic-inbound-intake",
     }
@@ -33,6 +35,8 @@ def organizations(clean_database) -> None:
             Organization(id=ORGANIZATION_ID, legal_name="Runtime", display_name="Runtime"),
             Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other Runtime", display_name="Other Runtime"),
         ))
+        for org, subject, role in ((ORGANIZATION_ID,"process:definition-manager","process_definition_manager"),(ORGANIZATION_ID,"process:instance-operator","process_instance_operator"),(ORGANIZATION_ID,"process:instance-viewer","process_instance_viewer"),(OTHER_ORGANIZATION_ID,"process:definition-manager-other","process_definition_manager"),(OTHER_ORGANIZATION_ID,"process:instance-operator-other","process_instance_operator"),(OTHER_ORGANIZATION_ID,"process:instance-viewer-other","process_instance_viewer")):
+            principal=Principal(external_subject=subject,status="active");session.add(principal);session.flush();session.add(PrincipalMembership(principal_id=principal.id,organization_id=org,role=role))
         session.commit()
 
 
