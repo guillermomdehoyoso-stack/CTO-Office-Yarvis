@@ -21,16 +21,11 @@ ORGANIZATION_ID = uuid4()
 OTHER_ORGANIZATION_ID = uuid4()
 
 
-def _headers(authority: str, organization_id: UUID = ORGANIZATION_ID) -> dict[str, str]:
-    subject = "economics:recorder" if authority == "economics.fact.record" else "economics:unmapped"
-    if organization_id == OTHER_ORGANIZATION_ID:
-        subject += "-other"
+def _headers(subject: str, **forged_headers: str) -> dict[str, str]:
     return {
-        "x-yarvis-subject": subject,
-        "x-yarvis-actor": "forged-economics-actor",
-        "x-yarvis-organization": str(organization_id),
-        "x-yarvis-authority": authority,
+        "x-yarvis-subject": f"economics:{subject}",
         "x-yarvis-auth-token": "deterministic-inbound-intake",
+        **forged_headers,
     }
 
 
@@ -42,11 +37,16 @@ def economic_subject(clean_database) -> UUID:
             Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other economics", display_name="Other economics"),
         ))
         session.flush()
-        for organization_id, subject in ((ORGANIZATION_ID, "economics:recorder"), (OTHER_ORGANIZATION_ID, "economics:recorder-other")):
+        for organization_id, subject, role in (
+            (ORGANIZATION_ID, "economics:recorder", "economics_fact_recorder"),
+            (ORGANIZATION_ID, "economics:corrector", "economics_fact_corrector"),
+            (ORGANIZATION_ID, "economics:viewer", "economics_viewer"),
+            (OTHER_ORGANIZATION_ID, "economics:viewer-other", "economics_viewer"),
+        ):
             principal = Principal(external_subject=subject, status="active")
             session.add(principal)
             session.flush()
-            session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role="economics_fact_recorder"))
+            session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role=role))
         site = Site(organization_id=ORGANIZATION_ID, reference="economics-site")
         session.add(site)
         session.flush()
@@ -66,7 +66,7 @@ def _record(project_id: UUID, fact_type: str, amount: str, *, key: str | None = 
             "evidence_references": ["evidence:test"], "idempotency_key": key or uuid4().hex,
             "correlation_id": str(uuid4()),
         },
-        headers=_headers("economics.fact.record"),
+        headers=_headers("recorder"),
     )
     assert response.status_code == 201, response.text
     return response.json()
@@ -97,12 +97,12 @@ def test_correction_replaces_current_value_and_summary_is_direct_only(economic_s
             "source_type": "operator_correction", "source_reference": "source-correction",
             "evidence_references": ["evidence:corrected"], "correction_reason": "Updated approved estimate",
             "idempotency_key": uuid4().hex, "correlation_id": str(uuid4()),
-        }, headers=_headers("economics.fact.correct"),
+        }, headers=_headers("corrector"),
     )
     assert corrected.status_code == 201, corrected.text
     summary = client.get(
         f"/operational-economics/subjects/project/{economic_subject}/summary?currency=MXN",
-        headers=_headers("economics.read"),
+        headers=_headers("viewer"),
     )
     assert summary.status_code == 200, summary.text
     assert Decimal(summary.json()["expected_revenue"]) == Decimal("1200.00")
@@ -118,6 +118,66 @@ def test_correction_replaces_current_value_and_summary_is_direct_only(economic_s
 def test_cross_tenant_subject_is_concealed(economic_subject: UUID) -> None:
     response = client.get(
         f"/operational-economics/subjects/project/{economic_subject}/facts",
-        headers=_headers("economics.read", OTHER_ORGANIZATION_ID),
+        headers=_headers("viewer-other"),
     )
     assert response.status_code == 404
+
+
+def test_economics_roles_are_separate_and_headers_do_not_elevate(economic_subject: UUID) -> None:
+    payload = {
+        "subject_type": "project", "subject_id": str(economic_subject), "fact_type": "revenue_expected",
+        "amount": "1000.00", "currency": "MXN", "effective_at": "2026-07-29T00:00:00+00:00",
+        "source_type": "operator_assertion", "source_reference": "forged", "evidence_references": ["evidence:test"],
+        "idempotency_key": uuid4().hex, "correlation_id": str(uuid4()),
+    }
+    denied_record = client.post("/operational-economics/facts", json=payload, headers=_headers("viewer", **{"x-yarvis-authority": "economics.fact.record"}))
+    assert denied_record.status_code == 403
+    fact = _record(economic_subject, "revenue_expected", "1000.00")
+    denied_correction = client.post(
+        f"/operational-economics/facts/{fact['id']}/corrections",
+        json={
+            "amount": "1200.00", "effective_at": "2026-07-29T01:00:00+00:00",
+            "source_type": "operator_correction", "source_reference": "forged-correction",
+            "evidence_references": ["evidence:test"], "correction_reason": "forged",
+            "idempotency_key": uuid4().hex, "correlation_id": str(uuid4()),
+        },
+        headers=_headers("recorder", **{"x-yarvis-authority": "economics.fact.correct"}),
+    )
+    assert denied_correction.status_code == 403
+    ignored_organization = client.get(
+        f"/operational-economics/subjects/project/{economic_subject}/facts",
+        headers=_headers("viewer", **{"x-yarvis-organization": str(OTHER_ORGANIZATION_ID)}),
+    )
+    assert ignored_organization.status_code == 200
+    denied_read = client.get(
+        f"/operational-economics/subjects/project/{economic_subject}/facts",
+        headers=_headers("corrector", **{"x-yarvis-authority": "economics.read"}),
+    )
+    assert denied_read.status_code == 403
+    forged_token = client.get(
+        f"/operational-economics/subjects/project/{economic_subject}/facts",
+        headers=_headers("viewer", **{"x-yarvis-auth-token": "forged"}),
+    )
+    assert forged_token.status_code == 403
+
+
+def test_revoked_economics_membership_is_denied_before_replay(economic_subject: UUID) -> None:
+    key = "revoked-economics-replay"
+    _record(economic_subject, "revenue_expected", "1000.00", key=key)
+    with app.state.yarvis.persistence.create_session() as session:
+        membership = session.scalar(select(PrincipalMembership).join(Principal).where(Principal.external_subject == "economics:recorder"))
+        assert membership is not None
+        membership.status = "revoked"
+        membership.revoked_at = datetime.now(timezone.utc)
+        session.commit()
+    response = client.post(
+        "/operational-economics/facts",
+        json={
+            "subject_type": "project", "subject_id": str(economic_subject), "fact_type": "revenue_expected",
+            "amount": "1000.00", "currency": "MXN", "effective_at": "2026-07-29T00:00:00+00:00",
+            "source_type": "operator_assertion", "source_reference": "source-revenue_expected",
+            "evidence_references": ["evidence:test"], "idempotency_key": key, "correlation_id": str(uuid4()),
+        },
+        headers=_headers("recorder"),
+    )
+    assert response.status_code == 403

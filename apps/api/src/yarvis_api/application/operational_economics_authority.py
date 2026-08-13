@@ -1,14 +1,15 @@
-"""Narrow F-011 compatibility adapter for the RecordEconomicFact contract."""
+"""Narrow F-011 compatibility adapter for Operational Economics contracts."""
 
 from yarvis_api.application.authentication import AuthenticatedPrincipal
 from yarvis_api.application.authority import IdentityAuthorityEnvelope
 from yarvis_api.clock import utc_now
 
 
-def economics_fact_recorder_principal_from_envelope(envelope: IdentityAuthorityEnvelope) -> AuthenticatedPrincipal:
-    """Project only the validated record scope without reading transport data."""
+def economics_principal_from_envelope(
+    envelope: IdentityAuthorityEnvelope, *, required_scope: str
+) -> AuthenticatedPrincipal:
+    """Project one validated Economics scope without reading transport data."""
 
-    required_scope = "economics.fact.record"
     envelope.require(required_scope)
     return AuthenticatedPrincipal(
         actor_id=str(envelope.principal_id), organization_id=str(envelope.organization_id), roles=(),
