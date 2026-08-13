@@ -3,9 +3,11 @@
 
 ## Status
 
-**PROPOSED — PENDING INDEPENDENT REVIEW AND RATIFICATION**
+**RATIFIED**
 
-This proposal is not ratified and authorizes no implementation.
+This is a ratified narrow authority amendment. It supplements Amendment 005
+only within the Operational Context and Mission Inbox authority scope stated
+here and does not authorize implementation.
 
 ## 1. Demonstrated Contractual Gap
 
@@ -83,6 +85,6 @@ F2C artifacts, Document Registry, Document Routes, G/H/I, backfill, or the 62
 historical records. It creates no token profile, hard-coded organization,
 header-derived authority, push, or merge.
 
-Independent review and ratification are required before a separate, bounded
-implementation mandate may address the two authority mappings and their
-focused evidence.
+A separate, bounded implementation mandate is required before the two
+authority mappings, any transitional adapter, fixtures, tests, or focused
+evidence may be implemented.
