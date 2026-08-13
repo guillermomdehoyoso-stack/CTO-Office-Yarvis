@@ -3,7 +3,11 @@
 
 ## Status
 
-**PROPOSED — PENDING INDEPENDENT REVIEW AND RATIFICATION**
+**RATIFIED**
+
+This is a ratified narrow authority amendment. It supplements Amendments 004–008
+only within the Operational Economics authority scope stated here and does not
+authorize implementation.
 
 ## 1. Demonstrated Contractual Gap
 
@@ -76,7 +80,7 @@ mutate data.
 
 ## 6. Relationship, Exclusions, and Next Step
 
-This proposal supplements the persisted-authority invariants ratified in
+This amendment supplements the persisted-authority invariants ratified in
 Amendments 004–008. It does not change their mappings or authorize a role for
 `economics.fact.correct` or `economics.read`.
 
@@ -86,7 +90,6 @@ push, or merge. It does not authorize correcting inherited header-authority
 expectations until this amendment is independently ratified and a separate
 implementation mandate is issued.
 
-A separate independent review and ratification is the next step. Only after
-ratification may a separate bounded implementation mandate add the role,
+A separate bounded implementation mandate is required before adding the role,
 resolve authority canonically, migrate fixtures, correct the affected
 expectations, and resume the relevant regression evidence.
