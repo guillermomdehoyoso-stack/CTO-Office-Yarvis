@@ -3,7 +3,11 @@
 
 ## Status
 
-**PROPOSED — PENDING INDEPENDENT REVIEW AND RATIFICATION**
+**RATIFIED**
+
+This is a ratified narrow authority amendment. It supplements Amendment 004
+only within the Intake authority scope stated here and does not authorize
+implementation.
 
 ## 1. Purpose and Relationship to Amendment 004
 
@@ -67,6 +71,5 @@ This amendment authorizes no runtime code, adapter implementation, migration,
 Radar receipt change, backfill, fixture-global optimization, timeout change,
 historical-record modification, F2 work, push, or merge.
 
-After independent review and human ratification, a separate implementation
-mandate must authorize the narrow Intake adapter, focused fixtures, tests, and
-validation evidence.
+A separate implementation mandate remains required to authorize the narrow
+Intake adapter, focused fixtures, tests, and validation evidence.
