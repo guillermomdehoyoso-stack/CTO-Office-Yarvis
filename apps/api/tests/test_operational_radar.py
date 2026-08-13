@@ -44,12 +44,12 @@ def test_request_templates_pending_and_idempotency():
 def test_close_requires_resolution_or_justification_and_reopen():
     canonical_context()
     request = create_request(next_action="Solicitar INE")
-    refused = client.post(f"/radar/requests/{request['id']}/close", headers=HEADERS, json={"actor": "ana"})
+    refused = client.post(f"/radar/requests/{request['id']}/close", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"actor": "ana"})
     assert refused.status_code == 422
-    closed = client.post(f"/radar/requests/{request['id']}/close", headers=HEADERS, json={"actor": "ana", "incomplete_justification": "Cliente retiró solicitud"})
+    closed = client.post(f"/radar/requests/{request['id']}/close", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"actor": "ana", "incomplete_justification": "Cliente retiró solicitud"})
     assert closed.status_code == 200 and closed.json()["status"] == "closed"
     assert client.get("/radar/dashboard", headers=HEADERS).json()["merchants"][0]["pending"] is False
-    assert client.post(f"/radar/requests/{request['id']}/reopen", headers=HEADERS, json={"actor": "ana"}).json()["status"] == "open"
+    assert client.post(f"/radar/requests/{request['id']}/reopen", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"actor": "ana"}).json()["status"] == "open"
 
 
 def test_document_actor_history_is_immutable_and_workspace_is_hidden():
@@ -83,13 +83,13 @@ def test_resolve_next_action_and_close_are_atomic_and_persistent():
     request = create_request("alta_tpv", next_action="Llamar al comercio")
     for item in request["checklist"]:
         assert client.patch(f"/radar/requests/{request['id']}/checklist/{item['id']}", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"received": True, "actor": "ana"}).status_code == 200
-    closed = client.post(f"/radar/requests/{request['id']}/close", headers=HEADERS, json={"next_action": None, "actor": "ana"})
+    closed = client.post(f"/radar/requests/{request['id']}/close", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"next_action": None, "actor": "ana"})
     assert closed.status_code == 200, closed.text
     assert closed.json()["status"] == "closed" and closed.json()["next_action"] is None
     merchant = client.get(f"/radar/merchants/{request['merchant_id']}", headers=HEADERS).json()
     assert merchant["pending"] is False and merchant["requests"][0]["next_action"] is None
     activity_before_retry = len(merchant["activity"])
-    assert client.post(f"/radar/requests/{request['id']}/close", headers=HEADERS, json={"next_action": None, "actor": "ana"}).status_code == 200
+    assert client.post(f"/radar/requests/{request['id']}/close", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"next_action": None, "actor": "ana"}).status_code == 200
     assert len(client.get(f"/radar/merchants/{request['merchant_id']}", headers=HEADERS).json()["activity"]) == activity_before_retry
 
 
@@ -100,6 +100,6 @@ def test_clearing_next_action_persists_and_another_open_request_keeps_pending_on
     cleared = client.patch(f"/radar/requests/{first['id']}/next-action", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"next_action": "", "actor": "ana"})
     assert cleared.status_code == 200 and cleared.json()["next_action"] is None
     assert client.get(f"/radar/merchants/{first['merchant_id']}", headers=HEADERS).json()["requests"][1]["next_action"] is None
-    assert client.post(f"/radar/requests/{first['id']}/close", headers=HEADERS, json={"next_action": None, "actor": "ana"}).status_code == 200
+    assert client.post(f"/radar/requests/{first['id']}/close", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"next_action": None, "actor": "ana"}).status_code == 200
     dashboard_merchant = client.get("/radar/dashboard", headers=HEADERS).json()["merchants"][0]
     assert dashboard_merchant["pending"] is True and dashboard_merchant["open_count"] == 1

@@ -341,25 +341,42 @@ def add_note(request_id: UUID, payload: NoteCreate, response: Response, idempote
 
 
 @router.post("/requests/{request_id}/close", response_model=RequestRead)
-def close_request(request_id: UUID, payload: CloseRequest, db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
-    envelope.require("radar.request.close"); request, merchant = canonical_request(db, request_id, envelope.organization_id)
-    if request.status == "closed": return request_read(db, request)
-    if "next_action" in payload.model_fields_set:
-        request.next_action = payload.next_action.strip() or None if payload.next_action else None
-    missing = db.scalars(select(RadarChecklistItem).where(RadarChecklistItem.request_id == request.id, RadarChecklistItem.required.is_(True), RadarChecklistItem.received.is_(False))).all()
-    if (request.next_action and request.next_action.strip()) or missing:
-        if not payload.incomplete_justification or not payload.incomplete_justification.strip():
-            raise HTTPException(status_code=422, detail="next action and required checklist must be resolved or justified")
-    request.status, request.closed_at, request.close_reason = "closed", now(), payload.incomplete_justification
-    activity(db, merchant, request, "request_closed", "Solicitud cerrada" + (" con justificación" if payload.incomplete_justification else ""), str(envelope.principal_id))
+def close_request(request_id: UUID, payload: CloseRequest, response: Response, idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255), db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
+    functional_payload = payload.model_dump(exclude={"actor"}, exclude_unset=True, mode="python")
+
+    def mutation(context):
+        request, merchant = canonical_request(db, request_id, context.envelope.organization_id)
+        if request.status == "closed":
+            return CommandResultReference("radar_request", request.id, status.HTTP_200_OK)
+        if "next_action" in payload.model_fields_set:
+            request.next_action = payload.next_action.strip() or None if payload.next_action else None
+        missing = db.scalars(select(RadarChecklistItem).where(RadarChecklistItem.request_id == request.id, RadarChecklistItem.required.is_(True), RadarChecklistItem.received.is_(False))).all()
+        if (request.next_action and request.next_action.strip()) or missing:
+            if not payload.incomplete_justification or not payload.incomplete_justification.strip():
+                raise HTTPException(status_code=422, detail="next action and required checklist must be resolved or justified")
+        request.status, request.closed_at, request.close_reason = "closed", now(), payload.incomplete_justification
+        activity(db, merchant, request, "request_closed", "Solicitud cerrada", str(context.envelope.principal_id))
+        record_event(db, event_type="radar.request_closed", aggregate_type="radar_request", aggregate_id=request.id, organization_id=context.envelope.organization_id, correlation_id=context.correlation_id, causation_id=context.command_id, payload={"event_version": "1.0.0", "actor_principal_id": str(context.envelope.principal_id), "command_id": str(context.command_id), "justified": bool(payload.incomplete_justification and payload.incomplete_justification.strip())})
+        return CommandResultReference("radar_request", request.id, status.HTTP_200_OK)
+
+    result = RadarCommandReceiptService().execute(db, resolve_authority=lambda: envelope.require("radar.request.close") or envelope, command_type="radar.request.close", contract_version="1.0.0", idempotency_key=idempotency_key, target_id=request_id, functional_payload=functional_payload, mutation=mutation)
     db.commit()
+    request, _ = canonical_request(db, result.result.resource_id, envelope.organization_id)
+    response.status_code = result.result.status_code
     return request_read(db, request)
 
 
 @router.post("/requests/{request_id}/reopen", response_model=RequestRead)
-def reopen_request(request_id: UUID, payload: ReopenRequest, db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
-    envelope.require("radar.request.reopen"); request, merchant = canonical_request(db, request_id, envelope.organization_id)
-    request.status, request.closed_at, request.close_reason = "open", None, None
-    activity(db, merchant, request, "request_reopened", "Solicitud reabierta", str(envelope.principal_id))
+def reopen_request(request_id: UUID, payload: ReopenRequest, response: Response, idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255), db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
+    def mutation(context):
+        request, merchant = canonical_request(db, request_id, context.envelope.organization_id)
+        request.status, request.closed_at, request.close_reason = "open", None, None
+        activity(db, merchant, request, "request_reopened", "Solicitud reabierta", str(context.envelope.principal_id))
+        record_event(db, event_type="radar.request_reopened", aggregate_type="radar_request", aggregate_id=request.id, organization_id=context.envelope.organization_id, correlation_id=context.correlation_id, causation_id=context.command_id, payload={"event_version": "1.0.0", "actor_principal_id": str(context.envelope.principal_id), "command_id": str(context.command_id)})
+        return CommandResultReference("radar_request", request.id, status.HTTP_200_OK)
+
+    result = RadarCommandReceiptService().execute(db, resolve_authority=lambda: envelope.require("radar.request.reopen") or envelope, command_type="radar.request.reopen", contract_version="1.0.0", idempotency_key=idempotency_key, target_id=request_id, functional_payload={}, mutation=mutation)
     db.commit()
+    request, _ = canonical_request(db, result.result.resource_id, envelope.organization_id)
+    response.status_code = result.result.status_code
     return request_read(db, request)
