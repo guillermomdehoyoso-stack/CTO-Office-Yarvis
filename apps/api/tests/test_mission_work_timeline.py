@@ -10,6 +10,7 @@ from yarvis_api.main import app
 from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 
 
 client = TestClient(app)
@@ -18,8 +19,10 @@ OTHER_ORGANIZATION_ID = uuid4()
 
 
 def _headers(organization_id: UUID = ORGANIZATION_ID, authority: str = "mission.work.read") -> dict[str, str]:
+    subject = {"inbound.intake": "timeline:intake", "mission.inbox.read": "timeline:inbox", "mission.work.read": "timeline:viewer", "mission.work.create": "timeline:operator", "mission.work.status.change": "timeline:operator", "mission.work.priority.change": "timeline:operator", "mission.work.assign": "timeline:coordinator"}[authority]
+    if organization_id == OTHER_ORGANIZATION_ID: subject += "-other"
     return {
-        "x-yarvis-actor": "operator:mission-timeline",
+        "x-yarvis-subject": subject, "x-yarvis-actor": "forged-timeline-actor",
         "x-yarvis-organization": str(organization_id),
         "x-yarvis-authority": authority,
         "x-yarvis-auth-token": "deterministic-inbound-intake",
@@ -35,6 +38,11 @@ def organizations(clean_database) -> None:
                 Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other Timeline", display_name="Other Timeline"),
             )
         )
+        session.flush()
+        for organization_id, suffix in ((ORGANIZATION_ID, ""), (OTHER_ORGANIZATION_ID, "-other")):
+            for subject, role in (("timeline:intake", "inbound_operator"), ("timeline:inbox", "mission_inbox_viewer"), ("timeline:viewer", "mission_work_viewer"), ("timeline:operator", "mission_work_operator"), ("timeline:coordinator", "mission_work_coordinator")):
+                principal = Principal(external_subject=subject + suffix, status="active")
+                session.add(principal); session.flush(); session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role=role))
         session.commit()
 
 
@@ -142,7 +150,7 @@ def test_timeline_records_append_only_events_in_stable_incremental_order() -> No
         "assignee_subject_id": None,
         "version": 4,
     }
-    assert items[-1]["actor_subject_id"] == "operator:mission-timeline"
+    assert items[-1]["actor_subject_id"] != "forged-timeline-actor"
     assert items[-1]["payload"] == {
         "work_item_id": work_item_id,
         "comment": "Verified by the operations team.",
@@ -193,11 +201,14 @@ def test_timeline_events_cannot_be_updated_or_deleted() -> None:
 
 def test_comment_and_timeline_authorities_are_enforced() -> None:
     item = _new_item()
-    timeline = _timeline(item["id"], authority="mission.work.create")
+    timeline = client.get(
+        f"/mission/work-items/{item['id']}/timeline",
+        headers={**_headers(authority="mission.inbox.read"), "x-yarvis-authority": "mission.work.read"},
+    )
     comment = client.post(
         f"/mission/work-items/{item['id']}/comments",
         json={"comment": "Not allowed."},
-        headers=_headers(authority="mission.work.read"),
+        headers={**_headers(authority="mission.work.read"), "x-yarvis-authority": "mission.work.create"},
     )
 
     assert timeline.status_code == 403 and timeline.json()["code"] == "AUTHORIZATION_DENIED"

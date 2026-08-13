@@ -13,6 +13,7 @@ from yarvis_api.main import app
 from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.operational_context import Project, Site
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 
 
 client = TestClient(app)
@@ -21,8 +22,12 @@ OTHER_ORGANIZATION_ID = uuid4()
 
 
 def _headers(authority: str, organization_id: UUID = ORGANIZATION_ID) -> dict[str, str]:
+    subject = "economics:recorder" if authority == "economics.fact.record" else "economics:unmapped"
+    if organization_id == OTHER_ORGANIZATION_ID:
+        subject += "-other"
     return {
-        "x-yarvis-actor": "operator:economics",
+        "x-yarvis-subject": subject,
+        "x-yarvis-actor": "forged-economics-actor",
         "x-yarvis-organization": str(organization_id),
         "x-yarvis-authority": authority,
         "x-yarvis-auth-token": "deterministic-inbound-intake",
@@ -37,6 +42,11 @@ def economic_subject(clean_database) -> UUID:
             Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other economics", display_name="Other economics"),
         ))
         session.flush()
+        for organization_id, subject in ((ORGANIZATION_ID, "economics:recorder"), (OTHER_ORGANIZATION_ID, "economics:recorder-other")):
+            principal = Principal(external_subject=subject, status="active")
+            session.add(principal)
+            session.flush()
+            session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role="economics_fact_recorder"))
         site = Site(organization_id=ORGANIZATION_ID, reference="economics-site")
         session.add(site)
         session.flush()

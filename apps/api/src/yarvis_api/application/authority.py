@@ -23,6 +23,10 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
         "document.association.unlink",
     }),
     "document_archivist": frozenset({"document.read", "document.archive"}),
+    "mission_work_viewer": frozenset({"mission.work.read"}),
+    "mission_work_operator": frozenset({"mission.work.read", "mission.work.create", "mission.work.status.change", "mission.work.priority.change"}),
+    "mission_work_coordinator": frozenset({"mission.work.read", "mission.work.assign"}),
+    "economics_fact_recorder": frozenset({"economics.fact.record"}),
 }
 
 

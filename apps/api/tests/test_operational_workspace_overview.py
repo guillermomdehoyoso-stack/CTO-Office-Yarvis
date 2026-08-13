@@ -13,6 +13,7 @@ from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.operational_context import Project, Site
 from yarvis_api.models.operational_task import OperationalTask, TaskDependency
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 from yarvis_api.models.process import ProcessDefinition, ProcessInstance, ProcessInstanceWorkLink, ProcessStage
 from yarvis_api.models.domain_event import DomainEvent
 from sqlalchemy import event, func, select
@@ -24,13 +25,18 @@ OTHER_ORGANIZATION_ID = uuid4()
 
 
 def _headers(organization_id: UUID = ORGANIZATION_ID, authority: str = "mission.work.read") -> dict[str, str]:
-    return {"x-yarvis-actor": "operator:workspace", "x-yarvis-organization": str(organization_id), "x-yarvis-authority": authority, "x-yarvis-auth-token": "deterministic-inbound-intake"}
+    subject = "workspace-overview:viewer" + ("-other" if organization_id == OTHER_ORGANIZATION_ID else "")
+    return {"x-yarvis-subject": subject, "x-yarvis-actor": "forged-workspace-actor", "x-yarvis-organization": str(organization_id), "x-yarvis-authority": authority, "x-yarvis-auth-token": "deterministic-inbound-intake"}
 
 
 @pytest.fixture(autouse=True)
 def organizations(clean_database) -> None:
     with app.state.yarvis.persistence.create_session() as session:
         session.add_all((Organization(id=ORGANIZATION_ID, legal_name="Workspace", display_name="Workspace"), Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other Workspace", display_name="Other Workspace")))
+        session.flush()
+        for organization_id, subject in ((ORGANIZATION_ID, "workspace-overview:viewer"), (OTHER_ORGANIZATION_ID, "workspace-overview:viewer-other")):
+            principal = Principal(external_subject=subject, status="active")
+            session.add(principal); session.flush(); session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role="mission_work_viewer"))
         session.commit()
 
 
@@ -90,15 +96,15 @@ def test_workspace_is_tenant_scoped_filters_context_and_reports_task_summary() -
     assert str(contextless_work_id) in {item["work_item_id"] for item in organization_workspace.json()["recent_activity"]}
 
 
-def test_workspace_conceals_foreign_or_invalid_context_and_requires_read_authority() -> None:
+def test_workspace_conceals_foreign_or_invalid_context_and_ignores_forged_authority_headers() -> None:
     foreign_site = uuid4()
     with app.state.yarvis.persistence.create_session() as session:
         session.add(Site(id=foreign_site, organization_id=OTHER_ORGANIZATION_ID, reference="OTHER"))
         session.commit()
-    assert client.get("/operational-workspace", headers=_headers(authority="wrong.authority")).status_code == 403
+    assert client.get("/operational-workspace", headers=_headers(authority="wrong.authority")).status_code == 200
     missing_authority = _headers()
     del missing_authority["x-yarvis-authority"]
-    assert client.get("/operational-workspace", headers=missing_authority).status_code == 403
+    assert client.get("/operational-workspace", headers=missing_authority).status_code == 200
     assert client.get(f"/operational-workspace?site_id={foreign_site}", headers=_headers()).status_code == 404
     assert client.get(f"/operational-workspace?project_id={uuid4()}", headers=_headers()).status_code == 404
 

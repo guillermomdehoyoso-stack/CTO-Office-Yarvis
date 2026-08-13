@@ -10,6 +10,7 @@ from yarvis_api.main import app
 from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 from yarvis_api.models.process import ProcessDefinition, ProcessInstance, ProcessInstanceEvent, ProcessInstanceWorkLink, ProcessStage
 
 
@@ -19,8 +20,12 @@ OTHER_ORGANIZATION_ID = uuid4()
 
 
 def _headers(organization_id: UUID = ORGANIZATION_ID, authority: str = "mission.work.read") -> dict[str, str]:
+    subject = {
+        "mission.work.read": "workspace:viewer",
+        "economics.fact.record": "workspace:economics-recorder",
+    }.get(authority, "workspace:viewer") + ("-other" if organization_id == OTHER_ORGANIZATION_ID else "")
     return {
-        "x-yarvis-actor": "operator:workspace",
+        "x-yarvis-subject": subject, "x-yarvis-actor": "forged-workspace-actor",
         "x-yarvis-organization": str(organization_id),
         "x-yarvis-authority": authority,
         "x-yarvis-auth-token": "deterministic-inbound-intake",
@@ -36,6 +41,10 @@ def workspace_subject(clean_database) -> tuple[UUID, UUID]:
             Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other workspace", display_name="Other workspace"),
         ))
         session.flush()
+        for organization_id, suffix in ((ORGANIZATION_ID, ""), (OTHER_ORGANIZATION_ID, "-other")):
+            for subject, role in (("workspace:viewer", "mission_work_viewer"), ("workspace:economics-recorder", "economics_fact_recorder")):
+                principal = Principal(external_subject=subject + suffix, status="active")
+                session.add(principal); session.flush(); session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role=role))
         work = MissionWorkItem(
             organization_id=ORGANIZATION_ID, inbox_item_id=uuid4(), source_type="test", source_id=uuid4(),
             title="Workspace work", summary="Read composition", status="assigned", priority="high",
@@ -77,6 +86,20 @@ def _record(subject_type: str, subject_id: UUID, fact_type: str, amount: str) ->
     assert response.status_code == 201, response.text
 
 
+def test_workspace_viewer_cannot_forge_economics_record_authority() -> None:
+    response = client.post(
+        "/operational-economics/facts",
+        json={
+            "subject_type": "mission_work_item", "subject_id": str(uuid4()), "fact_type": "revenue_expected",
+            "amount": "1000.00", "currency": "MXN", "effective_at": "2026-07-29T00:00:00+00:00",
+            "source_type": "test", "source_reference": uuid4().hex, "evidence_references": [],
+            "idempotency_key": uuid4().hex, "correlation_id": str(uuid4()),
+        },
+        headers={**_headers(), "x-yarvis-authority": "economics.fact.record"},
+    )
+    assert response.status_code == 403
+
+
 def test_workspace_composes_owner_read_models_without_economic_rollup(workspace_subject: tuple[UUID, UUID]) -> None:
     work_id, instance_id = workspace_subject
     _record("mission_work_item", work_id, "revenue_expected", "1000.00")
@@ -97,4 +120,4 @@ def test_workspace_composes_owner_read_models_without_economic_rollup(workspace_
 def test_workspace_conceals_cross_tenant_work_and_enforces_authority(workspace_subject: tuple[UUID, UUID]) -> None:
     work_id, _ = workspace_subject
     assert client.get(f"/mission/work-items/{work_id}/workspace?currency=MXN", headers=_headers(OTHER_ORGANIZATION_ID)).status_code == 404
-    assert client.get(f"/mission/work-items/{work_id}/workspace?currency=MXN", headers=_headers(authority="process.instance.read")).status_code == 403
+    assert client.get(f"/mission/work-items/{work_id}/workspace?currency=MXN", headers=_headers(authority="process.instance.read")).status_code == 200

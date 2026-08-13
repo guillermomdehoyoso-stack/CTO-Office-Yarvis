@@ -9,6 +9,7 @@ from yarvis_api.main import app
 from yarvis_api.models.domain_event import DomainEvent
 from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 
 
 client = TestClient(app)
@@ -17,8 +18,20 @@ OTHER_ORGANIZATION_ID = uuid4()
 
 
 def _headers(organization_id: UUID = ORGANIZATION_ID, authority: str = "mission.work.create") -> dict[str, str]:
+    subject = {
+        "inbound.intake": "mission-work:intake",
+        "mission.inbox.read": "mission-work:inbox",
+        "mission.work.read": "mission-work:viewer",
+        "mission.work.create": "mission-work:operator",
+        "mission.work.status.change": "mission-work:operator",
+        "mission.work.priority.change": "mission-work:operator",
+        "mission.work.assign": "mission-work:coordinator",
+    }.get(authority, "mission-work:viewer")
+    if organization_id == OTHER_ORGANIZATION_ID:
+        subject += "-other"
     return {
-        "x-yarvis-actor": "operator:mission-work",
+        "x-yarvis-subject": subject,
+        "x-yarvis-actor": "forged-mission-work-actor",
         "x-yarvis-organization": str(organization_id),
         "x-yarvis-authority": authority,
         "x-yarvis-auth-token": "deterministic-inbound-intake",
@@ -34,6 +47,18 @@ def organizations(clean_database) -> None:
                 Organization(id=OTHER_ORGANIZATION_ID, legal_name="Other", display_name="Other"),
             )
         )
+        session.flush()
+        for organization_id, suffix in ((ORGANIZATION_ID, ""), (OTHER_ORGANIZATION_ID, "-other")):
+            for subject, role in (
+                ("mission-work:intake", "inbound_operator"),
+                ("mission-work:inbox", "mission_inbox_viewer"),
+                ("mission-work:viewer", "mission_work_viewer"),
+                ("mission-work:operator", "mission_work_operator"),
+                ("mission-work:coordinator", "mission_work_coordinator"),
+            ):
+                principal = Principal(external_subject=subject + suffix, status="active")
+                session.add(principal); session.flush()
+                session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role=role))
         session.commit()
 
 
@@ -249,15 +274,15 @@ def test_mutation_authorities_are_directly_enforced(endpoint: str, payload: dict
     assert required_authority != "mission.work.read"
 
 
-def test_read_authority_and_actor_are_required() -> None:
+def test_operator_read_and_forged_actor_headers_are_ignored() -> None:
     item_id = _new_item()["id"]
     for url in ("/mission/work-items", f"/mission/work-items/{item_id}"):
         response = client.get(url, headers=_headers(authority="mission.work.create"))
-        assert response.status_code == 403 and response.json()["code"] == "AUTHORIZATION_DENIED"
+        assert response.status_code == 200
         headers = _headers(authority="mission.work.read")
         headers.pop("x-yarvis-actor")
         response = client.get(url, headers=headers)
-        assert response.status_code == 403 and response.json()["code"] == "AUTHORIZATION_DENIED"
+        assert response.status_code == 200
 
 
 def test_cross_tenant_operations_are_concealed() -> None:
@@ -378,7 +403,9 @@ def test_create_snapshots_governed_fields_and_duplicate_is_atomic() -> None:
     assert item["status"] == "open" and item["version"] == 1
     assert item["title"] == "Snapshot" and item["summary"] is None
     assert item["source_type"] == "deterministic_intake" and item["source_id"]
-    assert item["priority"] == "normal" and item["created_by_subject_id"] == "operator:mission-work"
+    with app.state.yarvis.persistence.create_session() as session:
+        operator_id = session.scalar(select(Principal.id).where(Principal.external_subject == "mission-work:operator"))
+    assert item["priority"] == "normal" and item["created_by_subject_id"] == str(operator_id)
     assert "private" not in response.text and "headers" not in response.text
     event = _latest_event(item["id"], "mission.work_item_created")
     assert event.payload == {
