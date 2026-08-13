@@ -56,7 +56,7 @@ def test_document_actor_history_is_immutable_and_workspace_is_hidden():
     canonical_context()
     request = create_request("alta_tpv")
     item = request["checklist"][0]
-    assert client.patch(f"/radar/requests/{request['id']}/checklist/{item['id']}", headers=HEADERS, json={"received": True, "actor": "maria"}).status_code == 200
+    assert client.patch(f"/radar/requests/{request['id']}/checklist/{item['id']}", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"received": True, "actor": "maria"}).status_code == 200
     detail = client.get(f"/radar/merchants/{request['merchant_id']}", headers=HEADERS).json()
     assert any(event["event_type"] == "document_received" and event["actor"] != "maria" for event in detail["activity"])
     with app.state.yarvis.persistence.create_session() as session:
@@ -82,7 +82,7 @@ def test_resolve_next_action_and_close_are_atomic_and_persistent():
     canonical_context()
     request = create_request("alta_tpv", next_action="Llamar al comercio")
     for item in request["checklist"]:
-        assert client.patch(f"/radar/requests/{request['id']}/checklist/{item['id']}", headers=HEADERS, json={"received": True, "actor": "ana"}).status_code == 200
+        assert client.patch(f"/radar/requests/{request['id']}/checklist/{item['id']}", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"received": True, "actor": "ana"}).status_code == 200
     closed = client.post(f"/radar/requests/{request['id']}/close", headers=HEADERS, json={"next_action": None, "actor": "ana"})
     assert closed.status_code == 200, closed.text
     assert closed.json()["status"] == "closed" and closed.json()["next_action"] is None
@@ -97,7 +97,7 @@ def test_clearing_next_action_persists_and_another_open_request_keeps_pending_on
     canonical_context()
     first = create_request("soporte", next_action="Resolver hoy")
     second = client.post("/radar/requests", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"merchant_id": first["merchant_id"], "free_text": "Otra solicitud", "classification": "soporte", "actor": "ana"}).json()
-    cleared = client.patch(f"/radar/requests/{first['id']}/next-action", headers=HEADERS, json={"next_action": "", "actor": "ana"})
+    cleared = client.patch(f"/radar/requests/{first['id']}/next-action", headers={**HEADERS, "Idempotency-Key": str(uuid4())}, json={"next_action": "", "actor": "ana"})
     assert cleared.status_code == 200 and cleared.json()["next_action"] is None
     assert client.get(f"/radar/merchants/{first['merchant_id']}", headers=HEADERS).json()["requests"][1]["next_action"] is None
     assert client.post(f"/radar/requests/{first['id']}/close", headers=HEADERS, json={"next_action": None, "actor": "ana"}).status_code == 200

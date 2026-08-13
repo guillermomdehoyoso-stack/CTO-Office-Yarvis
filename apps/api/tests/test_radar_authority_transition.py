@@ -37,9 +37,9 @@ def test_canonical_commands_reads_cross_org_and_revocation_are_effective():
     with app.state.yarvis.persistence.create_session() as db:
         before = db.scalar(select(func.count()).select_from(RadarActivity))
     assert client.post("/radar/requests", headers=headers("radar-b", **{"Idempotency-Key": "foreign-create"}), json={"merchant_id": merchant_id, "free_text": "foreign", "classification": "soporte"}).status_code == 404
-    assert client.patch(f"/radar/requests/{request['id']}/checklist/{request['checklist'][0]['id']}", headers=headers("radar-b"), json={"received": True}).status_code == 404
-    assert client.patch(f"/radar/requests/{request['id']}/next-action", headers=headers("radar-b"), json={"next_action": "foreign"}).status_code == 404
-    assert client.post(f"/radar/requests/{request['id']}/notes", headers=headers("radar-b"), json={"note": "foreign"}).status_code == 404
+    assert client.patch(f"/radar/requests/{request['id']}/checklist/{request['checklist'][0]['id']}", headers=headers("radar-b", **{"Idempotency-Key": "foreign-checklist"}), json={"received": True}).status_code == 404
+    assert client.patch(f"/radar/requests/{request['id']}/next-action", headers=headers("radar-b", **{"Idempotency-Key": "foreign-next-action"}), json={"next_action": "foreign"}).status_code == 404
+    assert client.post(f"/radar/requests/{request['id']}/notes", headers=headers("radar-b", **{"Idempotency-Key": "foreign-note"}), json={"note": "foreign"}).status_code == 404
     assert client.post(f"/radar/requests/{request['id']}/close", headers=headers("radar-b"), json={"incomplete_justification": "foreign"}).status_code == 404
     assert client.post(f"/radar/requests/{request['id']}/reopen", headers=headers("radar-b"), json={}).status_code == 404
     with app.state.yarvis.persistence.create_session() as db:

@@ -279,40 +279,64 @@ def merchant_detail(merchant_id: UUID, db: Session = Depends(get_db), envelope: 
 
 
 @router.patch("/requests/{request_id}/checklist/{item_id}", response_model=RequestRead)
-def update_checklist(request_id: UUID, item_id: UUID, payload: ChecklistUpdate, db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
-    envelope.require("radar.checklist.update"); request, merchant = canonical_request(db, request_id, envelope.organization_id)
-    item = db.scalar(select(RadarChecklistItem).where(RadarChecklistItem.id == item_id, RadarChecklistItem.request_id == request.id))
-    if item is None:
-        raise HTTPException(status_code=404, detail="not found")
-    item.received = payload.received
-    item.received_by = payload.actor if payload.received else None
-    item.received_at = now() if payload.received else None
-    activity(db, merchant, request, "document_received" if payload.received else "checklist_changed", ("Documento recibido: " if payload.received else "Checklist pendiente: ") + item.label, str(envelope.principal_id))
+def update_checklist(request_id: UUID, item_id: UUID, payload: ChecklistUpdate, response: Response, idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255), db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
+    def mutation(context):
+        request, merchant = canonical_request(db, request_id, context.envelope.organization_id)
+        item = db.scalar(select(RadarChecklistItem).where(RadarChecklistItem.id == item_id, RadarChecklistItem.request_id == request.id))
+        if item is None:
+            raise HTTPException(status_code=404, detail="not found")
+        item.received = payload.received
+        item.received_by = payload.actor if payload.received else None
+        item.received_at = now() if payload.received else None
+        activity(db, merchant, request, "document_received" if payload.received else "checklist_changed", ("Documento recibido: " if payload.received else "Checklist pendiente: ") + item.label, str(context.envelope.principal_id))
+        record_event(db, event_type="radar.request_checklist_updated", aggregate_type="radar_request", aggregate_id=request.id, organization_id=context.envelope.organization_id, correlation_id=context.correlation_id, causation_id=context.command_id, payload={"event_version": "1.0.0", "actor_principal_id": str(context.envelope.principal_id), "command_id": str(context.command_id), "item_id": str(item.id), "received": item.received})
+        return CommandResultReference("radar_request", request.id, status.HTTP_200_OK)
+
+    result = RadarCommandReceiptService().execute(db, resolve_authority=lambda: envelope.require("radar.checklist.update") or envelope, command_type="radar.checklist.update", contract_version="1.0.0", idempotency_key=idempotency_key, target_id=request_id, functional_payload={"item_id": item_id, "received": payload.received}, mutation=mutation)
     db.commit()
+    request, _ = canonical_request(db, result.result.resource_id, envelope.organization_id)
+    response.status_code = result.result.status_code
     return request_read(db, request)
 
 
 @router.patch("/requests/{request_id}/next-action", response_model=RequestRead)
-def update_next_action(request_id: UUID, payload: NextActionUpdate, db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
-    envelope.require("radar.request.update"); request, merchant = canonical_request(db, request_id, envelope.organization_id)
-    if "next_action" in payload.model_fields_set:
-        request.next_action = payload.next_action.strip() or None if payload.next_action else None
-    if "due_at" in payload.model_fields_set:
-        request.due_at = payload.due_at
-    if "priority" in payload.model_fields_set:
-        request.priority = payload.priority
-    if "owner" in payload.model_fields_set:
-        request.owner = payload.owner
-    activity(db, merchant, request, "next_action_changed", "Siguiente acción actualizada", str(envelope.principal_id))
+def update_next_action(request_id: UUID, payload: NextActionUpdate, response: Response, idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255), db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
+    functional_payload = payload.model_dump(exclude={"actor"}, exclude_unset=True, mode="python")
+    changed_fields = sorted(functional_payload)
+
+    def mutation(context):
+        request, merchant = canonical_request(db, request_id, context.envelope.organization_id)
+        if "next_action" in payload.model_fields_set:
+            request.next_action = payload.next_action.strip() or None if payload.next_action else None
+        if "due_at" in payload.model_fields_set:
+            request.due_at = payload.due_at
+        if "priority" in payload.model_fields_set:
+            request.priority = payload.priority
+        if "owner" in payload.model_fields_set:
+            request.owner = payload.owner
+        activity(db, merchant, request, "next_action_changed", "Siguiente acción actualizada", str(context.envelope.principal_id))
+        record_event(db, event_type="radar.request_next_action_set", aggregate_type="radar_request", aggregate_id=request.id, organization_id=context.envelope.organization_id, correlation_id=context.correlation_id, causation_id=context.command_id, payload={"event_version": "1.0.0", "actor_principal_id": str(context.envelope.principal_id), "command_id": str(context.command_id), "changed_fields": changed_fields})
+        return CommandResultReference("radar_request", request.id, status.HTTP_200_OK)
+
+    result = RadarCommandReceiptService().execute(db, resolve_authority=lambda: envelope.require("radar.request.update") or envelope, command_type="radar.request.update", contract_version="1.0.0", idempotency_key=idempotency_key, target_id=request_id, functional_payload=functional_payload, mutation=mutation)
     db.commit()
+    request, _ = canonical_request(db, result.result.resource_id, envelope.organization_id)
+    response.status_code = result.result.status_code
     return request_read(db, request)
 
 
 @router.post("/requests/{request_id}/notes", response_model=RequestRead)
-def add_note(request_id: UUID, payload: NoteCreate, db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
-    envelope.require("radar.note.create"); request, merchant = canonical_request(db, request_id, envelope.organization_id)
-    activity(db, merchant, request, "note_added", payload.note, str(envelope.principal_id))
+def add_note(request_id: UUID, payload: NoteCreate, response: Response, idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255), db: Session = Depends(get_db), envelope: IdentityAuthorityEnvelope = Depends(authority_envelope)):
+    def mutation(context):
+        request, merchant = canonical_request(db, request_id, context.envelope.organization_id)
+        activity(db, merchant, request, "note_added", payload.note, str(context.envelope.principal_id))
+        record_event(db, event_type="radar.request_note_added", aggregate_type="radar_request", aggregate_id=request.id, organization_id=context.envelope.organization_id, correlation_id=context.correlation_id, causation_id=context.command_id, payload={"event_version": "1.0.0", "actor_principal_id": str(context.envelope.principal_id), "command_id": str(context.command_id)})
+        return CommandResultReference("radar_request", request.id, status.HTTP_200_OK)
+
+    result = RadarCommandReceiptService().execute(db, resolve_authority=lambda: envelope.require("radar.note.create") or envelope, command_type="radar.note.create", contract_version="1.0.0", idempotency_key=idempotency_key, target_id=request_id, functional_payload={"note": payload.note}, mutation=mutation)
     db.commit()
+    request, _ = canonical_request(db, result.result.resource_id, envelope.organization_id)
+    response.status_code = result.result.status_code
     return request_read(db, request)
 
 
