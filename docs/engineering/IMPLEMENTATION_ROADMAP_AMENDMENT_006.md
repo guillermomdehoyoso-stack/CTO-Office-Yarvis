@@ -12,7 +12,7 @@ This proposal is not ratified and authorizes no implementation.
 F-011 G3 regression evidence identified two existing governed contracts whose
 required scopes are absent from the closed F-011 matrix and Amendment 005:
 
-- `AssociateIntakeOperationalContext` (`IC-INBOX-CMD-002`) requires
+- `AssociateIntakeOperationalContext` (`IC-INBOX-CMD-003`) requires
   `inbound.context.associate`.
 - `ListMissionInbox` (`IC-MISSION-QRY-002`) and
   `RetrieveMissionInboxItem` (`IC-MISSION-QRY-003`) require
@@ -39,7 +39,7 @@ this proposal grants no incidental permission through either role.
 `inbound.context.associate` authorizes only
 `AssociateIntakeOperationalContext` through
 `POST /intake/deterministic/{intake_id}/operational-context`
-(`IC-INBOX-CMD-002`). It does not authorize retrieval of the association;
+(`IC-INBOX-CMD-003`). It does not authorize retrieval of the association;
 that remains governed by its existing `inbound.read` query contract.
 
 `mission.inbox.read` authorizes only `ListMissionInbox` and
