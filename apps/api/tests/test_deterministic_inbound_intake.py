@@ -16,13 +16,18 @@ from yarvis_api.models.intake import IntakeItem
 from yarvis_api.models.message import Message
 from yarvis_api.models.observation_engine import Observation
 from yarvis_api.models.organization import Organization
+from yarvis_api.models.principal import Principal, PrincipalMembership
 
 client = TestClient(app)
 NO_SERVER_RAISE_CLIENT = TestClient(app, raise_server_exceptions=False)
 
 
+CANONICAL_ORGANIZATION_ID = uuid4()
+PRIMARY_PRINCIPAL_ID = uuid4()
+PRIMARY_SUBJECT = "connector:mailbox-01"
+
 TRUSTED_HEADERS = {
-    "x-yarvis-actor": "connector:mailbox-01",
+    "x-yarvis-actor": PRIMARY_SUBJECT,
     "x-yarvis-organization": str(uuid4()),
     "x-yarvis-authority": "inbound.intake",
     "x-yarvis-auth-token": "deterministic-inbound-intake",
@@ -35,27 +40,58 @@ def _read_headers(**overrides: str) -> dict[str, str]:
     return {**TRUSTED_HEADERS, "x-yarvis-authority": "inbound.read", **overrides}
 
 
-def _create_organization() -> str:
+def _headers_for_subject(subject: str, **overrides: str) -> dict[str, str]:
+    return {**TRUSTED_HEADERS, "x-yarvis-actor": subject, "x-yarvis-organization": str(uuid4()), **overrides}
+
+
+def _add_membership(subject: str, organization_id: UUID, role: str) -> dict[str, str]:
+    with app.state.yarvis.persistence.create_session() as session:
+        principal = Principal(external_subject=subject, status="active")
+        session.add(principal)
+        session.flush()
+        session.add(PrincipalMembership(principal_id=principal.id, organization_id=organization_id, role=role))
+        session.commit()
+    return _headers_for_subject(subject)
+
+
+def _create_organization(subject: str, role: str) -> dict[str, str]:
     with app.state.yarvis.persistence.create_session() as session:
         organization = Organization(
             legal_name=f"Deterministic Intake {uuid4().hex}",
             display_name="Deterministic Intake",
         )
         session.add(organization)
+        session.flush()
+        organization_id = organization.id
         session.commit()
-        return str(organization.id)
+    return _add_membership(subject, organization_id, role)
+
+
+def _set_primary_role(role: str) -> None:
+    with app.state.yarvis.persistence.create_session() as session:
+        membership = session.scalar(
+            select(PrincipalMembership).where(PrincipalMembership.principal_id == PRIMARY_PRINCIPAL_ID)
+        )
+        assert membership is not None
+        membership.role = role
+        session.commit()
 
 
 @pytest.fixture(autouse=True)
 def trusted_organization(clean_database) -> None:
     with app.state.yarvis.persistence.create_session() as session:
-        session.add(
-            Organization(
-                id=UUID(TRUSTED_HEADERS["x-yarvis-organization"]),
-                legal_name="Deterministic Intake Tenant",
-                display_name="Deterministic Intake Tenant",
+        session.add_all(
+            (
+                Organization(
+                    id=CANONICAL_ORGANIZATION_ID,
+                    legal_name="Deterministic Intake Tenant",
+                    display_name="Deterministic Intake Tenant",
+                ),
+                Principal(id=PRIMARY_PRINCIPAL_ID, external_subject=PRIMARY_SUBJECT, status="active"),
             )
         )
+        session.flush()
+        session.add(PrincipalMembership(principal_id=PRIMARY_PRINCIPAL_ID, organization_id=CANONICAL_ORGANIZATION_ID, role="inbound_operator"))
         session.commit()
 
 
@@ -107,7 +143,7 @@ def test_deterministic_inbound_intake_creates_intake_message_and_events() -> Non
     assert body["message"]["recipients"] == ["ops@example.com"]
     assert body["message"]["text_body"] == "Inbound message body"
     assert body["message"]["trace_metadata"]["principal"]["authority"] == "inbound.intake"
-    assert body["message"]["trace_metadata"]["principal"]["actor_id"] == TRUSTED_HEADERS["x-yarvis-actor"]
+    assert body["message"]["trace_metadata"]["principal"]["actor_id"] == str(PRIMARY_PRINCIPAL_ID)
     assert body["trace_metadata"]["correlation_id"] == body["message"]["trace_metadata"]["correlation_id"]
     assert [event["event_type"] for event in body["events"]] == ["intake.received", "message.registered"]
     assert body["events"][0]["correlation_id"] == body["trace_metadata"]["correlation_id"]
@@ -121,9 +157,9 @@ def test_deterministic_inbound_intake_creates_intake_message_and_events() -> Non
         assert message is not None
         assert str(message.intake_item_id) == str(intake.id)
         assert intake.source_metadata["external_message_id"] == body["source_metadata"]["external_message_id"]
-        assert str(intake.organization_id) == TRUSTED_HEADERS["x-yarvis-organization"]
+        assert str(intake.organization_id) == str(CANONICAL_ORGANIZATION_ID)
         assert intake.trace_metadata["principal"]["authority"] == "inbound.intake"
-        assert message.trace_metadata["principal"]["actor_id"] == TRUSTED_HEADERS["x-yarvis-actor"]
+        assert message.trace_metadata["principal"]["actor_id"] == str(PRIMARY_PRINCIPAL_ID)
 
     query_response = client.get(f"/intake/deterministic/{body['id']}", headers=_read_headers())
     assert query_response.status_code == 200, query_response.text
@@ -172,22 +208,22 @@ def test_deterministic_inbound_intake_rejects_missing_actor() -> None:
     assert response.json()["code"] == "AUTHORIZATION_DENIED"
 
 
-def test_deterministic_inbound_intake_rejects_missing_authority() -> None:
+def test_deterministic_inbound_intake_ignores_forged_authority_header() -> None:
     response = client.post(
         "/intake/deterministic",
         json=_payload(),
         headers={k: v for k, v in TRUSTED_HEADERS.items() if k != "x-yarvis-authority"},
     )
 
-    assert response.status_code == 403
-    assert response.json()["code"] == "AUTHORIZATION_DENIED"
+    assert response.status_code == 201, response.text
 
 
-def test_deterministic_inbound_intake_rejects_insufficient_authority() -> None:
+def test_deterministic_inbound_intake_rejects_role_without_intake_permission() -> None:
+    _set_primary_role("radar_viewer")
     response = client.post(
         "/intake/deterministic",
         json=_payload(),
-        headers={**TRUSTED_HEADERS, "x-yarvis-authority": "inbound.readonly"},
+        headers={**TRUSTED_HEADERS, "x-yarvis-authority": "inbound.intake"},
     )
 
     assert response.status_code == 403
@@ -273,21 +309,21 @@ def test_command_contracts_include_f002_intake_commands() -> None:
     assert command_contracts[WS001CommandName.REGISTER_MESSAGE].requires_idempotency_key is True
 
 
-def test_deterministic_inbound_intake_rejects_missing_organization_context() -> None:
+def test_deterministic_inbound_intake_uses_persisted_organization_without_header() -> None:
     response = client.post(
         "/intake/deterministic",
         json=_payload(),
         headers={key: value for key, value in TRUSTED_HEADERS.items() if key != "x-yarvis-organization"},
     )
 
-    assert response.status_code == 403
-    assert response.json()["code"] == "AUTHORIZATION_DENIED"
+    assert response.status_code == 201, response.text
+    assert response.json()["organization_id"] == str(CANONICAL_ORGANIZATION_ID)
 
 
 def test_deterministic_inbound_intake_uses_organization_scoped_idempotency() -> None:
     payload = _payload(idempotency_key="organization-scoped-key")
     first_response = client.post("/intake/deterministic", json=payload, headers=TRUSTED_HEADERS)
-    other_organization_headers = {**TRUSTED_HEADERS, "x-yarvis-organization": _create_organization()}
+    other_organization_headers = _create_organization("connector:mailbox-03", "inbound_operator")
     second_response = client.post("/intake/deterministic", json=payload, headers=other_organization_headers)
 
     assert first_response.status_code == 201, first_response.text
@@ -305,7 +341,7 @@ def test_deterministic_inbound_intake_replays_for_a_different_actor_in_the_same_
     replay_response = client.post(
         "/intake/deterministic",
         json=payload,
-        headers={**TRUSTED_HEADERS, "x-yarvis-actor": "connector:mailbox-02"},
+        headers=_add_membership("connector:mailbox-02", CANONICAL_ORGANIZATION_ID, "inbound_operator"),
     )
 
     assert first_response.status_code == 201, first_response.text
@@ -317,7 +353,7 @@ def test_deterministic_inbound_intake_replays_for_a_different_actor_in_the_same_
 
 def test_intake_detail_requires_governed_same_organization_access() -> None:
     created = client.post("/intake/deterministic", json=_payload(), headers=TRUSTED_HEADERS).json()
-    other_organization_headers = _read_headers(**{"x-yarvis-organization": _create_organization()})
+    other_organization_headers = _create_organization("connector:mailbox-04", "inbound_viewer")
 
     unauthorized = client.get(f"/intake/deterministic/{created['id']}", headers=other_organization_headers)
 
@@ -363,21 +399,40 @@ def test_legacy_intake_routes_conceal_tenant_owned_records() -> None:
     assert governed_detail.status_code == 200
 
 
-@pytest.mark.parametrize(
-    "headers",
-    [
-        {key: value for key, value in _read_headers().items() if key != "x-yarvis-actor"},
-        {key: value for key, value in _read_headers().items() if key != "x-yarvis-authority"},
-        _read_headers(**{"x-yarvis-authority": "inbound.readonly"}),
-    ],
-)
-def test_intake_detail_rejects_missing_or_insufficient_authority(headers: dict[str, str]) -> None:
+def test_intake_detail_rejects_missing_actor() -> None:
     created = client.post("/intake/deterministic", json=_payload(), headers=TRUSTED_HEADERS).json()
 
-    response = client.get(f"/intake/deterministic/{created['id']}", headers=headers)
+    response = client.get(
+        f"/intake/deterministic/{created['id']}",
+        headers={key: value for key, value in _read_headers().items() if key != "x-yarvis-actor"},
+    )
 
     assert response.status_code == 403
     assert response.json()["code"] == "AUTHORIZATION_DENIED"
+
+
+def test_inbound_viewer_can_read_but_cannot_create() -> None:
+    viewer_headers = _add_membership("connector:viewer", CANONICAL_ORGANIZATION_ID, "inbound_viewer")
+    denied = client.post("/intake/deterministic", json=_payload(), headers=viewer_headers)
+    assert denied.status_code == 403
+    created = client.post("/intake/deterministic", json=_payload(), headers=TRUSTED_HEADERS).json()
+    read = client.get(f"/intake/deterministic/{created['id']}", headers=viewer_headers)
+    assert read.status_code == 200
+
+
+def test_revoked_membership_is_denied_before_replay() -> None:
+    payload = _payload(idempotency_key="revoked-replay")
+    created = client.post("/intake/deterministic", json=payload, headers=TRUSTED_HEADERS)
+    assert created.status_code == 201
+    with app.state.yarvis.persistence.create_session() as session:
+        membership = session.scalar(select(PrincipalMembership).where(PrincipalMembership.principal_id == PRIMARY_PRINCIPAL_ID))
+        assert membership is not None
+        membership.status = "revoked"
+        membership.revoked_at = datetime.now(timezone.utc)
+        session.commit()
+    denied = client.post("/intake/deterministic", json=payload, headers=TRUSTED_HEADERS)
+    assert denied.status_code == 403
+    assert denied.json()["code"] == "AUTHORIZATION_DENIED"
 
 
 def test_intake_detail_conceals_legacy_and_nonexistent_intakes() -> None:

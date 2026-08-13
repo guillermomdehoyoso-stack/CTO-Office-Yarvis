@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from yarvis_api.api.authentication import transport_authentication_request
+from yarvis_api.application.intake_authority import intake_principal_from_envelope
 from yarvis_api.application.inbound_intake import InboundIntakeSubmission
 from yarvis_api.application.operational_context import AssociateIntakeOperationalContextCommand
 from yarvis_api.application.metadata import RequestMetadata
@@ -16,6 +17,7 @@ from yarvis_api.models.intake import IntakeItem
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.person import Person
 from yarvis_api.models.evidence import Evidence
+from yarvis_api.services.authority_resolution import AuthorityResolutionService
 from yarvis_api.schemas.intake import (
     DeterministicInboundIntakeCreate,
     IntakeCreate,
@@ -28,6 +30,20 @@ from yarvis_api.schemas.operational_context import (
 )
 
 router = APIRouter(prefix="/intake", tags=["intake"])
+
+
+def _resolved_intake_principal(request: Request, db: Session, *, required_scope: str):
+    authenticated = request.app.state.yarvis.authentication.authenticate(
+        transport_authentication_request(request)
+    )
+    envelope = AuthorityResolutionService().resolve(
+        db,
+        external_subject=authenticated.actor_id,
+        selector=None,
+        authentication_source=authenticated.authentication_method,
+        correlation_id=authenticated.correlation_id or str(uuid4()),
+    )
+    return intake_principal_from_envelope(envelope, required_scope=required_scope)
 
 
 def validate_references(db: Session, payload: IntakeCreate) -> None:
@@ -81,7 +97,7 @@ def create_deterministic_intake(
     adapter = request.app.state.yarvis.deterministic_inbound_adapter
     fixture = adapter.adapt(payload)
     service = request.app.state.yarvis.inbound_intake_service
-    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    principal = _resolved_intake_principal(request, db, required_scope="inbound.intake")
     intake_id = service.submit(
         InboundIntakeSubmission(
             fixture=fixture,
@@ -110,7 +126,7 @@ def list_intake(db: Session = Depends(get_db)):
 
 @router.get("/deterministic/{intake_id}", response_model=IntakeDetailRead)
 def get_deterministic_intake_detail(intake_id: UUID, request: Request, db: Session = Depends(get_db)):
-    principal = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
+    principal = _resolved_intake_principal(request, db, required_scope="inbound.read")
     return request.app.state.yarvis.inbound_intake_query_service.load_detail(
         db,
         intake_id,

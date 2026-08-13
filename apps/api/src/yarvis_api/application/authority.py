@@ -9,6 +9,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "radar_viewer": frozenset({"radar.read", "radar.activity.read"}),
     "radar_operator": frozenset({"radar.read", "radar.activity.read", "radar.merchant.create", "radar.request.create", "radar.request.update", "radar.checklist.update", "radar.request.close", "radar.request.reopen", "radar.note.create"}),
     "foundation_membership_operator": frozenset({"governance.membership.create", "governance.membership.revoke"}),
+    "inbound_viewer": frozenset({"inbound.read"}),
+    "inbound_operator": frozenset({"inbound.read", "inbound.intake"}),
 }
 
 

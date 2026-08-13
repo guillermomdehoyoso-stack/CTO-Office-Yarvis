@@ -4,6 +4,7 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from yarvis_api.api.authentication import DeterministicAuthenticationProvider
+from yarvis_api.api.routes import intake as intake_routes
 from yarvis_api.application.authentication import AuthenticatedPrincipal, TransportAuthenticationRequest
 from yarvis_api.application.errors import ApplicationErrorCode
 from yarvis_api.config import Settings
@@ -103,26 +104,26 @@ def test_production_mode_rejects_deterministic_provider() -> None:
         assert getattr(error, "code", None) == ApplicationErrorCode.AUTHORIZATION_DENIED
 
 
-def test_route_uses_authentication_port_and_passes_principal(monkeypatch) -> None:
+def test_route_uses_resolved_intake_principal_and_passes_compatibility_projection(monkeypatch) -> None:
     client = TestClient(app)
     captured: dict[str, object] = {}
 
-    class SpyProvider:
-        def authenticate(self, request: TransportAuthenticationRequest) -> AuthenticatedPrincipal:
-            captured["request"] = request
-            principal = AuthenticatedPrincipal(
-                actor_id="spy-actor",
-                organization_id="spy-org",
-                roles=("connector",),
-                permissions=("intake:receive",),
-                authority="inbound.intake",
-                authentication_method="spy",
-                authenticated_at=datetime.now(timezone.utc),
-                is_system_actor=False,
-                correlation_id="spy-correlation",
-            )
-            captured["principal"] = principal
-            return principal
+    principal = AuthenticatedPrincipal(
+        actor_id="spy-principal-id",
+        organization_id="spy-org",
+        roles=(),
+        permissions=("inbound.intake",),
+        authority="inbound.intake",
+        authentication_method="resolved-envelope",
+        authenticated_at=datetime.now(timezone.utc),
+        is_system_actor=False,
+        correlation_id="spy-correlation",
+    )
+
+    def fake_resolve(request, db, *, required_scope: str) -> AuthenticatedPrincipal:
+        captured["required_scope"] = required_scope
+        captured["principal"] = principal
+        return principal
 
     expected_intake_id = uuid4()
 
@@ -152,17 +153,13 @@ def test_route_uses_authentication_port_and_passes_principal(monkeypatch) -> Non
             events=[],
         )
 
-    original_provider = app.state.yarvis.authentication
-    monkeypatch.setattr(app.state.yarvis, "authentication", SpyProvider())
+    monkeypatch.setattr(intake_routes, "_resolved_intake_principal", fake_resolve)
     monkeypatch.setattr(InboundIntakeService, "submit", fake_submit)
     monkeypatch.setattr(InboundIntakeService, "load_detail", fake_load_detail)
 
-    try:
-        response = client.post("/intake/deterministic", json=_payload(), headers={"x-any": "value"})
-    finally:
-        monkeypatch.setattr(app.state.yarvis, "authentication", original_provider)
+    response = client.post("/intake/deterministic", json=_payload(), headers={"x-any": "value"})
 
     assert response.status_code == 201, response.text
-    assert isinstance(captured["request"], TransportAuthenticationRequest)
+    assert captured["required_scope"] == "inbound.intake"
     assert captured["submission_principal"] == captured["principal"]
     assert captured["load_intake_id"] == expected_intake_id
