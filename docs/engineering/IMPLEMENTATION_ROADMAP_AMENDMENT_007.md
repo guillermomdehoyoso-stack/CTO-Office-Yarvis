@@ -3,9 +3,11 @@
 
 ## Status
 
-**PROPOSED — PENDING INDEPENDENT REVIEW AND RATIFICATION**
+**RATIFIED**
 
-This proposal is not ratified and authorizes no implementation.
+This is a ratified narrow authority amendment. It supplements Amendments 005
+and 006 only within the Document Registry authority scope stated here and does
+not authorize implementation.
 
 ## 1. Demonstrated Contractual Gap
 
@@ -77,6 +79,6 @@ This proposal authorizes no code, tests, fixtures, migrations, routes, F2,
 F2C change, G/H/I, backfill, historical-record change, push, or merge. It does
 not modify Document Registry behavior, only the proposed authority mapping.
 
-Independent review and ratification are required before a separate bounded
-implementation mandate may migrate Document Registry authority and its focused
-evidence.
+A separate bounded implementation mandate is required before Document Registry
+authority, any transitional adapter, fixtures, tests, or focused evidence may
+be implemented.
