@@ -14,6 +14,7 @@ from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.message import Message
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
 from yarvis_api.models.netpay_master import NetpayBranch, NetpayClient, NetpayCompany, NetpayMasterCommandReceipt, NetpayStoreReference
+from yarvis_api.models.netpay_inbox import NetpayCaseActivity, NetpayCaseChecklistItem, NetpayCaseDocumentReference, NetpayCaseNextAction, NetpayCaseStep, NetpayCaseType, NetpayChecklistTemplate, NetpayInboxCommandReceipt, NetpayServiceCase
 from yarvis_api.models.radar import RadarActivity, RadarChecklistItem, RadarCommandReceipt, RadarMerchant, RadarRequest
 from yarvis_api.models.observation_engine import (
 	AttentionItem,

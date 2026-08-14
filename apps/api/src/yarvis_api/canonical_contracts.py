@@ -545,6 +545,25 @@ CANONICAL_CONTRACTS += tuple(
 )
 
 CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(interaction_contract_id=contract_id, version="1.0.0", contract_type=contract_type, owner_module_id="netpay_merchant_operations", owning_context="Netpay Merchant Operations", owning_capability="service inbox", name=name, semantic_purpose=purpose, lifecycle=ContractLifecycle.RATIFIED, operational_status=ContractOperationalStatus.PLANNED, criticality=ContractCriticality.CORE, primary_consumer_or_use_case="Netpay service Inbox")
+    for contract_id, contract_type, name, purpose in (
+        ("IC-NETPAY-CMD-009", ContractType.COMMAND, "CreateNetpayServiceCase", "Create a tenant-owned Netpay service case"),
+        ("IC-NETPAY-CMD-010", ContractType.COMMAND, "ClassifyAndUpdateNetpayServiceCase", "Classify and update a Netpay service case"),
+        ("IC-NETPAY-CMD-011", ContractType.COMMAND, "ManageNetpayCaseChecklist", "Manage a Netpay case checklist"),
+        ("IC-NETPAY-CMD-012", ContractType.COMMAND, "AssignNetpayServiceCase", "Assign a Netpay service case"),
+        ("IC-NETPAY-CMD-013", ContractType.COMMAND, "SetNetpayCaseNextAction", "Set a Netpay case next action"),
+        ("IC-NETPAY-CMD-014", ContractType.COMMAND, "TransitionNetpayServiceCase", "Transition a Netpay service case"),
+        ("IC-NETPAY-CMD-015", ContractType.COMMAND, "RecordNetpayCaseActivity", "Record append-only Netpay case activity"),
+        ("IC-NETPAY-QRY-005", ContractType.QUERY, "ListNetpayServiceInbox", "List the tenant-scoped Netpay service Inbox"),
+        ("IC-NETPAY-QRY-006", ContractType.QUERY, "RetrieveNetpayServiceCaseDetail", "Retrieve tenant-scoped Netpay service case detail"),
+        ("IC-NETPAY-EVT-003", ContractType.EVENT, "NetpayServiceCaseCreated", "Record Netpay service case creation"),
+        ("IC-NETPAY-EVT-004", ContractType.EVENT, "NetpayServiceCaseClassified", "Record Netpay service case classification"),
+        ("IC-NETPAY-EVT-005", ContractType.EVENT, "NetpayServiceCaseStateChanged", "Record Netpay service case state change"),
+        ("IC-NETPAY-EVT-006", ContractType.EVENT, "NetpayServiceCaseActivityRecorded", "Record Netpay service case activity"),
+    )
+)
+
+CANONICAL_CONTRACTS += tuple(
     ContractDefinition(interaction_contract_id=contract_id, version="1.0.0", contract_type=contract_type, owner_module_id="netpay_merchant_operations", owning_context="Netpay Merchant Operations", owning_capability="tenant-owned master", name=name, semantic_purpose=purpose, lifecycle=ContractLifecycle.RATIFIED, operational_status=ContractOperationalStatus.VERIFIED, criticality=ContractCriticality.CORE, primary_consumer_or_use_case="Netpay master")
     for contract_id, contract_type, name, purpose in (
         ("IC-NETPAY-CMD-005", ContractType.COMMAND, "CreateNetpayClient", "Create a tenant-owned Netpay Client"),

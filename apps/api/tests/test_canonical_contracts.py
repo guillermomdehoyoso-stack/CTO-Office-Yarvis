@@ -70,6 +70,19 @@ CANONICAL_RUNTIME_BASELINE_V1 = (
     ("IC-DOCUMENT-QRY-002", ContractType.QUERY, "document_registry", "version retrieval", *_RATIFIED_VERIFIED),
     ("IC-DOCUMENT-QRY-003", ContractType.QUERY, "document_registry", "association retrieval", *_RATIFIED_VERIFIED),
     ("IC-DOCUMENT-QRY-004", ContractType.QUERY, "document_registry", "subject retrieval", *_RATIFIED_VERIFIED),
+    ("IC-NETPAY-CMD-009", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-CMD-010", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-CMD-011", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-CMD-012", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-CMD-013", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-CMD-014", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-CMD-015", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-QRY-005", ContractType.QUERY, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-QRY-006", ContractType.QUERY, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-EVT-003", ContractType.EVENT, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-EVT-004", ContractType.EVENT, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-EVT-005", ContractType.EVENT, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
+    ("IC-NETPAY-EVT-006", ContractType.EVENT, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
     ("IC-NETPAY-CMD-005", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
     ("IC-NETPAY-CMD-006", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
     ("IC-NETPAY-CMD-007", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
@@ -96,8 +109,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
         for contract in contracts
     ) == CANONICAL_RUNTIME_BASELINE_V1
     assert tuple(contract.interaction_contract_id for contract in contracts) == CANONICAL_CONTRACT_IDS
-    assert len(contracts) == 61
-    assert len({contract.interaction_contract_id for contract in contracts}) == 61
+    assert len(contracts) == 74
+    assert len({contract.interaction_contract_id for contract in contracts}) == 74
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -119,9 +132,9 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
     contracts = canonical_contracts()
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
-        ContractType.COMMAND: 31,
-        ContractType.QUERY: 17,
-        ContractType.EVENT: 11,
+        ContractType.COMMAND: 38,
+        ContractType.QUERY: 19,
+        ContractType.EVENT: 15,
         ContractType.NOTIFICATION: 2,
     }
     owner_counts = {
@@ -136,7 +149,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
         "knowledge": 3,
         "execution": 6,
         "mission_control": 5,
-        "netpay_merchant_operations": 15,
+        "netpay_merchant_operations": 28,
         "operational_execution": 7,
         "document_registry": 10,
     }

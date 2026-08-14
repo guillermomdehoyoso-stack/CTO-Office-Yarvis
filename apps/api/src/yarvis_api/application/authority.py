@@ -40,6 +40,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "process_work_link_coordinator": frozenset({"process.instance.work.link", "process.instance.work.unlink"}),
     "netpay_master_viewer": frozenset({"netpay.master.read"}),
     "netpay_master_operator": frozenset({"netpay.master.read", "netpay.master.manage"}),
+    "netpay_inbox_viewer": frozenset({"netpay.inbox.read"}),
+    "netpay_inbox_operator": frozenset({"netpay.inbox.read", "netpay.inbox.manage"}),
 }
 
 
