@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 
 const api = 'http://localhost:8000';
-const headers = { 'Content-Type': 'application/json', 'X-Yarvis-Workspace': 'netpay-demo' };
+const headers = { 'Content-Type': 'application/json' };
 const categories = [['alta_tpv', 'Alta TPV'], ['alta_ecommerce', 'Alta e-commerce'], ['soporte', 'Soporte'], ['reposicion_terminal', 'Reposición de terminal'], ['pagos_depositos', 'Pagos o depósitos'], ['documentacion', 'Documentación'], ['otro', 'Otro']];
 
 async function request(path: string, init?: RequestInit) {

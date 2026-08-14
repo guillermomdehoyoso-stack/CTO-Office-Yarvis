@@ -33,30 +33,12 @@ TPV_TEMPLATE = [
 ECOMMERCE_TEMPLATE = TPV_TEMPLATE + [("dominio", "Comprobante de propiedad o control del dominio")]
 
 
-def workspace_id(value: str = Header(..., alias="X-Yarvis-Workspace", min_length=1, max_length=100)) -> str:
-    return value.strip()
-
-
 def now() -> datetime:
     return datetime.now(timezone.utc)
 
 
 def activity(db: Session, merchant: RadarMerchant, request: RadarRequest | None, event_type: str, summary: str, actor: str) -> None:
-    db.add(RadarActivity(workspace_id=merchant.workspace_id, organization_id=merchant.organization_id, merchant_id=merchant.id, request_id=request.id if request else None, event_type=event_type, summary=summary, actor=actor))
-
-
-def scoped_merchant(db: Session, merchant_id: UUID, workspace: str) -> RadarMerchant:
-    merchant = db.scalar(select(RadarMerchant).where(RadarMerchant.id == merchant_id, RadarMerchant.workspace_id == workspace))
-    if merchant is None:
-        raise HTTPException(status_code=404, detail="not found")
-    return merchant
-
-
-def scoped_request(db: Session, request_id: UUID, workspace: str) -> tuple[RadarRequest, RadarMerchant]:
-    request = db.scalar(select(RadarRequest).where(RadarRequest.id == request_id, RadarRequest.workspace_id == workspace))
-    if request is None:
-        raise HTTPException(status_code=404, detail="not found")
-    return request, scoped_merchant(db, request.merchant_id, workspace)
+    db.add(RadarActivity(workspace_id=None, organization_id=merchant.organization_id, merchant_id=merchant.id, request_id=request.id if request else None, event_type=event_type, summary=summary, actor=actor))
 
 
 def canonical_request(db: Session, request_id: UUID, organization_id: UUID) -> tuple[RadarRequest, RadarMerchant]:
@@ -83,7 +65,7 @@ def request_read(db: Session, request: RadarRequest) -> RequestRead:
 
 
 def merchant_read(db: Session, merchant: RadarMerchant) -> MerchantRead:
-    requests = db.scalars(select(RadarRequest).where(RadarRequest.merchant_id == merchant.id, RadarRequest.workspace_id == merchant.workspace_id).order_by(RadarRequest.created_at, RadarRequest.id)).all()
+    requests = db.scalars(select(RadarRequest).where(RadarRequest.merchant_id == merchant.id).order_by(RadarRequest.created_at, RadarRequest.id)).all()
     opens = [item for item in requests if item.status == "open"]
     open_ids = [item.id for item in opens]
     items = db.scalars(select(RadarChecklistItem).where(RadarChecklistItem.request_id.in_(open_ids)).order_by(RadarChecklistItem.position, RadarChecklistItem.id)).all() if open_ids else []
@@ -105,7 +87,6 @@ def create_merchant(
     response: Response,
     idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255),
     db: Session = Depends(get_db),
-    workspace: str = Depends(workspace_id),
     envelope: IdentityAuthorityEnvelope = Depends(authority_envelope),
 ):
     def mutation(context):
@@ -117,7 +98,7 @@ def create_merchant(
         ):
             raise HTTPException(status_code=409, detail="store id already exists in organization")
         merchant = RadarMerchant(
-            workspace_id=workspace,
+            workspace_id=None,
             organization_id=context.envelope.organization_id,
             **payload.model_dump(exclude={"actor"}),
         )
@@ -168,7 +149,6 @@ def create_request(
     response: Response,
     idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255),
     db: Session = Depends(get_db),
-    workspace: str = Depends(workspace_id),
     envelope: IdentityAuthorityEnvelope = Depends(authority_envelope),
 ):
     def mutation(context):
@@ -181,7 +161,7 @@ def create_request(
             )
             if payload.merchant_id
             else RadarMerchant(
-                workspace_id=workspace,
+                workspace_id=None,
                 organization_id=context.envelope.organization_id,
                 **payload.merchant.model_dump(),
             )
@@ -193,7 +173,7 @@ def create_request(
             db.flush()
             activity(db, merchant, None, "merchant_created", "Comercio registrado al crear solicitud", str(context.envelope.principal_id))
         request = RadarRequest(
-            workspace_id=workspace,
+            workspace_id=None,
             organization_id=context.envelope.organization_id,
             merchant_id=merchant.id,
             free_text=payload.free_text,

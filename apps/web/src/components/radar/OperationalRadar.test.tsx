@@ -12,6 +12,7 @@ describe('OperationalRadar', () => {
     expect(await screen.findByText('Radar Operativo Netpay')).toBeTruthy();
     expect(await screen.findByText('Gasolinera La Providencia')).toBeTruthy();
     expect(screen.getByText('PENDIENTE ON')).toBeTruthy();
+    expect(vi.mocked(fetch).mock.calls[0][1]).toEqual({ headers: { 'Content-Type': 'application/json' } });
   });
 
   it('keeps the close dialog open and exposes an API rejection', async () => {

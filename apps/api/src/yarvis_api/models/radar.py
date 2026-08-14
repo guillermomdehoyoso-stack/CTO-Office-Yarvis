@@ -14,7 +14,7 @@ class RadarMerchant(TimestampedUUIDMixin, Base):
     __tablename__ = "radar_merchants"
     __table_args__ = (UniqueConstraint("organization_id", "store_id", name="uq_radar_merchants_organization_store"),)
 
-    workspace_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    workspace_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     organization_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)
     trade_name: Mapped[str] = mapped_column(String(255), nullable=False)
     legal_name: Mapped[str | None] = mapped_column(String(255))
@@ -33,7 +33,7 @@ class RadarRequest(TimestampedUUIDMixin, Base):
         CheckConstraint("priority IN ('low', 'normal', 'high')", name="ck_radar_requests_priority"),
     )
 
-    workspace_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    workspace_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     organization_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)
     merchant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("radar_merchants.id"), nullable=False, index=True)
     free_text: Mapped[str] = mapped_column(Text, nullable=False)
@@ -69,7 +69,7 @@ class RadarActivity(Base):
     __tablename__ = "radar_activities"
 
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
-    workspace_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    workspace_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     organization_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=True, index=True)
     merchant_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("radar_merchants.id"), nullable=False, index=True)
     request_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("radar_requests.id"), index=True)

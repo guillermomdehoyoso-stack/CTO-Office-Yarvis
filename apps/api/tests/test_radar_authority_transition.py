@@ -52,6 +52,44 @@ def test_canonical_commands_reads_cross_org_and_revocation_are_effective():
     assert denied.status_code == 403
 
 
+def test_new_radar_records_omit_workspace_and_legacy_header_is_ignored():
+    org_a, _org_b, _radar_a, _radar_b, _governor = context()
+    merchant = client.post(
+        "/radar/merchants",
+        headers={"X-Yarvis-Subject": "radar-a", "X-Yarvis-Auth-Token": "deterministic-inbound-intake", "Idempotency-Key": "headerless-merchant"},
+        json={"trade_name": "Headerless merchant", "products": ["tpv"]},
+    )
+    assert merchant.status_code == 201, merchant.text
+    payload = {
+        "merchant": {"trade_name": "Headerless", "products": ["tpv"]},
+        "free_text": "headerless request",
+        "classification": "alta_tpv",
+    }
+    first = client.post(
+        "/radar/requests",
+        headers={"X-Yarvis-Subject": "radar-a", "X-Yarvis-Auth-Token": "deterministic-inbound-intake", "Idempotency-Key": "headerless"},
+        json=payload,
+    )
+    replay = client.post(
+        "/radar/requests",
+        headers={**headers("radar-a", "forged-workspace", **{"Idempotency-Key": "headerless"})},
+        json=payload,
+    )
+    assert first.status_code == replay.status_code == 201
+    assert first.json() == replay.json()
+    with app.state.yarvis.persistence.create_session() as db:
+        merchant_id, request_id = first.json()["merchant_id"], first.json()["id"]
+        assert db.scalar(select(RadarMerchant.workspace_id).where(RadarMerchant.id == merchant.json()["id"])) is None
+        assert db.scalar(select(RadarActivity.workspace_id).where(RadarActivity.merchant_id == merchant.json()["id"])) is None
+        assert db.scalar(select(RadarMerchant.workspace_id).where(RadarMerchant.id == merchant_id)) is None
+        assert db.scalar(select(RadarRequest.workspace_id).where(RadarRequest.id == request_id)) is None
+        assert db.scalars(select(RadarActivity.workspace_id).where(RadarActivity.request_id == request_id)).all() == [None]
+        assert db.scalar(select(RadarMerchant.organization_id).where(RadarMerchant.id == merchant_id)) == org_a
+    specification = client.get("/openapi.json").json()
+    for path in ("/radar/merchants", "/radar/requests"):
+        assert all(parameter["name"].lower() != "x-yarvis-workspace" for parameter in specification["paths"][path]["post"].get("parameters", []))
+
+
 def db_membership_id(principal_id, organization_id):
     with app.state.yarvis.persistence.create_session() as db:
         return str(db.scalar(select(PrincipalMembership.id).where(PrincipalMembership.principal_id == principal_id, PrincipalMembership.organization_id == organization_id)))
