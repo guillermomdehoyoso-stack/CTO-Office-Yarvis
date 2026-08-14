@@ -3,12 +3,15 @@
 
 ## Status
 
-**PROPOSED — PENDING INDEPENDENT REVIEW AND RATIFICATION**
+**RATIFIED**
 
-This proposal formalizes only the MVP-2 Inbox and Service Case contracts,
-events, authority matrix, and frozen boundaries defined by the
+This is a ratified MVP-2 Inbox and Service Case contract and authority
+amendment. It supplements the Netpay Merchant Operations scope stated here
+only and does not authorize implementation.
+
+It formalizes only the MVP-2 Inbox and Service Case contracts, events,
+authority matrix, and frozen boundaries defined by the
 [Netpay MVP-2A Inbox and Service Case Contract](NETPAY_MVP2_INBOX_CASE_CONTRACT.md).
-It does not authorize implementation.
 
 ## 1. Scope and demonstrated contractual gap
 
@@ -113,9 +116,12 @@ This proposal does not authorize:
   production catalog changes, `ROLE_PERMISSIONS`, or changes to prior
   Amendments.
 
-## 7. Required ratification and next step
+## 7. Ratified scope and next step
 
-This proposal requires independent review and ratification. It does not
-authorize implementation. MVP-2B may proceed only under a separate bounded
-implementation mandate after ratification, and any future expansion of case
-types, permissions, or events requires a separate evaluation.
+This ratification approves only the nine contract allocations, four event
+allocations, two-role matrix, and ownership, tenancy, idempotency, event, and
+non-grant invariants stated above. It does not authorize implementation.
+
+MVP-2B requires a separate bounded implementation mandate. Any future
+expansion of case types, permissions, or events requires a separate
+evaluation.
