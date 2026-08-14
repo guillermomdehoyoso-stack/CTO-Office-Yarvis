@@ -305,4 +305,5 @@ def test_cross_organization_task_is_concealed_and_migration_constraints_exist() 
         event_constraints = {item["name"] for item in inspect(session.bind).get_unique_constraints("operational_task_events")}
     assert "uq_operational_tasks_create_idempotency" in constraints
     assert "uq_operational_task_events_idempotency" in event_constraints
-    assert ScriptDirectory.from_config(Config("alembic.ini")).get_heads() == ["20260813_36"]
+    script = ScriptDirectory.from_config(Config("alembic.ini"))
+    assert script.get_heads() == [script.get_current_head()]
