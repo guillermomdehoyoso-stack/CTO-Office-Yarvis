@@ -128,4 +128,5 @@ class NetpayInboxCommandReceipt(Base):
     correlation_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
     result_resource_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
     result_status_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    result_response_body: Mapped[dict] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
