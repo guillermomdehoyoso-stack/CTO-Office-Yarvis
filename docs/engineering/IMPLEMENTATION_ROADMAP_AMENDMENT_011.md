@@ -3,12 +3,11 @@
 
 ## Status
 
-**PROPOSED — PENDING INDEPENDENT REVIEW AND RATIFICATION**
+**RATIFIED**
 
-This proposal formalizes only the Netpay master contract and authority decisions
-required before MVP-1B. It does not ratify itself and does not authorize
-implementation, catalog changes, roles, routes, models, migrations, fixtures,
-UI, data creation, or external integration.
+This is a ratified Netpay master contract and authority amendment. It
+supplements the Netpay Merchant Operations scope stated here only and does not
+authorize implementation.
 
 ## 1. Scope and demonstrated gap
 
@@ -115,18 +114,14 @@ This proposal does not authorize:
 - migrations, models, routes, tests, fixtures, durable seed data, backfill,
   push, or merge.
 
-## 7. Required ratification and next step
+## 7. Ratified scope and next step
 
-Independent review must confirm:
+This ratification approves only the six contract allocations, the two-role
+matrix, and the tenancy, idempotency, provenance, and non-grant invariants
+stated above. It does not authorize implementation.
 
-1. the six IDs remain free and the semantic names/ownership above do not
-   overlap the existing Netpay case/checklist contracts;
-2. viewer/operator separation grants no incidental cross-domain capability;
-3. Store removal/correction preserves the one-active-reference rule;
-4. all authority and tenancy invariants remain consistent with F-011.
-
-If ratified unchanged, a separate MVP-1B implementation mandate may add only
-the master persistence, reversible migration, narrow APIs, ratified roles,
-fixtures, and focused validation described in
+MVP-1B requires a separate bounded implementation mandate. That mandate may
+add only the master persistence, reversible migration, narrow APIs, ratified
+roles, fixtures, and focused validation described in
 `NETPAY_MVP1_MASTER_CONTRACT.md`. It must not expand into case onboarding or
 external integration.
