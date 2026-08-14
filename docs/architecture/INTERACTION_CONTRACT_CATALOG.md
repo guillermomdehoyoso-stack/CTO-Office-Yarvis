@@ -183,8 +183,14 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-CMD-002 | CMD | Netpay Merchant Operations / case | OpenNetpayOnboardingOrServiceCase | C | TPV/e-commerce service case |
 | IC-NETPAY-CMD-003 | CMD | Netpay Merchant Operations / case classification | ClassifyNetpayChannel | Co | TPV, e-commerce, or mixed |
 | IC-NETPAY-CMD-004 | CMD | Netpay Merchant Operations / checklist | EvaluateChecklistAndSetPendingAction | C | missing-document detection; invokes owner contracts |
+| IC-NETPAY-CMD-005 | CMD | Netpay Merchant Operations / master | CreateNetpayClient | C | tenant-owned Client master |
+| IC-NETPAY-CMD-006 | CMD | Netpay Merchant Operations / master | CreateNetpayCompany | C | same-tenant Company under Client |
+| IC-NETPAY-CMD-007 | CMD | Netpay Merchant Operations / master | CreateNetpayBranch | C | same-tenant Branch; Store ID optional |
+| IC-NETPAY-CMD-008 | CMD | Netpay Merchant Operations / master | AssignCorrectOrRemoveNetpayStoreReference | C | optional Store Reference lifecycle within Branch |
 | IC-NETPAY-QRY-001 | QRY | Netpay Merchant Operations / case view | RetrieveMerchantCase | Co | case handling |
 | IC-NETPAY-QRY-002 | QRY | Netpay Merchant Operations / checklist view | RetrieveChecklistAndPendingActions | Co | operator view |
+| IC-NETPAY-QRY-003 | QRY | Netpay Merchant Operations / master view | ListSearchNetpayMaster | Co | tenant-scoped master search |
+| IC-NETPAY-QRY-004 | QRY | Netpay Merchant Operations / master view | RetrieveNetpayMasterDetail | Co | Client -> Company -> Branch -> Store Reference |
 | IC-NETPAY-EVT-001 | EVT | Netpay Merchant Operations / case | NetpayCaseOpened | C | Execution, MC |
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |

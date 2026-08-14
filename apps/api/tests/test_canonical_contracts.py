@@ -70,6 +70,12 @@ CANONICAL_RUNTIME_BASELINE_V1 = (
     ("IC-DOCUMENT-QRY-002", ContractType.QUERY, "document_registry", "version retrieval", *_RATIFIED_VERIFIED),
     ("IC-DOCUMENT-QRY-003", ContractType.QUERY, "document_registry", "association retrieval", *_RATIFIED_VERIFIED),
     ("IC-DOCUMENT-QRY-004", ContractType.QUERY, "document_registry", "subject retrieval", *_RATIFIED_VERIFIED),
+    ("IC-NETPAY-CMD-005", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
+    ("IC-NETPAY-CMD-006", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
+    ("IC-NETPAY-CMD-007", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
+    ("IC-NETPAY-CMD-008", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
+    ("IC-NETPAY-QRY-003", ContractType.QUERY, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
+    ("IC-NETPAY-QRY-004", ContractType.QUERY, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
 )
 
 CANONICAL_CONTRACT_IDS = tuple(contract[0] for contract in CANONICAL_RUNTIME_BASELINE_V1)
@@ -90,8 +96,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
         for contract in contracts
     ) == CANONICAL_RUNTIME_BASELINE_V1
     assert tuple(contract.interaction_contract_id for contract in contracts) == CANONICAL_CONTRACT_IDS
-    assert len(contracts) == 55
-    assert len({contract.interaction_contract_id for contract in contracts}) == 55
+    assert len(contracts) == 61
+    assert len({contract.interaction_contract_id for contract in contracts}) == 61
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -103,7 +109,7 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
     assert all(
         (contract.lifecycle, contract.operational_status) == _PROPOSED_PLANNED
         for contract in contracts
-        if contract.owner_module_id != "document_registry"
+        if contract.owner_module_id not in {"document_registry", "netpay_merchant_operations"}
     )
     assert all(contract.architectural_steward is None for contract in contracts)
     assert all(contract.traceability_references == () for contract in contracts)
@@ -113,8 +119,8 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
     contracts = canonical_contracts()
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
-        ContractType.COMMAND: 27,
-        ContractType.QUERY: 15,
+        ContractType.COMMAND: 31,
+        ContractType.QUERY: 17,
         ContractType.EVENT: 11,
         ContractType.NOTIFICATION: 2,
     }
@@ -130,7 +136,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
         "knowledge": 3,
         "execution": 6,
         "mission_control": 5,
-        "netpay_merchant_operations": 9,
+        "netpay_merchant_operations": 15,
         "operational_execution": 7,
         "document_registry": 10,
     }

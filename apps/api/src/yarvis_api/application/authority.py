@@ -38,6 +38,8 @@ ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
     "process_instance_viewer": frozenset({"process.instance.read"}),
     "process_instance_operator": frozenset({"process.instance.start", "process.instance.transition", "process.instance.cancel"}),
     "process_work_link_coordinator": frozenset({"process.instance.work.link", "process.instance.work.unlink"}),
+    "netpay_master_viewer": frozenset({"netpay.master.read"}),
+    "netpay_master_operator": frozenset({"netpay.master.read", "netpay.master.manage"}),
 }
 
 

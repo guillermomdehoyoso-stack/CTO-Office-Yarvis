@@ -544,6 +544,18 @@ CANONICAL_CONTRACTS += tuple(
     )
 )
 
+CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(interaction_contract_id=contract_id, version="1.0.0", contract_type=contract_type, owner_module_id="netpay_merchant_operations", owning_context="Netpay Merchant Operations", owning_capability="tenant-owned master", name=name, semantic_purpose=purpose, lifecycle=ContractLifecycle.RATIFIED, operational_status=ContractOperationalStatus.VERIFIED, criticality=ContractCriticality.CORE, primary_consumer_or_use_case="Netpay master")
+    for contract_id, contract_type, name, purpose in (
+        ("IC-NETPAY-CMD-005", ContractType.COMMAND, "CreateNetpayClient", "Create a tenant-owned Netpay Client"),
+        ("IC-NETPAY-CMD-006", ContractType.COMMAND, "CreateNetpayCompany", "Create a Company under a same-tenant Client"),
+        ("IC-NETPAY-CMD-007", ContractType.COMMAND, "CreateNetpayBranch", "Create a Branch under a same-tenant Company"),
+        ("IC-NETPAY-CMD-008", ContractType.COMMAND, "AssignCorrectOrRemoveNetpayStoreReference", "Manage the optional same-Branch Store reference"),
+        ("IC-NETPAY-QRY-003", ContractType.QUERY, "ListSearchNetpayMaster", "List or search tenant-owned Netpay master records"),
+        ("IC-NETPAY-QRY-004", ContractType.QUERY, "RetrieveNetpayMasterDetail", "Retrieve tenant-owned Netpay master detail"),
+    )
+)
+
 
 def canonical_contracts() -> tuple[ContractDefinition, ...]:
     """Return the immutable, explicit canonical Tier 1 contract baseline."""

@@ -141,6 +141,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         mission_inbox,
         mission_work,
         netpay,
+        netpay_master,
         observations,
         operational_policies,
         operational_economics,
@@ -193,6 +194,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     app.include_router(process_runtime.router)
     app.include_router(document_registry.router)
     app.include_router(netpay.router)
+    app.include_router(netpay_master.router)
     app.include_router(radar.router)
     app.include_router(observations.router)
     app.include_router(operational_policies.router)
