@@ -3,11 +3,11 @@
 
 ## Status
 
-**PROPOSED — PENDING INDEPENDENT REVIEW AND RATIFICATION**
+**RATIFIED**
 
-This document proposes only a local Netpay operations role and a bounded local
-provisioning procedure. It is not ratified and authorizes no implementation,
-data change, bootstrap execution, or UI work.
+This ratification approves only the local Netpay operations role and bounded
+local provisioning contract stated here. It does not implement or authorize by
+itself any code, data change, bootstrap execution, or UI work.
 
 ## 1. Demonstrated operational gap
 
@@ -105,9 +105,8 @@ The excluded historical sets `manual-close-validation` (11) and `netpay-demo`
 not authorize code, `ROLE_PERMISSIONS`, an executable bootstrap, memberships,
 UI, migrations, Gmail, WhatsApp, data writes, push, or merge.
 
-## 7. Required next step
+## 7. Ratified scope and required next step
 
-Amendment 013 requires independent review and ratification. Only after
-ratification may a separate bounded mandate implement the combined role and
-local fail-closed bootstrap. MVP-2C remains blocked until that implementation
-has been validated and a local operator has been provisioned explicitly.
+The combined role and local fail-closed bootstrap require a separate bounded
+implementation mandate. MVP-2C remains blocked until that implementation has
+been validated and a local operator has been provisioned explicitly.
