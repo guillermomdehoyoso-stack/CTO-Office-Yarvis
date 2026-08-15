@@ -9,6 +9,7 @@ import { WorkspaceShell } from './workspace-shell/WorkspaceShell';
 import { MissionWorkQueue } from './components/mission-work/MissionWorkQueue';
 import { OperationalWorkspace } from './components/mission-work/OperationalWorkspace';
 import { OperationalRadar } from './components/radar/OperationalRadar';
+import { NetpayCaseDetail, NetpayInboxWorkspace } from './components/netpay/NetpayInboxWorkspace';
 
 const api = 'http://localhost:8000';
 
@@ -54,6 +55,7 @@ function Layout() {
         <Link to="/people">Personas</Link>
         <Link to="/netpay-intake">NetPay XLSX</Link>
         <Link to="/radar-netpay">Radar Netpay</Link>
+        <Link to="/netpay-inbox">Netpay Inbox</Link>
         <Link to="/recovery-queue">Cola de recuperación</Link>
         <Link to="/workspace">Development Workspace</Link>
         <Link to="/mission-work">Mission Work</Link>
@@ -67,6 +69,8 @@ function Layout() {
         <Route path="/people" element={<PeoplePage />} />
         <Route path="/netpay-intake" element={<NetPayIntakePage />} />
         <Route path="/radar-netpay" element={<OperationalRadar />} />
+        <Route path="/netpay-inbox" element={<NetpayInboxWorkspace />} />
+        <Route path="/netpay-inbox/:caseId" element={<NetpayCaseDetail />} />
         <Route path="/recovery-queue" element={<RecoveryQueuePage />} />
         <Route path="/workspace/*" element={<WorkspaceShell />} />
         <Route path="/mission-work" element={<MissionWorkQueue />} />

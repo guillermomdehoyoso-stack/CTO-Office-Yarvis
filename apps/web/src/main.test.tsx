@@ -25,6 +25,7 @@ describe('Yarvis web app', () => {
 
     expect(await screen.findByRole('heading', { name: /mission control/i })).toBeTruthy();
     expect(await screen.findByText(/pending reports/i)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Netpay Inbox' }).getAttribute('href')).toBe('/netpay-inbox');
   });
 
   it('allows sending a message and confirming context', async () => {
