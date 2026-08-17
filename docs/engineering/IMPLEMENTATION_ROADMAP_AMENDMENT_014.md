@@ -235,4 +235,4 @@ mandatory and no step implies completion of a later one:
 | Decision | Ratified — MVP-2D1 Manual Review Variant design authority only; all exclusions and future preconditions preserved. |
 | Ratified by | Human Architecture Authority (user-confirmed) |
 | Ratified at | 2026-08-17 America/Mexico_City |
-| Effective commit | TO BE RECORDED — no commit created by this ratification action. |
+| Effective commit | `0f07c55f9225f4079d7e35ba27c38ec7d7b55eee` |
