@@ -1,5 +1,29 @@
 # Current Engineering State
 
+## Prospective reconciliation overlay — 2026-08-17
+
+This dated overlay records the current governed position without rewriting the
+historical statements below. It supersedes only their current-state,
+current-gate, current-work-package, and next-action readings. IG-006, F-011
+Stage G/H/I, Netpay Radar evidence, and ratified Amendments remain immutable
+sources and are not altered by this overlay.
+
+| Field | Reconciled current value |
+| --- | --- |
+| F-011 status | **Implemented / closed:** F-011 Stage I records F-011 COMPLETE — VALIDATED. IG-006 is retained as the historical authorization that opened the bounded work. |
+| Implemented Netpay reality | The manual Netpay Radar remains implemented historical evidence. The tenant-scoped Netpay Master/Inbox vertical is implemented in later repository commits under the ratified Inbox boundary of `IMPLEMENTATION_ROADMAP_AMENDMENT_012.md`. |
+| Gmail MVP-2D1 | **Design Ratified:** `IMPLEMENTATION_ROADMAP_AMENDMENT_014.md` ratifies MVP-2D1 Manual Review Variant design limits only. Gmail contracts are not canonically assigned; CMD-017 is unregistered, non-dispatchable, and `gate_closed`. |
+| Gmail runtime | **Not implemented / not authorized:** no Gmail connector, OAuth, credential store, mailbox access, real synchronization, migration, or code is opened by this record. |
+| Current engineering gate | No Gmail implementation gate is active. Any future work must follow Amendment 014 §7: canonical identity proof, separate contract allocation, separate implementation gate, security/privacy prerequisites, and a separate OAuth/real-pilot gate. |
+| Current work package | This prospective documentation reconciliation is complete. No successor implementation package is opened by it. |
+| Next mandatory action | Preserve the reconciled record and await a separately authorized governance step; do not allocate Gmail contracts, resolve Principal/Membership, implement code, or access Gmail. |
+
+**Precedence for this overlay:** `IMPLEMENTATION_ROADMAP_AMENDMENT_012.md`
+governs the ratified Inbox boundary and Gmail exclusion;
+`IMPLEMENTATION_ROADMAP_AMENDMENT_014.md` governs the Gmail design boundary;
+F-011 Stage I is final closure evidence; implementation/Git evidence confirms
+what exists but never grants authority.
+
 **Last updated:** 2026-08-06 — F-013 Test and Conformance Foundation closure
 
 | Field | Current value |

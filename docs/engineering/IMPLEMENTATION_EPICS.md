@@ -5,6 +5,37 @@
 
 This is the canonical engineering decomposition of ratified Yarvis architecture into executable epics. It is not a backlog, sprint plan, project-management schedule, or semantic redesign. Every epic implements existing ownership, interaction, application, and decision-trace constraints.
 
+## Current-status reconciliation overlay — 2026-08-17
+
+This prospective overlay records the reconciled execution status without
+rewriting the original epic definitions, ratified authority, or historical
+closure evidence below.
+
+- **Implemented / closed:** F-011 is complete according to
+  `F011_STAGE_I_ACCEPTANCE.md`; IG-006 remains the historical implementation
+  authorization that opened F-011.
+- **Implemented:** the manual Netpay Radar is historical implementation
+  evidence. The tenant-scoped Netpay Master/Inbox vertical is implemented in
+  later repository commits under the ratified Inbox boundary of
+  `IMPLEMENTATION_ROADMAP_AMENDMENT_012.md`.
+- **Design Ratified:** `IMPLEMENTATION_ROADMAP_AMENDMENT_014.md` ratifies the
+  design limits and prerequisites of MVP-2D1 Manual Review Variant only. It
+  does not assign Gmail contracts, authorize implementation, or enable a
+  connector.
+- **Contracts not assigned / connector closed:** the proposed Gmail IDs are not
+  canonically allocated; CMD-017 is unregistered, non-dispatchable, and
+  `gate_closed`. No Gmail connector, OAuth, credential store, mailbox access,
+  real synchronization, or live pilot is implemented or authorized.
+- **Mandatory sequence:** any later Gmail work must follow Amendment 014 §7:
+  canonical identity proof, separate canonical-contract allocation, independent
+  implementation gate, security/privacy prerequisites, and a separate
+  OAuth/real-pilot gate. This overlay opens none of those steps.
+
+For current execution status, this overlay and the development current-state
+records take precedence over dated planning descriptions. Ratified Amendments
+and F-011 closure evidence retain their declared authority and historical
+meaning; implementation evidence confirms presence, never authority.
+
 **Execution order:** Engineering Foundation → Inbox First → Mission Control → Execution Engine → Netpay Merchant Operations → Automation → Knowledge & Intelligence → Energy Fotónica Operations.
 
 ## Architectural Guardrails
