@@ -149,7 +149,17 @@ def test_b2_five_commands_replay_events_and_requires_attention():
         },
     )
     assert action.status_code == 200
+    assert action.json()["next_actions"][-1]["due_date"] is not None
+    assert client.get(f"/netpay/inbox/cases/{case_id}", headers=h("inbox:viewer", "read-due")).json()["next_actions"][-1]["due_date"] == action.json()["next_actions"][-1]["due_date"]
     assert action.json()["requires_attention"] is False
+
+    invalid_due = client.put(
+        f"/netpay/inbox/cases/{case_id}/next-action",
+        headers=h("inbox:operator", "b2-invalid-due"),
+        json={"description": "Invalid date", "responsible_principal_id": str(viewer_id), "due_date": "not-a-date", "status": "open", "origin": "human"},
+    )
+    assert invalid_due.status_code == 422
+    assert client.get(f"/netpay/inbox/cases/{case_id}", headers=h("inbox:viewer", "read-invalid-due")).json()["next_actions"][-1]["due_date"] == action.json()["next_actions"][-1]["due_date"]
 
     overdue = client.put(
         f"/netpay/inbox/cases/{case_id}/next-action",

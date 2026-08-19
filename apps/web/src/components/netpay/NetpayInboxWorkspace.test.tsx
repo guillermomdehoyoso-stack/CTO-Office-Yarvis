@@ -74,7 +74,7 @@ describe('Netpay Inbox workspace', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar' }));
     const assignee = screen.getByPlaceholderText(/UUID o vacío/i); await user.type(assignee, '11111111-1111-1111-1111-111111111111'); await user.click(screen.getByRole('button', { name: /Guardar asignación/i }));
     await user.type(screen.getByLabelText('Siguiente acción'), 'Llamar cliente');
-    fireEvent.change(screen.getByLabelText('Fecha objetivo'), { target: { value: '2026-08-20T10:00' } });
+    fireEvent.input(screen.getByLabelText('Fecha objetivo'), { target: { value: '2026-08-20T10:00' } });
     await user.click(screen.getByRole('button', { name: /Definir acción/i }));
     await user.selectOptions(screen.getByLabelText('Nuevo estado'), 'cancelled'); await user.type(screen.getByLabelText('Motivo'), 'Solicitud retirada'); await user.click(screen.getByRole('button', { name: /Cambiar estado/i }));
     await user.type(screen.getByLabelText('Nota interna'), 'Confirmación telefónica'); await user.click(screen.getByRole('button', { name: /Agregar actividad/i }));
