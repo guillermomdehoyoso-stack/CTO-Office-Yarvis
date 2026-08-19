@@ -12,6 +12,7 @@ const inboxCase: NetpayCase = { id: 'case-1', folio: 'NPS-0001', client_id: 'cli
 function configuredClient(manage = true) {
   const client = new NetpayApiClient(runtime(manage));
   vi.spyOn(client, 'listInbox').mockResolvedValue({ items: [], offset: 0, limit: 20, total: 0 });
+  vi.spyOn(client, 'listCommercialIntake').mockResolvedValue({ items: [], offset: 0, limit: 20, total: 0 });
   return client;
 }
 
@@ -27,7 +28,7 @@ describe('Netpay Inbox workspace', () => {
     view.unmount();
     vi.mocked(client.listInbox).mockResolvedValueOnce({ items: [], offset: 0, limit: 20, total: 0 });
     render(<MemoryRouter><NetpayInboxWorkspace client={client} /></MemoryRouter>);
-    expect(await screen.findByRole('heading', { name: /Inbox vacío/i })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: /Casos vacíos/i })).toBeTruthy();
     vi.mocked(client.listInbox).mockRejectedValueOnce(new Error('offline'));
     await userEvent.click(screen.getByRole('button', { name: /Aplicar/i }));
     expect(await screen.findByRole('alert')).toBeTruthy();
@@ -57,9 +58,9 @@ describe('Netpay Inbox workspace', () => {
     vi.spyOn(client, 'listMaster').mockResolvedValue({ items: [], offset: 0, limit: 100, total: 0 });
     vi.spyOn(client, 'createCase').mockRejectedValueOnce(new NetpayApiError(409, 'conflict', 'retry')).mockResolvedValueOnce(inboxCase);
     render(<MemoryRouter initialEntries={['/netpay-inbox']}><Routes><Route path="/netpay-inbox" element={<NetpayInboxWorkspace client={client} />} /><Route path="/netpay-inbox/:caseId" element={<p>Detalle creado</p>} /></Routes></MemoryRouter>);
-    await screen.findByText(/Inbox vacío/i); const user = userEvent.setup(); await user.click(screen.getByRole('button', { name: /Nueva solicitud/i })); const dialog = within(screen.getByRole('dialog'));
+    await screen.findByText(/Casos vacíos/i); const user = userEvent.setup(); await user.click(screen.getByRole('button', { name: /Nuevo caso Netpay/i })); const dialog = within(screen.getByRole('dialog'));
     await user.type(dialog.getByLabelText('Cliente'), 'Cliente Uno'); await user.type(dialog.getByLabelText('Empresa'), 'Empresa Uno'); await user.type(dialog.getByLabelText('Sucursal'), 'Sucursal Centro');
-    await user.click(screen.getByRole('button', { name: /Guardar maestro/i })); await screen.findByText(/paso 2/i); await user.type(screen.getByLabelText(/Descripción original/i), 'Abrir nueva sucursal'); await user.click(screen.getByRole('button', { name: /Revisar/i }));
+    await user.click(screen.getByRole('button', { name: /Guardar comercio/i })); await screen.findByText(/paso 2/i); await user.type(screen.getByLabelText(/Descripción original/i), 'Abrir nueva sucursal'); await user.click(screen.getByRole('button', { name: /Revisar/i }));
     const submit = screen.getByRole('button', { name: /Crear caso/i }); fireEvent.click(submit); fireEvent.click(submit);
     expect(await screen.findByRole('alert')).toBeTruthy(); expect(client.createCase).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole('button', { name: /Crear caso/i })); await screen.findByText('Detalle creado');

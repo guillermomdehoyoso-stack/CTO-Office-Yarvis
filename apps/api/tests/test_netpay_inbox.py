@@ -291,3 +291,32 @@ def test_b2_revoked_membership_denies_before_replay():
         json={"responsible_principal_id": None},
     )
     assert replay.status_code == 403
+
+
+def test_commercial_intake_pre_master_lifecycle_conversion_replay_and_tenant_scope():
+    org, _, _, _, h = _setup()
+    payload = {
+        "kind": "rfq", "channel": "manual", "received_at": datetime.now(timezone.utc).isoformat(),
+        "provisional_company_name": "Synthetic RFQ Co", "provisional_contact_name": "Synthetic Contact",
+        "product_interest": "tpv", "summary": "Synthetic commercial request", "priority": "normal", "assign_to_self": True,
+        "next_action": "Synthetic follow-up", "due_date": (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+    }
+    created = client.post("/netpay/inbox/contacts", headers=h("inbox:operator", "commercial-create"), json=payload)
+    replay = client.post("/netpay/inbox/contacts", headers=h("inbox:operator", "commercial-create"), json=payload)
+    assert created.status_code == 201 and replay.json() == created.json()
+    intake_id = created.json()["id"]
+    assert created.json()["status"] == "new" and created.json()["master_client_id"] is None and created.json()["assignee_principal_id"] is not None
+    assert client.get("/netpay/inbox/contacts", headers=h("inbox:viewer", "commercial-list"), params={"query": "Synthetic RFQ"}).json()["total"] == 1
+    assert client.get(f"/netpay/inbox/contacts/{intake_id}", headers=h("inbox:foreign", "commercial-foreign")).status_code == 404
+    qualifying = client.put(f"/netpay/inbox/contacts/{intake_id}", headers=h("inbox:operator", "commercial-qualifying"), json={"status": "qualifying", "assign_to_self": True})
+    qualified = client.put(f"/netpay/inbox/contacts/{intake_id}", headers=h("inbox:operator", "commercial-qualified"), json={"status": "qualified"})
+    assert qualifying.status_code == qualified.status_code == 200
+    conversion = {"create_master": {"client_name": "Synthetic RFQ Co", "company_name": "Synthetic RFQ Co", "branch_name": "Synthetic Branch"}, "case_type_key": "tpv_activation"}
+    converted = client.post(f"/netpay/inbox/contacts/{intake_id}/convert", headers=h("inbox:operator", "commercial-convert"), json=conversion)
+    duplicate = client.post(f"/netpay/inbox/contacts/{intake_id}/convert", headers=h("inbox:operator", "commercial-convert-retry"), json=conversion)
+    assert converted.status_code == 201 and duplicate.status_code == 200
+    assert converted.json()["converted_case_id"] == duplicate.json()["converted_case_id"]
+    with app.state.yarvis.persistence.create_session() as db:
+        assert len(db.scalars(select(NetpayServiceCase).where(NetpayServiceCase.id == UUID(converted.json()["converted_case_id"]))).all()) == 1
+        assert len(db.scalars(select(NetpayClient).where(NetpayClient.organization_id == org, NetpayClient.display_name == "Synthetic RFQ Co")).all()) == 1
+        assert len(db.scalars(select(DomainEvent).where(DomainEvent.event_type == "netpay_commercial_intake.converted")).all()) == 1

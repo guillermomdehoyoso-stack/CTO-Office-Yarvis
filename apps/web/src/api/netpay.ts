@@ -83,6 +83,8 @@ export type NetpayCase = {
 };
 
 export type InboxPage = { items: NetpayCase[]; offset: number; limit: number; total: number };
+export type CommercialIntake = { id: string; kind: string; channel: string; received_at: string; provisional_company_name: string | null; provisional_contact_name: string | null; product_interest: string; summary: string; priority: string; assignee_principal_id: string | null; next_action: string | null; due_date: string | null; status: string; master_client_id: string | null; master_company_id: string | null; master_branch_id: string | null; converted_case_id: string | null; created_at: string; updated_at: string; requires_attention: boolean; timeline: { type: string; at: string }[] };
+export type CommercialIntakePage = { items: CommercialIntake[]; offset: number; limit: number; total: number };
 export type ApiProblemKind = 'forbidden' | 'not_found' | 'conflict' | 'validation' | 'unavailable';
 
 export class NetpayApiError extends Error {
@@ -180,6 +182,12 @@ export class NetpayApiClient {
   setNextAction(caseId: string, payload: Record<string, unknown>, key: string) { return this.request<NetpayCase>(`/netpay/inbox/cases/${caseId}/next-action`, { method: 'PUT', body: JSON.stringify(payload) }, key); }
   transitionCase(caseId: string, payload: Record<string, unknown>, key: string) { return this.request<NetpayCase>(`/netpay/inbox/cases/${caseId}/state`, { method: 'PUT', body: JSON.stringify(payload) }, key); }
   addActivity(caseId: string, payload: Record<string, unknown>, key: string) { return this.request<NetpayCase>(`/netpay/inbox/cases/${caseId}/activities`, { method: 'POST', body: JSON.stringify(payload) }, key); }
+  listCommercialIntake(filters: Record<string, string | number | undefined> = {}) { const params = new URLSearchParams(); Object.entries(filters).forEach(([key, value]) => value !== undefined && value !== '' && params.set(key, String(value))); return this.request<CommercialIntakePage>(`/netpay/inbox/contacts?${params}`); }
+  getCommercialIntake(id: string) { return this.request<CommercialIntake>(`/netpay/inbox/contacts/${id}`); }
+  createCommercialIntake(payload: Record<string, unknown>, key: string) { return this.request<CommercialIntake>('/netpay/inbox/contacts', { method: 'POST', body: JSON.stringify(payload) }, key); }
+  updateCommercialIntake(id: string, payload: Record<string, unknown>, key: string) { return this.request<CommercialIntake>(`/netpay/inbox/contacts/${id}`, { method: 'PUT', body: JSON.stringify(payload) }, key); }
+  discardCommercialIntake(id: string, key: string) { return this.request<CommercialIntake>(`/netpay/inbox/contacts/${id}/discard`, { method: 'PUT', body: '{}' }, key); }
+  convertCommercialIntake(id: string, payload: Record<string, unknown>, key: string) { return this.request<CommercialIntake>(`/netpay/inbox/contacts/${id}/convert`, { method: 'POST', body: JSON.stringify(payload) }, key); }
 }
 
 export const netpayApi = new NetpayApiClient();

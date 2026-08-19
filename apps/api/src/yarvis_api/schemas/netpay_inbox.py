@@ -45,3 +45,41 @@ class NextActionUpdate(BaseModel):
     description: str | None = None; responsible_principal_id: UUID | None = None; due_date: datetime | None = None; status: str = Field(default="open", pattern="^(open|done|cancelled)$"); origin: str = Field(default="human", pattern="^(human|suggested)$")
 class StateTransition(BaseModel): state: str; reason: str | None = None
 class ActivityWrite(BaseModel): activity_type: str = Field(min_length=1,max_length=64); safe_summary: str = Field(min_length=1); external_reference: str | None = Field(default=None,max_length=255)
+
+class CommercialIntakeCreate(BaseModel):
+    kind: str = Field(pattern="^(initial_contact|rfq|commercial_opportunity|unclassified)$")
+    channel: str = Field(pattern="^(call|email|whatsapp|referral|manual)$")
+    received_at: datetime
+    provisional_company_name: str | None = Field(default=None, max_length=255)
+    provisional_contact_name: str | None = Field(default=None, max_length=255)
+    product_interest: str = Field(pattern="^(tpv|ecommerce|other)$")
+    summary: str = Field(min_length=1, max_length=4000)
+    priority: str = Field(default="normal", pattern="^(urgent|high|normal|low)$")
+    assignee_principal_id: UUID | None = None
+    assign_to_self: bool = False
+    next_action: str | None = Field(default=None, max_length=4000)
+    due_date: datetime | None = None
+
+class CommercialIntakeUpdate(BaseModel):
+    status: str | None = Field(default=None, pattern="^(qualifying|qualified)$")
+    assignee_principal_id: UUID | None = None
+    next_action: str | None = Field(default=None, max_length=4000)
+    due_date: datetime | None = None
+    assign_to_self: bool = False
+
+class CommercialIntakeConvert(BaseModel):
+    existing_client_id: UUID | None = None
+    company_id: UUID | None = None
+    branch_id: UUID | None = None
+    create_master: dict | None = None
+    case_type_key: str = Field(default="tpv_activation", max_length=64)
+    expected_outcome: str | None = Field(default=None, max_length=4000)
+
+class CommercialIntakeRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID; kind: str; channel: str; received_at: datetime; provisional_company_name: str | None; provisional_contact_name: str | None; product_interest: str; summary: str; priority: str; assignee_principal_id: UUID | None; next_action: str | None; due_date: datetime | None; status: str; master_client_id: UUID | None; master_company_id: UUID | None; master_branch_id: UUID | None; converted_case_id: UUID | None; created_at: datetime; updated_at: datetime
+    requires_attention: bool = False
+    timeline: list[dict] = Field(default_factory=list)
+
+class CommercialIntakePage(BaseModel):
+    items: list[CommercialIntakeRead]; offset: int; limit: int; total: int

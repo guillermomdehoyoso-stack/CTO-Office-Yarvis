@@ -9,7 +9,7 @@ import { WorkspaceShell } from './workspace-shell/WorkspaceShell';
 import { MissionWorkQueue } from './components/mission-work/MissionWorkQueue';
 import { OperationalWorkspace } from './components/mission-work/OperationalWorkspace';
 import { OperationalRadar } from './components/radar/OperationalRadar';
-import { NetpayCaseDetail, NetpayInboxWorkspace } from './components/netpay/NetpayInboxWorkspace';
+import { CommercialIntakeDetail, NetpayCaseDetail, NetpayInboxWorkspace } from './components/netpay/NetpayInboxWorkspace';
 
 const api = 'http://localhost:8000';
 
@@ -69,6 +69,7 @@ function Layout() {
         <Route path="/netpay-intake" element={<NetPayIntakePage />} />
         <Route path="/radar-netpay" element={<OperationalRadar />} />
         <Route path="/netpay-inbox" element={<NetpayInboxWorkspace />} />
+        <Route path="/netpay-inbox/contacts/:contactId" element={<CommercialIntakeDetail />} />
         <Route path="/netpay-inbox/:caseId" element={<NetpayCaseDetail />} />
         <Route path="/recovery-queue" element={<RecoveryQueuePage />} />
         <Route path="/workspace/*" element={<WorkspaceShell />} />

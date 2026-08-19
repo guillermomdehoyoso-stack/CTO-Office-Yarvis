@@ -545,6 +545,24 @@ CANONICAL_CONTRACTS += tuple(
 )
 
 CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(interaction_contract_id=contract_id, version="1.0.0", contract_type=contract_type, owner_module_id="netpay_merchant_operations", owning_context="Netpay Merchant Operations", owning_capability="commercial intake pre-master", name=name, semantic_purpose=purpose, lifecycle=ContractLifecycle.RATIFIED, operational_status=ContractOperationalStatus.PLANNED, criticality=ContractCriticality.CORE, primary_consumer_or_use_case="Netpay commercial intake")
+    for contract_id, contract_type, name, purpose in (
+        ("IC-NETPAY-CMD-020", ContractType.COMMAND, "CreateCommercialIntake", "Create a tenant-owned pre-Master commercial intake item"),
+        ("IC-NETPAY-CMD-021", ContractType.COMMAND, "UpdateCommercialIntakeQualification", "Update commercial intake qualification"),
+        ("IC-NETPAY-CMD-022", ContractType.COMMAND, "AssignCommercialIntake", "Assign commercial intake"),
+        ("IC-NETPAY-CMD-023", ContractType.COMMAND, "SetCommercialIntakeNextAction", "Set commercial intake next action"),
+        ("IC-NETPAY-CMD-024", ContractType.COMMAND, "DiscardCommercialIntake", "Discard commercial intake"),
+        ("IC-NETPAY-CMD-025", ContractType.COMMAND, "ConvertCommercialIntakeToServiceCase", "Convert qualified commercial intake to Netpay service case"),
+        ("IC-NETPAY-QRY-009", ContractType.QUERY, "GetCommercialIntake", "Retrieve one commercial intake"),
+        ("IC-NETPAY-QRY-010", ContractType.QUERY, "ListCommercialIntake", "List tenant-scoped commercial intake"),
+        ("IC-NETPAY-EVT-011", ContractType.EVENT, "CommercialIntakeCreated", "Record commercial intake creation"),
+        ("IC-NETPAY-EVT-012", ContractType.EVENT, "CommercialIntakeChanged", "Record commercial intake change"),
+        ("IC-NETPAY-EVT-013", ContractType.EVENT, "CommercialIntakeConverted", "Record commercial intake conversion"),
+        ("IC-NETPAY-EVT-014", ContractType.EVENT, "CommercialIntakeDiscarded", "Record commercial intake discard"),
+    )
+)
+
+CANONICAL_CONTRACTS += tuple(
     ContractDefinition(interaction_contract_id=contract_id, version="1.0.0", contract_type=contract_type, owner_module_id="netpay_merchant_operations", owning_context="Netpay Merchant Operations", owning_capability="service inbox", name=name, semantic_purpose=purpose, lifecycle=ContractLifecycle.RATIFIED, operational_status=ContractOperationalStatus.PLANNED, criticality=ContractCriticality.CORE, primary_consumer_or_use_case="Netpay service Inbox")
     for contract_id, contract_type, name, purpose in (
         ("IC-NETPAY-CMD-009", ContractType.COMMAND, "CreateNetpayServiceCase", "Create a tenant-owned Netpay service case"),

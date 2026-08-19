@@ -11,11 +11,11 @@ from yarvis_api.api.dependencies.authority import authority_envelope
 from yarvis_api.application.authority import IdentityAuthorityEnvelope
 from yarvis_api.application.netpay_inbox_authority import netpay_inbox_envelope
 from yarvis_api.database import get_db
-from yarvis_api.models.domain_event import record_event
-from yarvis_api.models.netpay_inbox import NetpayCaseActivity, NetpayCaseChecklistItem, NetpayCaseDocumentReference, NetpayCaseNextAction, NetpayCaseStep, NetpayCaseType, NetpayChecklistTemplate, NetpayInboxCommandReceipt, NetpayServiceCase
+from yarvis_api.models.domain_event import DomainEvent, record_event
+from yarvis_api.models.netpay_inbox import CommercialIntakeCommandReceipt, CommercialIntakeItem, NetpayCaseActivity, NetpayCaseChecklistItem, NetpayCaseDocumentReference, NetpayCaseNextAction, NetpayCaseStep, NetpayCaseType, NetpayChecklistTemplate, NetpayInboxCommandReceipt, NetpayServiceCase
 from yarvis_api.models.netpay_master import NetpayBranch, NetpayClient, NetpayCompany, NetpayStoreReference
 from yarvis_api.models.principal import PrincipalMembership
-from yarvis_api.schemas.netpay_inbox import ActivityWrite, AssignmentUpdate, CaseClassify, CaseCreate, CaseRead, ChecklistUpdate, InboxPage, NextActionUpdate, StateTransition
+from yarvis_api.schemas.netpay_inbox import ActivityWrite, AssignmentUpdate, CaseClassify, CaseCreate, CaseRead, ChecklistUpdate, CommercialIntakeConvert, CommercialIntakeCreate, CommercialIntakePage, CommercialIntakeRead, CommercialIntakeUpdate, InboxPage, NextActionUpdate, StateTransition
 
 router = APIRouter(prefix="/netpay/inbox", tags=["netpay-inbox"])
 _CASE_TYPES = ("merchant_onboarding","branch_onboarding","tpv_activation","ecommerce_activation","bank_account_change","document_submission","legal_entity_change","franchisee_change","store_deactivation","terminal_replacement","support_incident","unclassified")
@@ -151,3 +151,110 @@ def add_activity(case_id:UUID,payload:ActivityWrite,response:Response,idempotenc
  def mutate(e,c):
   item=_target(db,e,case_id); summary=payload.safe_summary if not payload.external_reference else f"{payload.safe_summary} [ref:{payload.external_reference}]"; _activity(db,e,item,c,payload.activity_type,summary); return item.id,201
  rid,code,body=_execute(db,envelope,idempotency_key,"IC-NETPAY-CMD-015",payload.model_dump(),mutate,case_id); db.commit(); response.status_code=code; return body
+
+
+def _commercial_read(db, item):
+    events=db.scalars(select(DomainEvent).where(DomainEvent.aggregate_type=="netpay_commercial_intake", DomainEvent.aggregate_id==item.id, DomainEvent.organization_id==item.organization_id).order_by(DomainEvent.occurred_at,DomainEvent.id)).all()
+    attention=item.status not in {"discarded"} and (item.assignee_principal_id is None or not item.next_action or (item.due_date is not None and item.due_date < datetime.now(timezone.utc)))
+    return CommercialIntakeRead.model_validate(item).model_copy(update={"requires_attention":attention,"timeline":[{"type":event.event_type,"at":event.occurred_at.isoformat()} for event in events]})
+
+
+def _commercial_execute(db,e,key,command,payload,mutation,target=None):
+    current=_operator(e); key=key.strip(); fingerprint=_fp(command,target,payload)
+    receipt=db.scalar(select(CommercialIntakeCommandReceipt).where(CommercialIntakeCommandReceipt.organization_id==current.organization_id,CommercialIntakeCommandReceipt.command_type==command,CommercialIntakeCommandReceipt.idempotency_key==key))
+    if receipt:
+        if receipt.request_fingerprint!=fingerprint: raise HTTPException(409,"idempotency conflict")
+        return receipt.result_status_code,receipt.result_response_body
+    try: correlation=UUID(current.correlation_id)
+    except ValueError: correlation=uuid4()
+    item,status_code=mutation(current,correlation); db.flush()
+    body=_commercial_read(db,item).model_dump(mode="json")
+    db.add(CommercialIntakeCommandReceipt(organization_id=current.organization_id,command_type=command,idempotency_key=key,request_fingerprint=fingerprint,actor_principal_id=current.principal_id,correlation_id=correlation,result_resource_id=item.id,result_status_code=status_code,result_response_body=body)); db.flush()
+    return status_code,body
+
+
+def _commercial_target(db,e,item_id):
+    item=db.scalar(select(CommercialIntakeItem).where(CommercialIntakeItem.id==item_id,CommercialIntakeItem.organization_id==e.organization_id))
+    if not item: raise HTTPException(404,"not found")
+    return item
+
+
+def _commercial_event(db,e,item,c,event_type):
+    record_event(db,event_type=event_type,aggregate_type="netpay_commercial_intake",aggregate_id=item.id,organization_id=e.organization_id,correlation_id=c,causation_id=c,payload={"commercial_intake_id":str(item.id),"status":item.status,"actor_principal_id":str(e.principal_id)})
+
+
+@router.post("/contacts",response_model=CommercialIntakeRead,status_code=201)
+def create_commercial_intake(payload:CommercialIntakeCreate,response:Response,idempotency_key:str=Header(...,alias="Idempotency-Key"),db:Session=Depends(get_db),envelope:IdentityAuthorityEnvelope=Depends(authority_envelope)):
+ def mutate(e,c):
+  assignee=e.principal_id if payload.assign_to_self else payload.assignee_principal_id
+  _active_member(db,e,assignee)
+  item=CommercialIntakeItem(organization_id=e.organization_id,kind=payload.kind,channel=payload.channel,received_at=payload.received_at,provisional_company_name=payload.provisional_company_name,provisional_contact_name=payload.provisional_contact_name,product_interest=payload.product_interest,summary=payload.summary,priority=payload.priority,assignee_principal_id=assignee,next_action=payload.next_action,due_date=payload.due_date,status="new",created_by_principal_id=e.principal_id,updated_by_principal_id=e.principal_id); db.add(item); db.flush(); _commercial_event(db,e,item,c,"netpay_commercial_intake.created"); return item,201
+ try: code,body=_commercial_execute(db,envelope,idempotency_key,"IC-NETPAY-CMD-020",payload.model_dump(mode="python"),mutate); db.commit()
+ except IntegrityError as x: db.rollback(); raise HTTPException(409,"conflict") from x
+ response.status_code=code; return body
+
+
+@router.get("/contacts",response_model=CommercialIntakePage)
+def list_commercial_intake(query:str|None=None,status_value:str|None=Query(default=None,alias="status"),offset:int=Query(0,ge=0),limit:int=Query(50,ge=1,le=100),db:Session=Depends(get_db),envelope:IdentityAuthorityEnvelope=Depends(authority_envelope)):
+ e=_viewer(envelope); stmt=select(CommercialIntakeItem).where(CommercialIntakeItem.organization_id==e.organization_id)
+ if status_value: stmt=stmt.where(CommercialIntakeItem.status==status_value)
+ if query:
+  value=f"%{query.strip()}%"; stmt=stmt.where(or_(CommercialIntakeItem.provisional_company_name.ilike(value),CommercialIntakeItem.provisional_contact_name.ilike(value),CommercialIntakeItem.summary.ilike(value)))
+ total=db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+ items=db.scalars(stmt.order_by(CommercialIntakeItem.due_date.asc().nulls_last(),CommercialIntakeItem.created_at.desc(),CommercialIntakeItem.id).offset(offset).limit(limit)).all()
+ return CommercialIntakePage(items=[_commercial_read(db,item) for item in items],offset=offset,limit=limit,total=total)
+
+
+@router.get("/contacts/{item_id}",response_model=CommercialIntakeRead)
+def commercial_intake_detail(item_id:UUID,db:Session=Depends(get_db),envelope:IdentityAuthorityEnvelope=Depends(authority_envelope)):
+ return _commercial_read(db,_commercial_target(db,_viewer(envelope),item_id))
+
+
+@router.put("/contacts/{item_id}",response_model=CommercialIntakeRead)
+def update_commercial_intake(item_id:UUID,payload:CommercialIntakeUpdate,response:Response,idempotency_key:str=Header(...,alias="Idempotency-Key"),db:Session=Depends(get_db),envelope:IdentityAuthorityEnvelope=Depends(authority_envelope)):
+ def mutate(e,c):
+  item=_commercial_target(db,e,item_id)
+  if item.status=="discarded": raise HTTPException(409,"discarded intake")
+  if payload.status:
+   allowed={"new":{"qualifying"},"qualifying":{"qualified"}}
+   if payload.status not in allowed.get(item.status,set()): raise HTTPException(409,"invalid transition")
+   item.status=payload.status
+  assignee=e.principal_id if payload.assign_to_self else payload.assignee_principal_id
+  _active_member(db,e,assignee)
+  if payload.assign_to_self or "assignee_principal_id" in payload.model_fields_set: item.assignee_principal_id=assignee
+  if "next_action" in payload.model_fields_set: item.next_action=payload.next_action
+  if "due_date" in payload.model_fields_set: item.due_date=payload.due_date
+  item.updated_by_principal_id=e.principal_id; _commercial_event(db,e,item,c,"netpay_commercial_intake.changed"); return item,200
+ code,body=_commercial_execute(db,envelope,idempotency_key,"IC-NETPAY-CMD-021",payload.model_dump(mode="python",exclude_unset=True),mutate,item_id); db.commit(); response.status_code=code; return body
+
+
+@router.put("/contacts/{item_id}/discard",response_model=CommercialIntakeRead)
+def discard_commercial_intake(item_id:UUID,response:Response,idempotency_key:str=Header(...,alias="Idempotency-Key"),db:Session=Depends(get_db),envelope:IdentityAuthorityEnvelope=Depends(authority_envelope)):
+ def mutate(e,c):
+  item=_commercial_target(db,e,item_id)
+  if item.status=="discarded": raise HTTPException(409,"discarded intake")
+  item.status="discarded"; item.updated_by_principal_id=e.principal_id; _commercial_event(db,e,item,c,"netpay_commercial_intake.discarded"); return item,200
+ code,body=_commercial_execute(db,envelope,idempotency_key,"IC-NETPAY-CMD-024",{},mutate,item_id); db.commit(); response.status_code=code; return body
+
+
+@router.post("/contacts/{item_id}/convert",response_model=CommercialIntakeRead)
+def convert_commercial_intake(item_id:UUID,payload:CommercialIntakeConvert,response:Response,idempotency_key:str=Header(...,alias="Idempotency-Key"),db:Session=Depends(get_db),envelope:IdentityAuthorityEnvelope=Depends(authority_envelope)):
+ def mutate(e,c):
+  item=_commercial_target(db,e,item_id)
+  if item.converted_case_id: return item,200
+  if item.status!="qualified": raise HTTPException(409,"intake must be qualified")
+  client_item=company=branch=None
+  if payload.existing_client_id:
+   client_item=db.scalar(select(NetpayClient).where(NetpayClient.id==payload.existing_client_id,NetpayClient.organization_id==e.organization_id)); company=db.scalar(select(NetpayCompany).where(NetpayCompany.id==payload.company_id,NetpayCompany.organization_id==e.organization_id,NetpayCompany.client_id==payload.existing_client_id)); branch=db.scalar(select(NetpayBranch).where(NetpayBranch.id==payload.branch_id,NetpayBranch.organization_id==e.organization_id,NetpayBranch.company_id==payload.company_id)) if payload.branch_id else None
+   if not client_item or not company: raise HTTPException(404,"not found")
+  else:
+   raw=payload.create_master or {}; client_name=str(raw.get("client_name") or item.provisional_company_name or "Commercial intake client").strip(); company_name=str(raw.get("company_name") or client_name).strip(); branch_name=str(raw.get("branch_name") or "Sucursal comercial").strip()
+   norm=lambda value:"".join(char for char in value.lower() if char.isalnum())
+   client_item=NetpayClient(organization_id=e.organization_id,display_name=client_name,normalized_name=norm(client_name),created_by_principal_id=e.principal_id,updated_by_principal_id=e.principal_id); db.add(client_item); db.flush()
+   company=NetpayCompany(organization_id=e.organization_id,client_id=client_item.id,legal_name=company_name,normalized_legal_name=norm(company_name),created_by_principal_id=e.principal_id,updated_by_principal_id=e.principal_id); db.add(company); db.flush()
+   branch=NetpayBranch(organization_id=e.organization_id,company_id=company.id,commercial_name=branch_name,normalized_commercial_name=norm(branch_name),branch_match_key=norm(branch_name),branch_kind="commercial",created_by_principal_id=e.principal_id,updated_by_principal_id=e.principal_id); db.add(branch); db.flush()
+  _ensure_catalog(db,e); folio=f"NPS-{str(uuid4())[:8].upper()}"; case_item=NetpayServiceCase(organization_id=e.organization_id,folio=folio,client_id=client_item.id,company_id=company.id,branch_id=branch.id if branch else None,store_reference_id=None,case_type_key=payload.case_type_key,original_description=item.summary,expected_outcome=payload.expected_outcome,product="tpv" if item.product_interest=="tpv" else "ecommerce" if item.product_interest=="ecommerce" else "not_applicable",priority=item.priority,responsible_principal_id=item.assignee_principal_id,source_channel=item.channel,source_reference=f"commercial-intake:{item.id}",provenance={"commercial_intake_id":str(item.id)},created_by_principal_id=e.principal_id,updated_by_principal_id=e.principal_id); db.add(case_item); db.flush()
+  if item.next_action: db.add(NetpayCaseNextAction(organization_id=e.organization_id,case_id=case_item.id,description=item.next_action,responsible_principal_id=item.assignee_principal_id,due_date=item.due_date,status="open",origin="human",provenance={"commercial_intake_id":str(item.id)},created_by_principal_id=e.principal_id,updated_by_principal_id=e.principal_id))
+  _activity(db,e,case_item,c,"commercial_intake_converted","Commercial intake converted")
+  item.master_client_id,item.master_company_id,item.master_branch_id,item.converted_case_id,item.updated_by_principal_id=client_item.id,company.id,branch.id if branch else None,case_item.id,e.principal_id; _commercial_event(db,e,item,c,"netpay_commercial_intake.converted"); record_event(db,event_type="netpay_service_case.created",aggregate_type="netpay_service_case",aggregate_id=case_item.id,organization_id=e.organization_id,correlation_id=c,causation_id=c,payload={"case_id":str(case_item.id),"source":"commercial_intake"}); return item,201
+ code,body=_commercial_execute(db,envelope,idempotency_key,"IC-NETPAY-CMD-025",payload.model_dump(mode="python"),mutate,item_id); db.commit(); response.status_code=code; return body

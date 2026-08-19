@@ -130,3 +130,47 @@ class NetpayInboxCommandReceipt(Base):
     result_status_code: Mapped[int] = mapped_column(Integer, nullable=False)
     result_response_body: Mapped[dict] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class CommercialIntakeItem(_Audit, TimestampedUUIDMixin, Base):
+    __tablename__ = "netpay_commercial_intake_items"
+    __table_args__ = (
+        CheckConstraint("kind IN ('initial_contact','rfq','commercial_opportunity','unclassified')", name="ck_netpay_commercial_intake_kind"),
+        CheckConstraint("channel IN ('call','email','whatsapp','referral','manual')", name="ck_netpay_commercial_intake_channel"),
+        CheckConstraint("product_interest IN ('tpv','ecommerce','other')", name="ck_netpay_commercial_intake_product"),
+        CheckConstraint("priority IN ('urgent','high','normal','low')", name="ck_netpay_commercial_intake_priority"),
+        CheckConstraint("status IN ('new','qualifying','qualified','discarded')", name="ck_netpay_commercial_intake_status"),
+        Index("ix_netpay_commercial_intake_org_attention", "organization_id", "status", "priority"),
+    )
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    channel: Mapped[str] = mapped_column(String(16), nullable=False)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    provisional_company_name: Mapped[str | None] = mapped_column(String(255))
+    provisional_contact_name: Mapped[str | None] = mapped_column(String(255))
+    product_interest: Mapped[str] = mapped_column(String(16), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    priority: Mapped[str] = mapped_column(String(16), nullable=False, default="normal")
+    assignee_principal_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("principals.id", ondelete="RESTRICT"))
+    next_action: Mapped[str | None] = mapped_column(Text)
+    due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="new")
+    master_client_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("netpay_clients.id", ondelete="RESTRICT"))
+    master_company_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("netpay_companies.id", ondelete="RESTRICT"))
+    master_branch_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("netpay_branches.id", ondelete="RESTRICT"))
+    converted_case_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("netpay_inbox_cases.id", ondelete="RESTRICT"), unique=True)
+
+
+class CommercialIntakeCommandReceipt(Base):
+    __tablename__ = "netpay_commercial_intake_command_receipts"
+    __table_args__ = (UniqueConstraint("organization_id", "command_type", "idempotency_key", name="uq_netpay_commercial_intake_receipts_org_command_key"),)
+    command_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False)
+    command_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor_principal_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("principals.id", ondelete="RESTRICT"), nullable=False)
+    correlation_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    result_resource_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    result_status_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    result_response_body: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
