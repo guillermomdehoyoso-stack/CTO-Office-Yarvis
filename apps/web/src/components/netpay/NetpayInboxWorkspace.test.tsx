@@ -73,10 +73,13 @@ describe('Netpay Inbox workspace', () => {
     expect(await screen.findByRole('heading', { name: 'Cliente Uno' })).toBeTruthy(); const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Confirmar' }));
     const assignee = screen.getByPlaceholderText(/UUID o vacío/i); await user.type(assignee, '11111111-1111-1111-1111-111111111111'); await user.click(screen.getByRole('button', { name: /Guardar asignación/i }));
-    await user.type(screen.getByLabelText('Siguiente acción'), 'Llamar cliente'); await user.click(screen.getByRole('button', { name: /Definir acción/i }));
+    await user.type(screen.getByLabelText('Siguiente acción'), 'Llamar cliente');
+    fireEvent.change(screen.getByLabelText('Fecha objetivo'), { target: { value: '2026-08-20T10:00' } });
+    await user.click(screen.getByRole('button', { name: /Definir acción/i }));
     await user.selectOptions(screen.getByLabelText('Nuevo estado'), 'cancelled'); await user.type(screen.getByLabelText('Motivo'), 'Solicitud retirada'); await user.click(screen.getByRole('button', { name: /Cambiar estado/i }));
     await user.type(screen.getByLabelText('Nota interna'), 'Confirmación telefónica'); await user.click(screen.getByRole('button', { name: /Agregar actividad/i }));
     await waitFor(() => methods.forEach((method) => expect(client[method]).toHaveBeenCalled())); methods.forEach((method) => expect(vi.mocked(client[method]).mock.calls[0].at(-1)).toMatch(/.+/));
+    expect(client.setNextAction).toHaveBeenCalledWith('case-1', expect.objectContaining({ due_date: '2026-08-20T10:00:00.000Z' }), expect.any(String));
   });
 
   it('keeps viewers read-only and exposes no mutation controls', async () => {

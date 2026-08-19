@@ -54,7 +54,6 @@ function Layout() {
         <Link to="/organizations">Organización</Link>
         <Link to="/people">Personas</Link>
         <Link to="/netpay-intake">NetPay XLSX</Link>
-        <Link to="/radar-netpay">Radar Netpay</Link>
         <Link to="/netpay-inbox">Netpay Inbox</Link>
         <Link to="/recovery-queue">Cola de recuperación</Link>
         <Link to="/workspace">Development Workspace</Link>
