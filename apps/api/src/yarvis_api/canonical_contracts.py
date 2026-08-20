@@ -563,6 +563,25 @@ CANONICAL_CONTRACTS += tuple(
 )
 
 CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(interaction_contract_id=contract_id, version="1.0.0", contract_type=contract_type, owner_module_id="netpay_merchant_operations", owning_context="Netpay Merchant Operations", owning_capability="operational data intake D1", name=name, semantic_purpose=purpose, lifecycle=ContractLifecycle.RATIFIED, operational_status=ContractOperationalStatus.PLANNED, criticality=ContractCriticality.CORE, primary_consumer_or_use_case="Netpay operational dataset intake")
+    for contract_id, contract_type, name, purpose in (
+        ("IC-NETPAY-CMD-026", ContractType.COMMAND, "UploadOperationalDataset", "Upload and stage a tenant-scoped operational dataset"),
+        ("IC-NETPAY-CMD-027", ContractType.COMMAND, "ValidateOperationalDataset", "Validate controlled operational dataset rows"),
+        ("IC-NETPAY-CMD-028", ContractType.COMMAND, "AcceptOperationalDataset", "Accept a validated operational dataset and append facts"),
+        ("IC-NETPAY-CMD-029", ContractType.COMMAND, "RejectOperationalDataset", "Reject a staged operational dataset without deleting evidence"),
+        ("IC-NETPAY-CMD-030", ContractType.COMMAND, "ResolveOperationalRowMatch", "Resolve one operational row to a same-tenant Store Reference"),
+        ("IC-NETPAY-QRY-011", ContractType.QUERY, "PreviewOperationalDataset", "Retrieve a sanitized operational dataset preview"),
+        ("IC-NETPAY-QRY-012", ContractType.QUERY, "GetOperationalDatasetBatch", "Retrieve one tenant-scoped operational dataset batch"),
+        ("IC-NETPAY-QRY-013", ContractType.QUERY, "ListOperationalDatasetBatches", "List tenant-scoped operational dataset batches"),
+        ("IC-NETPAY-EVT-015", ContractType.EVENT, "OperationalDatasetUploaded", "Record sanitized dataset upload counts"),
+        ("IC-NETPAY-EVT-016", ContractType.EVENT, "OperationalDatasetValidated", "Record sanitized dataset validation counts"),
+        ("IC-NETPAY-EVT-017", ContractType.EVENT, "OperationalDatasetAccepted", "Record accepted dataset counts"),
+        ("IC-NETPAY-EVT-018", ContractType.EVENT, "OperationalDatasetRejected", "Record rejected dataset status"),
+        ("IC-NETPAY-EVT-019", ContractType.EVENT, "OperationalRowMatchResolved", "Record sanitized row-match resolution"),
+    )
+)
+
+CANONICAL_CONTRACTS += tuple(
     ContractDefinition(interaction_contract_id=contract_id, version="1.0.0", contract_type=contract_type, owner_module_id="netpay_merchant_operations", owning_context="Netpay Merchant Operations", owning_capability="service inbox", name=name, semantic_purpose=purpose, lifecycle=ContractLifecycle.RATIFIED, operational_status=ContractOperationalStatus.PLANNED, criticality=ContractCriticality.CORE, primary_consumer_or_use_case="Netpay service Inbox")
     for contract_id, contract_type, name, purpose in (
         ("IC-NETPAY-CMD-009", ContractType.COMMAND, "CreateNetpayServiceCase", "Create a tenant-owned Netpay service case"),

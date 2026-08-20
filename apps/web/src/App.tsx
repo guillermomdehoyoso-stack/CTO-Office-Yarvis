@@ -1,4 +1,4 @@
-import { Link, Route, Routes, useParams } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { getRecoveryQueue, getStoreSummary } from './api/storeIntelligence';
@@ -10,6 +10,7 @@ import { MissionWorkQueue } from './components/mission-work/MissionWorkQueue';
 import { OperationalWorkspace } from './components/mission-work/OperationalWorkspace';
 import { OperationalRadar } from './components/radar/OperationalRadar';
 import { CommercialIntakeDetail, NetpayCaseDetail, NetpayInboxWorkspace } from './components/netpay/NetpayInboxWorkspace';
+import { NetpayDataWorkspace } from './components/netpay/NetpayDataWorkspace';
 
 const api = 'http://localhost:8000';
 
@@ -53,8 +54,8 @@ function Layout() {
         <Link to="/conversation">Conversación</Link>
         <Link to="/organizations">Organización</Link>
         <Link to="/people">Personas</Link>
-        <Link to="/netpay-intake">NetPay XLSX</Link>
         <Link to="/netpay-inbox">Netpay Inbox</Link>
+        <Link to="/netpay-data">Datos Netpay</Link>
         <Link to="/recovery-queue">Cola de recuperación</Link>
         <Link to="/workspace">Development Workspace</Link>
         <Link to="/mission-work">Mission Work</Link>
@@ -66,11 +67,12 @@ function Layout() {
         <Route path="/conversation" element={<ConversationPage />} />
         <Route path="/organizations" element={<OrganizationsPage />} />
         <Route path="/people" element={<PeoplePage />} />
-        <Route path="/netpay-intake" element={<NetPayIntakePage />} />
+        <Route path="/netpay-intake" element={<Navigate to="/netpay-data" replace />} />
         <Route path="/radar-netpay" element={<OperationalRadar />} />
         <Route path="/netpay-inbox" element={<NetpayInboxWorkspace />} />
         <Route path="/netpay-inbox/contacts/:contactId" element={<CommercialIntakeDetail />} />
         <Route path="/netpay-inbox/:caseId" element={<NetpayCaseDetail />} />
+        <Route path="/netpay-data" element={<NetpayDataWorkspace />} />
         <Route path="/recovery-queue" element={<RecoveryQueuePage />} />
         <Route path="/workspace/*" element={<WorkspaceShell />} />
         <Route path="/mission-work" element={<MissionWorkQueue />} />

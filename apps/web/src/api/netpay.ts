@@ -85,6 +85,9 @@ export type NetpayCase = {
 export type InboxPage = { items: NetpayCase[]; offset: number; limit: number; total: number };
 export type CommercialIntake = { id: string; kind: string; channel: string; received_at: string; provisional_company_name: string | null; provisional_contact_name: string | null; product_interest: string; summary: string; priority: string; assignee_principal_id: string | null; next_action: string | null; due_date: string | null; status: string; master_client_id: string | null; master_company_id: string | null; master_branch_id: string | null; converted_case_id: string | null; created_at: string; updated_at: string; requires_attention: boolean; timeline: { type: string; at: string }[] };
 export type CommercialIntakePage = { items: CommercialIntake[]; offset: number; limit: number; total: number };
+export type OperationalDataRow = { id: string; source_row_number: number; validation_status: string; match_status: string; store_reference_id: string | null; error_codes: string[]; projected_action: string; preview: Record<string, unknown> };
+export type OperationalDataBatch = { id: string; dataset_type: string; reporting_period: string | null; sanitized_filename: string; selected_sheet: string; hash_identifier: string; preview_token: string; duplicate_upload: boolean; status: string; row_counts: Record<string, number>; source_discarded: boolean; created_at: string; updated_at: string; rows: OperationalDataRow[] };
+export type OperationalDataBatchPage = { items: OperationalDataBatch[]; total: number };
 export type ApiProblemKind = 'forbidden' | 'not_found' | 'conflict' | 'validation' | 'unavailable';
 
 export class NetpayApiError extends Error {
@@ -136,7 +139,7 @@ export class NetpayApiClient {
     const response = await fetch(`${this.runtime.baseUrl}${path}`, {
       ...init,
       headers: {
-        'Content-Type': 'application/json',
+        ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         'X-Yarvis-Subject': this.runtime.subject,
         'X-Yarvis-Auth-Token': this.runtime.authToken,
         'X-Yarvis-Organization-Selector': this.runtime.organizationSelector,
@@ -188,6 +191,16 @@ export class NetpayApiClient {
   updateCommercialIntake(id: string, payload: Record<string, unknown>, key: string) { return this.request<CommercialIntake>(`/netpay/inbox/contacts/${id}`, { method: 'PUT', body: JSON.stringify(payload) }, key); }
   discardCommercialIntake(id: string, key: string) { return this.request<CommercialIntake>(`/netpay/inbox/contacts/${id}/discard`, { method: 'PUT', body: '{}' }, key); }
   convertCommercialIntake(id: string, payload: Record<string, unknown>, key: string) { return this.request<CommercialIntake>(`/netpay/inbox/contacts/${id}/convert`, { method: 'POST', body: JSON.stringify(payload) }, key); }
+  async uploadOperationalDataset(file: File, datasetType: string, rfcFilter: string, key: string) {
+    const form = new FormData(); form.append('file', file); form.append('dataset_type', datasetType); if (rfcFilter) form.append('rfc_filter', rfcFilter);
+    return this.request<OperationalDataBatch>('/netpay/data/datasets', { method: 'POST', body: form }, key);
+  }
+  listOperationalDatasets(datasetType = '') { const query = datasetType ? `?dataset_type=${encodeURIComponent(datasetType)}` : ''; return this.request<OperationalDataBatchPage>(`/netpay/data/datasets${query}`); }
+  getOperationalDataset(id: string) { return this.request<OperationalDataBatch>(`/netpay/data/datasets/${id}`); }
+  acceptOperationalDataset(id: string, previewToken: string, key: string) { return this.request<OperationalDataBatch>(`/netpay/data/datasets/${id}/accept`, { method: 'POST', body: JSON.stringify({ preview_token: previewToken }) }, key); }
+  rejectOperationalDataset(id: string, key: string) { return this.request<OperationalDataBatch>(`/netpay/data/datasets/${id}/reject`, { method: 'POST', body: '{}' }, key); }
+  resolveOperationalRow(id: string, rowId: string, storeReferenceId: string, key: string) { return this.request<OperationalDataBatch>(`/netpay/data/datasets/${id}/rows/${rowId}/match`, { method: 'PUT', body: JSON.stringify({ store_reference_id: storeReferenceId }) }, key); }
+  getOperationalDatasetResults(id: string) { return this.request<Record<string, unknown>[]>(`/netpay/data/datasets/${id}/results`); }
 }
 
 export const netpayApi = new NetpayApiClient();

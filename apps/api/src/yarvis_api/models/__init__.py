@@ -15,6 +15,7 @@ from yarvis_api.models.message import Message
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
 from yarvis_api.models.netpay_master import NetpayBranch, NetpayClient, NetpayCompany, NetpayMasterCommandReceipt, NetpayStoreReference
 from yarvis_api.models.netpay_inbox import CommercialIntakeCommandReceipt, CommercialIntakeItem, NetpayCaseActivity, NetpayCaseChecklistItem, NetpayCaseDocumentReference, NetpayCaseNextAction, NetpayCaseStep, NetpayCaseType, NetpayChecklistTemplate, NetpayInboxCommandReceipt, NetpayServiceCase
+from yarvis_api.models.netpay_operational_data import NoUsageCampaignEntry, OperationalDataBatch, OperationalDataCommandReceipt, OperationalDataRow, StoreProfitabilityFact
 from yarvis_api.models.radar import RadarActivity, RadarChecklistItem, RadarCommandReceipt, RadarMerchant, RadarRequest
 from yarvis_api.models.observation_engine import (
 	AttentionItem,

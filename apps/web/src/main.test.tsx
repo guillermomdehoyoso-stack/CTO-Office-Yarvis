@@ -63,15 +63,15 @@ describe('Yarvis web app', () => {
     expect(await screen.findByText(/No se pudo conectar con la API/i)).toBeTruthy();
   });
 
-  it('renders the confidential NetPay XLSX intake entry point', async () => {
+  it('redirects the legacy NetPay XLSX route to Datos Netpay', async () => {
     render(
       <MemoryRouter initialEntries={['/netpay-intake']}>
         <App />
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('heading', { name: /netpay xlsx intake/i })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /upload and preview/i })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: /datos netpay/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /importar xlsx/i })).toBeTruthy();
   });
 
   it('renders the recovery queue empty state without deriving actions', async () => {
