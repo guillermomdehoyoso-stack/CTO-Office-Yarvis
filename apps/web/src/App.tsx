@@ -13,7 +13,7 @@ import { CommercialIntakeDetail, NetpayCaseDetail, NetpayInboxWorkspace } from '
 import { NetpayDataWorkspace } from './components/netpay/NetpayDataWorkspace';
 import { beginProductiveLogin, loadProductiveSession, productiveLogout } from './api/netpay';
 
-const api = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const api = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
 
 function csrfToken() {
   return decodeURIComponent(document.cookie.split('; ').find((item) => item.startsWith('yarvis_csrf='))?.split('=')[1] || '');

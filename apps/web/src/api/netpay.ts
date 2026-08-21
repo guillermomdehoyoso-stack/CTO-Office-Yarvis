@@ -105,7 +105,7 @@ export type NetpayRuntime = {
 function runtimeFromEnvironment(): NetpayRuntime {
   const env = import.meta.env;
   return {
-    baseUrl: env.VITE_API_BASE_URL || 'http://localhost:8000',
+    baseUrl: env.VITE_API_BASE_URL || (env.PROD ? '' : 'http://localhost:8000'),
     organizationLabel: env.VITE_YARVIS_ORGANIZATION_LABEL || '',
     capabilities: new Set<string>(),
   };

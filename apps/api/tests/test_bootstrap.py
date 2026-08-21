@@ -78,6 +78,20 @@ def test_production_can_disable_documentation_explicitly() -> None:
         assert client.get("/openapi.json").status_code == 404
 
 
+def test_productive_web_assets_are_optional_and_serve_spa_routes(tmp_path) -> None:
+    static_root = tmp_path / "web"
+    assets_root = static_root / "assets"
+    assets_root.mkdir(parents=True)
+    (static_root / "index.html").write_text("<main>Yarvis productive web</main>", encoding="utf-8")
+    (assets_root / "app.js").write_text("console.log('safe')", encoding="utf-8")
+    app = create_app(Settings(environment="test", web_static_root=static_root))
+
+    with TestClient(app) as client:
+        assert client.get("/netpay-inbox").text == "<main>Yarvis productive web</main>"
+        assert client.get("/assets/app.js").text == "console.log('safe')"
+        assert client.get("/health").json() == {"status": "ok", "service": "yarvis-api"}
+
+
 def test_lifespan_has_deterministic_technical_boundaries() -> None:
     app = create_app(Settings(environment="test"))
 

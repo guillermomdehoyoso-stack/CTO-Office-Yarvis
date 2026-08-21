@@ -10,6 +10,8 @@ from typing import Any, AsyncIterator, cast
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from yarvis_api.api.authentication import DeterministicAuthenticationProvider
 from yarvis_api.api.errors import application_error_handler, unhandled_application_exception_handler
@@ -150,7 +152,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(Exception, unhandled_application_exception_handler)
 
 
-def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
+def register_routes(app: FastAPI, module_registry: ModuleRegistry, settings: Settings) -> None:
     """Register technical routes and the retained incremental interface baseline."""
     from yarvis_api.api.routes import (
         auth,
@@ -240,6 +242,25 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     for module in module_registry.modules:
         if module.register_routes is not None:
             module.register_routes(app)
+    register_productive_web_assets(app, settings)
+
+
+def register_productive_web_assets(app: FastAPI, settings: Settings) -> None:
+    """Serve the compiled SPA only when a production image supplied its assets."""
+
+    static_root = settings.web_static_root
+    if static_root is None or not static_root.is_dir():
+        return
+    assets_root = static_root / "assets"
+    if assets_root.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets_root), name="productive-web-assets")
+    index = static_root / "index.html"
+    if not index.is_file():
+        return
+
+    @app.get("/{web_path:path}", include_in_schema=False)
+    def productive_web_application(web_path: str) -> FileResponse:
+        return FileResponse(index)
 
 
 def create_app(
@@ -364,5 +385,5 @@ def create_app(
     )
     register_middleware(app, composed_settings)
     register_exception_handlers(app)
-    register_routes(app, module_registry)
+    register_routes(app, module_registry, composed_settings)
     return app

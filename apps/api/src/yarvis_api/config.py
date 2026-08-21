@@ -39,6 +39,10 @@ class Settings(BaseSettings):
         default="/data/yarvis",
         validation_alias=AliasChoices("document_storage_root", "YARVIS_DOCUMENT_STORAGE_ROOT", "DOCUMENT_STORAGE_ROOT"),
     )
+    web_static_root: Path | None = Field(
+        default=None,
+        validation_alias=AliasChoices("web_static_root", "YARVIS_WEB_STATIC_ROOT"),
+    )
     max_upload_size_bytes: int = 5_242_880
     preview_row_limit: int = 200
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
