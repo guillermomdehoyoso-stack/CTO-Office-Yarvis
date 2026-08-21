@@ -32,6 +32,16 @@ def test_migration_url_uses_settings_when_alembic_url_is_absent() -> None:
     )
 
 
+def test_migration_url_uses_migrator_environment_before_runtime_settings() -> None:
+    settings = Settings.model_validate({"database_url": "postgresql://runtime:runtime@database/runtime"})
+
+    assert resolve_migration_database_url(
+        None,
+        settings,
+        {"YARVIS_MIGRATOR_DATABASE_URL": "postgresql://migrator:migrator@database/migrations"},
+    ) == "postgresql+psycopg://migrator:migrator@database/migrations"
+
+
 def test_migration_url_uses_explicit_programmatic_override() -> None:
     settings = Settings.model_validate({"database_url": "postgresql://settings:settings@database/settings"})
     config = Config(str(ALembic_ini))

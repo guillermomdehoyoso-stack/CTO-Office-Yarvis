@@ -1,13 +1,7 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
-    [Parameter(Mandatory = $true)][string]$ProjectId,
-    [Parameter(Mandatory = $true)][string]$Region,
-    [Parameter(Mandatory = $true)][string]$ArtifactRepository,
-    [Parameter(Mandatory = $true)][string]$ServiceName,
     [Parameter(Mandatory = $true)][ValidatePattern('^sha256:[a-f0-9]{64}$')][string]$ImageDigest,
     [Parameter(Mandatory = $true)][string]$CloudSqlConnectionName,
-    [Parameter(Mandatory = $true)][string]$RuntimeServiceAccount,
-    [Parameter(Mandatory = $true)][string]$DocumentsBucket,
     [Parameter(Mandatory = $true)][string]$OidcIssuer,
     [Parameter(Mandatory = $true)][string]$OidcClientId,
     [Parameter(Mandatory = $true)][string]$OidcRedirectUri,
@@ -15,6 +9,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$ProjectId = 'yarvis-pilot'
+$Region = 'northamerica-south1'
+$ArtifactRepository = 'yarvis'
+$ServiceName = 'yarvis-pilot'
+$RuntimeServiceAccount = 'yarvis-pilot-runtime@yarvis-pilot.iam.gserviceaccount.com'
 $image = "$Region-docker.pkg.dev/$ProjectId/$ArtifactRepository/yarvis-api@$ImageDigest"
 $requiredSecrets = @(
     'YARVIS_DATABASE_URL',
@@ -50,5 +49,5 @@ $environment = @(
 Write-Output "Prepared image reference: $image"
 Write-Output "Prepared migration command: gcloud run jobs execute $ServiceName-migrate --region $Region --project $ProjectId --wait"
 if ($PSCmdlet.ShouldProcess("Cloud Run service $ServiceName", 'deploy restricted pilot')) {
-    gcloud run deploy $ServiceName --project $ProjectId --region $Region --image $image --service-account $RuntimeServiceAccount --add-cloudsql-instances $CloudSqlConnectionName --add-volume "name=documents,type=cloud-storage,bucket=$DocumentsBucket" --add-volume-mount 'volume=documents,mount-path=/var/yarvis-documents' --set-secrets $secretBindings --set-env-vars $environment --max-instances 1 --min-instances 0 --port 8080 --allow-unauthenticated
+    gcloud run deploy $ServiceName --project $ProjectId --region $Region --image $image --service-account $RuntimeServiceAccount --add-cloudsql-instances $CloudSqlConnectionName --set-secrets $secretBindings --set-env-vars $environment --max-instances 1 --min-instances 0 --port 8080 --allow-unauthenticated
 }
