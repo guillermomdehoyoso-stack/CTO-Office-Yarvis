@@ -6,6 +6,26 @@ from yarvis_api.canonical_contracts import CANONICAL_CONTRACTS
 from yarvis_api.config import Settings
 
 
+def _production_oidc_settings(**overrides) -> Settings:
+    values = {
+        "environment": "production",
+        "database_url": "postgresql://synthetic:synthetic@db.test:5432/yarvis_test",
+        "auth_mode": "oidc",
+        "oidc_issuer": "https://issuer.test.invalid",
+        "oidc_client_id": "yarvis-test-client",
+        "oidc_client_secret": "synthetic-test-secret",
+        "oidc_attempt_encryption_key": "synthetic-test-encryption-key",
+        "oidc_redirect_uri": "https://yarvis.test.invalid/auth/callback",
+        "oidc_post_login_redirect_allowlist": "/",
+        "oidc_allowed_algorithms": "RS256",
+        "cors_origins": "https://yarvis.test.invalid",
+        "csrf_allowed_origins": "https://yarvis.test.invalid",
+        "session_cookie_name": "__Host-yarvis_session",
+    }
+    values.update(overrides)
+    return Settings.model_validate(values)
+
+
 def test_factory_returns_distinct_applications_with_isolated_state() -> None:
     first = create_app(Settings(environment="test", app_name="First API"))
     second = create_app(Settings(environment="test", app_name="Second API"))
@@ -50,13 +70,7 @@ def test_factory_uses_canonical_provider_when_settings_are_omitted(monkeypatch) 
 
 
 def test_production_can_disable_documentation_explicitly() -> None:
-    settings = Settings.model_validate(
-        {
-            "environment": "production",
-            "api_docs_enabled": False,
-            "database_url": "postgresql://test:test@localhost/yarvis",
-        }
-    )
+    settings = _production_oidc_settings(api_docs_enabled=False)
     app = create_app(settings)
 
     with TestClient(app) as client:
@@ -103,7 +117,10 @@ def test_default_and_explicit_empty_contract_composition_are_isolated() -> None:
     default_contract_ids = {contract.interaction_contract_id for contract in default_contracts}
 
     assert default_app.state.yarvis.contract_registry.is_sealed is True
-    assert len(default_contracts) == len(CANONICAL_CONTRACTS) == 99
+    # AUTH-CONTRACT-001 adds 16 runtime contracts to the prior 99-contract baseline.
+    # The documentary catalog remains a distinct projection from this runtime composition.
+    assert default_contracts == CANONICAL_CONTRACTS
+    assert len(default_contracts) == 115
     assert {
         "IC-TASK-CMD-001",
         "IC-TASK-CMD-002",

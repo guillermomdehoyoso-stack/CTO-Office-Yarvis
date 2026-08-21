@@ -18,7 +18,9 @@ os.environ["DOCUMENT_STORAGE_ROOT"] = "/tmp/yarvis_test_data"
 def test_database():
     assert TEST_DATABASE_NAME.startswith("yarvis_test")
     with psycopg.connect(ADMIN_URL, autocommit=True) as connection:
-        connection.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(TEST_DATABASE_NAME)))
+        connection.execute(
+            sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(TEST_DATABASE_NAME))
+        )
         connection.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(TEST_DATABASE_NAME)))
     try:
         alembic_config = Config("alembic.ini")
@@ -27,7 +29,9 @@ def test_database():
         yield
     finally:
         with psycopg.connect(ADMIN_URL, autocommit=True) as connection:
-            connection.execute(sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(TEST_DATABASE_NAME)))
+            connection.execute(
+                sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(sql.Identifier(TEST_DATABASE_NAME))
+            )
 
 
 @pytest.fixture(autouse=True)
@@ -36,7 +40,14 @@ def clean_database(test_database):
     from yarvis_api.main import app
 
     with app.state.yarvis.persistence.create_session() as session:
-        session.connection().exec_driver_sql("TRUNCATE TABLE application_traces, netpay_operational_data_command_receipts, netpay_no_usage_campaign_entries, netpay_store_profitability_facts, netpay_operational_data_rows, netpay_operational_data_batches, netpay_commercial_intake_command_receipts, netpay_commercial_intake_items, netpay_master_command_receipts, netpay_store_references, netpay_branches, netpay_companies, netpay_clients, radar_command_receipts, radar_activities, radar_checklist_items, radar_requests, radar_merchants, domain_events, principal_memberships, principals, attention_items, policy_evaluations, operational_policies, resolution_decisions, observations, document_records, source_records, netpay_device_assignments, netpay_shipments, netpay_service_cases, next_action_suggestions, operational_alerts, requirement_fulfillments, intake_classifications, case_checklists, evidence, intake_items, checklist_requirements, checklist_templates, cases, people, organizations, document_types, case_types RESTART IDENTITY CASCADE")
+        session.connection().exec_driver_sql(
+            "TRUNCATE TABLE identity_bootstrap_enrollment_receipts, authentication_security_audit, "
+            "identity_bootstrap_windows, productive_sessions, oidc_authentication_attempts, "
+            "identity_provisioning_receipts, external_identity_bindings RESTART IDENTITY CASCADE"
+        )
+        session.connection().exec_driver_sql(
+            "TRUNCATE TABLE application_traces, netpay_operational_data_command_receipts, netpay_no_usage_campaign_entries, netpay_store_profitability_facts, netpay_operational_data_rows, netpay_operational_data_batches, netpay_commercial_intake_command_receipts, netpay_commercial_intake_items, netpay_master_command_receipts, netpay_store_references, netpay_branches, netpay_companies, netpay_clients, radar_command_receipts, radar_activities, radar_checklist_items, radar_requests, radar_merchants, domain_events, principal_memberships, principals, attention_items, policy_evaluations, operational_policies, resolution_decisions, observations, document_records, source_records, netpay_device_assignments, netpay_shipments, netpay_service_cases, next_action_suggestions, operational_alerts, requirement_fulfillments, intake_classifications, case_checklists, evidence, intake_items, checklist_requirements, checklist_templates, cases, people, organizations, document_types, case_types RESTART IDENTITY CASCADE"
+        )
         session.commit()
         load_catalogs(session)
         session.commit()

@@ -6,6 +6,7 @@ from uuid import UUID
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 
 ROLE_PERMISSIONS: dict[str, frozenset[str]] = {
+    "identity_provisioning_operator": frozenset({"identity.binding.manage", "identity.principal.link"}),
     "radar_viewer": frozenset({"radar.read", "radar.activity.read"}),
     "radar_operator": frozenset({"radar.read", "radar.activity.read", "radar.merchant.create", "radar.request.create", "radar.request.update", "radar.checklist.update", "radar.request.close", "radar.request.reopen", "radar.note.create"}),
     "foundation_membership_operator": frozenset({"governance.membership.create", "governance.membership.revoke"}),

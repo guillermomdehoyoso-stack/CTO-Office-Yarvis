@@ -6,7 +6,7 @@ from collections.abc import Iterable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncIterator
+from typing import Any, AsyncIterator, cast
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,8 +22,6 @@ from yarvis_api.contract_registry import ContractDefinition, ContractRegistry, b
 from yarvis_api.dispatch import Dispatcher, HandlerDefinition, HandlerRegistry, build_handler_registry
 from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
 from yarvis_api.modules.deterministic_inbound import DeterministicInboundInboxAdapter
-from yarvis_api.persistence import PersistenceRuntime, build_persistence_runtime
-from yarvis_api.persistence.application_trace_store import ApplicationTraceStore
 from yarvis_api.observability.logging import configure_structured_logging
 from yarvis_api.observability.metrics import ObservabilityMetrics
 from yarvis_api.observability.readiness import ReadinessProbe
@@ -32,17 +30,36 @@ from yarvis_api.observability.tracing import (
     TraceInspectionService,
     TraceRecorder,
 )
+from yarvis_api.persistence import PersistenceRuntime, build_persistence_runtime
+from yarvis_api.persistence.application_trace_store import ApplicationTraceStore
+from yarvis_api.services.auth_rate_limit import AuthRateLimiter, InMemoryAuthRateLimitBackend
+from yarvis_api.services.document_registry import DocumentRegistryQueryService, DocumentRegistryService
 from yarvis_api.services.inbound_intake import InboundIntakeQueryService, InboundIntakeService
-from yarvis_api.services.operational_context import IntakeOperationalContextAssociationService, IntakeOperationalContextQueryService
 from yarvis_api.services.mission_inbox import MissionInboxProjectionService, MissionInboxQueryService
 from yarvis_api.services.mission_work import MissionWorkQueryService, MissionWorkService
-from yarvis_api.services.process import ProcessDefinitionQueryService, ProcessDefinitionService, ProcessRuntimeQueryService, ProcessRuntimeService
-from yarvis_api.services.process_work_association import ProcessMissionWorkTimelineProjector, ProcessWorkAssociationQueryService, ProcessWorkAssociationService
+from yarvis_api.services.operational_context import (
+    IntakeOperationalContextAssociationService,
+    IntakeOperationalContextQueryService,
+)
 from yarvis_api.services.operational_economics import OperationalEconomicsQueryService, OperationalEconomicsService
+from yarvis_api.services.operational_task import (
+    OperationalTaskQueryService,
+    OperationalTaskService,
+    TaskMissionWorkTimelineProjector,
+)
 from yarvis_api.services.operational_workspace import OperationalWorkspaceQueryService
 from yarvis_api.services.operational_workspace_overview import OperationalWorkspaceOverviewQueryService
-from yarvis_api.services.operational_task import OperationalTaskQueryService, OperationalTaskService, TaskMissionWorkTimelineProjector
-from yarvis_api.services.document_registry import DocumentRegistryQueryService, DocumentRegistryService
+from yarvis_api.services.process import (
+    ProcessDefinitionQueryService,
+    ProcessDefinitionService,
+    ProcessRuntimeQueryService,
+    ProcessRuntimeService,
+)
+from yarvis_api.services.process_work_association import (
+    ProcessMissionWorkTimelineProjector,
+    ProcessWorkAssociationQueryService,
+    ProcessWorkAssociationService,
+)
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
 
@@ -67,6 +84,7 @@ class ApplicationState:
     readiness_probe: ReadinessProbe
     workspace_platform: WorkspacePlatform
     authentication: AuthenticationPort
+    auth_rate_limiter: AuthRateLimiter
     deterministic_inbound_adapter: DeterministicInboundInboxAdapter
     inbound_intake_service: InboundIntakeService
     inbound_intake_query_service: InboundIntakeQueryService
@@ -113,40 +131,46 @@ async def application_lifespan(app: FastAPI) -> AsyncIterator[None]:
 def register_middleware(app: FastAPI, settings: Settings) -> None:
     """Register currently required technical middleware at the composition root."""
 
+    allowed_headers = ["Content-Type", "Idempotency-Key", "X-CSRF-Token", "X-Correlation-ID"]
+    if settings.environment in {"local", "test"} and settings.auth_mode == "deterministic":
+        allowed_headers.extend(["X-Yarvis-Subject", "X-Yarvis-Auth-Token", "X-Yarvis-Organization-Selector"])
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=allowed_headers,
     )
 
 
 def register_exception_handlers(app: FastAPI) -> None:
     """Register central application-layer error translation."""
 
-    app.add_exception_handler(ApplicationError, application_error_handler)
+    app.add_exception_handler(ApplicationError, cast(Any, application_error_handler))
     app.add_exception_handler(Exception, unhandled_application_exception_handler)
 
 
 def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     """Register technical routes and the retained incremental interface baseline."""
     from yarvis_api.api.routes import (
+        auth,
         cases,
         checklists,
         data_intake,
+        document_registry,
         evidence,
+        governance,
         intake,
         mission_control,
         mission_inbox,
         mission_work,
         netpay,
-        netpay_inbox,
         netpay_data,
+        netpay_inbox,
         netpay_master,
         observations,
-        operational_policies,
         operational_economics,
+        operational_policies,
         operational_task,
         operational_workspace,
         organizations,
@@ -154,9 +178,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         process,
         process_runtime,
         radar,
-        document_registry,
         recovery_queue,
-        governance,
         workspace_api,
     )
 
@@ -169,13 +191,19 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
         state: ApplicationState = app.state.yarvis
         report = state.readiness_probe.check(
             lifecycle_active=state.lifecycle_active,
-            registries_sealed=(state.module_registry.is_sealed and state.contract_registry.is_sealed and state.handler_registry.is_sealed),
+            registries_sealed=(
+                state.module_registry.is_sealed
+                and state.contract_registry.is_sealed
+                and state.handler_registry.is_sealed
+            ),
         )
         state.observability_metrics.set_gauge("yarvis_readiness_ready", int(report.ready))
         if not report.ready:
             from fastapi import HTTPException
 
-            raise HTTPException(status_code=503, detail={"code": "DEPENDENCY_UNAVAILABLE", "message": "service is not ready"})
+            raise HTTPException(
+                status_code=503, detail={"code": "DEPENDENCY_UNAVAILABLE", "message": "service is not ready"}
+            )
         return {"status": "ready", "service": "yarvis-api"}
 
     @app.get("/metrics", tags=["technical"])
@@ -208,6 +236,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry) -> None:
     app.include_router(recovery_queue.router)
     app.include_router(governance.router)
     app.include_router(workspace_api.router)
+    app.include_router(auth.router)
     for module in module_registry.modules:
         if module.register_routes is not None:
             module.register_routes(app)
@@ -224,7 +253,12 @@ def create_app(
 
     composed_settings = settings if settings is not None else get_settings()
     authentication = DeterministicAuthenticationProvider(composed_settings)
-    workspace_root = resolve_workspace_repository_root(composed_settings.workspace_repository_root, Path(__file__).resolve())
+    if composed_settings.auth_rate_limit_backend != "memory":
+        raise ValueError("shared authentication rate-limit backend is not configured")
+    auth_rate_limiter = AuthRateLimiter(InMemoryAuthRateLimitBackend())
+    workspace_root = resolve_workspace_repository_root(
+        composed_settings.workspace_repository_root, Path(__file__).resolve()
+    )
     module_registry = build_module_registry(canonical_modules() if modules is None else modules)
     contract_registry = build_contract_registry(
         module_registry,
@@ -299,6 +333,7 @@ def create_app(
         readiness_probe=readiness_probe,
         workspace_platform=workspace_platform,
         authentication=authentication,
+        auth_rate_limiter=auth_rate_limiter,
         deterministic_inbound_adapter=deterministic_inbound_adapter,
         inbound_intake_service=inbound_intake_service,
         inbound_intake_query_service=inbound_intake_query_service,

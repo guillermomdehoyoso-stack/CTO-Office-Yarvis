@@ -27,6 +27,26 @@ EXPECTED_PERMISSIONS = frozenset(
 )
 
 
+def _production_oidc_settings() -> Settings:
+    return Settings.model_validate(
+        {
+            "environment": "production",
+            "database_url": "postgresql://synthetic:synthetic@db.test:5432/yarvis_test",
+            "auth_mode": "oidc",
+            "oidc_issuer": "https://issuer.test.invalid",
+            "oidc_client_id": "yarvis-test-client",
+            "oidc_client_secret": "synthetic-test-secret",
+            "oidc_attempt_encryption_key": "synthetic-test-encryption-key",
+            "oidc_redirect_uri": "https://yarvis.test.invalid/auth/callback",
+            "oidc_post_login_redirect_allowlist": "/",
+            "oidc_allowed_algorithms": "RS256",
+            "cors_origins": "https://yarvis.test.invalid",
+            "csrf_allowed_origins": "https://yarvis.test.invalid",
+            "session_cookie_name": "__Host-yarvis_session",
+        }
+    )
+
+
 def _session():
     from yarvis_api.main import app
 
@@ -43,9 +63,10 @@ def _organization(session, name="Netpay Local"):
 
 
 def _provision(session, organization_id, *, environment="local", subject="local:netpay", role=NETPAY_OPERATIONS_ROLE):
+    settings = _production_oidc_settings() if environment == "production" else Settings(environment=environment)
     return provision_local_netpay_operator(
         session,
-        settings=Settings(environment=environment),
+        settings=settings,
         subject=subject,
         organization_id=organization_id,
         role=role,

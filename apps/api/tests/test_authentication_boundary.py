@@ -13,6 +13,26 @@ from yarvis_api.schemas.intake import IntakeDetailRead
 from yarvis_api.services.inbound_intake import InboundIntakeService
 
 
+def _production_oidc_settings(**overrides) -> Settings:
+    values = {
+        "environment": "production",
+        "database_url": "postgresql://synthetic:synthetic@db.test:5432/yarvis_test",
+        "auth_mode": "oidc",
+        "oidc_issuer": "https://issuer.test.invalid",
+        "oidc_client_id": "yarvis-test-client",
+        "oidc_client_secret": "synthetic-test-secret",
+        "oidc_attempt_encryption_key": "synthetic-test-encryption-key",
+        "oidc_redirect_uri": "https://yarvis.test.invalid/auth/callback",
+        "oidc_post_login_redirect_allowlist": "/",
+        "oidc_allowed_algorithms": "RS256",
+        "cors_origins": "https://yarvis.test.invalid",
+        "csrf_allowed_origins": "https://yarvis.test.invalid",
+        "session_cookie_name": "__Host-yarvis_session",
+    }
+    values.update(overrides)
+    return Settings.model_validate(values)
+
+
 def _transport_request(headers: dict[str, str]) -> TransportAuthenticationRequest:
     return TransportAuthenticationRequest(headers={k.lower(): v for k, v in headers.items()}, path="/intake/deterministic", method="POST")
 
@@ -93,9 +113,7 @@ def test_development_provider_ignores_invalid_legacy_authority_headers() -> None
 
 
 def test_production_mode_rejects_deterministic_provider() -> None:
-    provider = DeterministicAuthenticationProvider(
-        Settings(environment="production", database_url="postgresql://yarvis:yarvis@db:5432/yarvis")
-    )
+    provider = DeterministicAuthenticationProvider(_production_oidc_settings())
 
     try:
         provider.authenticate(_transport_request(_trusted_headers()))

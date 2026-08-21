@@ -42,6 +42,24 @@ class Settings(BaseSettings):
     max_upload_size_bytes: int = 5_242_880
     preview_row_limit: int = 200
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    auth_mode: Literal["deterministic", "oidc"] = "deterministic"
+    oidc_issuer: str | None = None
+    oidc_client_id: str | None = None
+    oidc_client_secret: SecretStr | None = Field(default=None, repr=False)
+    oidc_attempt_encryption_key: SecretStr | None = Field(default=None, repr=False)
+    oidc_redirect_uri: str | None = None
+    oidc_post_login_redirect_allowlist: str = "/"
+    oidc_allowed_algorithms: str = "RS256"
+    session_cookie_name: str = "yarvis_session"
+    session_idle_seconds: int = 1800
+    session_absolute_seconds: int = 28800
+    session_max_active: int = 3
+    csrf_allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    bootstrap_enabled: bool = False
+    bootstrap_window_seconds: int = 86400
+    auth_rate_limit_backend: Literal["memory", "shared"] = "memory"
+    auth_deployment_replicas: int = 1
+    auth_cleanup_session_retention_days: int = 7
     worker_enabled: bool = False
     worker_poll_interval_seconds: int = 5
     worker_lease_seconds: int = 30
@@ -115,7 +133,40 @@ class Settings(BaseSettings):
             raise ValueError("worker lease duration must exceed worker polling interval")
         if self.environment == "production" and self.database_url == DEFAULT_LOCAL_DATABASE_URL:
             raise ValueError("production requires an explicit database URL")
+        if self.environment == "production":
+            if self.auth_mode != "oidc":
+                raise ValueError("production requires OIDC authentication")
+            required = (
+                self.oidc_issuer,
+                self.oidc_client_id,
+                self.oidc_client_secret,
+                self.oidc_attempt_encryption_key,
+                self.oidc_redirect_uri,
+            )
+            if any(value is None for value in required):
+                raise ValueError("production OIDC configuration is incomplete")
+            issuer = self.oidc_issuer
+            redirect_uri = self.oidc_redirect_uri
+            assert issuer is not None and redirect_uri is not None
+            if not issuer.startswith("https://") or not redirect_uri.startswith("https://"):
+                raise ValueError("production OIDC endpoints require HTTPS")
+            if any("*" in origin or "localhost" in origin or "127.0.0.1" in origin for origin in self.cors_origin_list):
+                raise ValueError("production CORS origins must be exact non-local origins")
+            if not self.session_cookie_name.startswith("__Host-"):
+                raise ValueError("production session cookie must use __Host- prefix")
+            if self.auth_deployment_replicas > 1 and self.auth_rate_limit_backend != "shared":
+                raise ValueError("multi-replica production authentication requires a shared rate-limit backend")
+        if self.bootstrap_window_seconds > 86400:
+            raise ValueError("bootstrap window cannot exceed 24 hours")
+        if self.session_idle_seconds != 1800 or self.session_absolute_seconds != 28800:
+            raise ValueError("session durations must match AUTH-POLICY-001")
+        if self.session_max_active != 3:
+            raise ValueError("maximum active sessions must match AUTH-POLICY-001")
         return self
+
+    @property
+    def csrf_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.csrf_allowed_origins.split(",") if origin.strip()]
 
 
 @lru_cache

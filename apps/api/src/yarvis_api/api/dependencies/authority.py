@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from yarvis_api.api.authentication import transport_authentication_request
 from yarvis_api.database import get_db
 from yarvis_api.services.authority_resolution import AuthorityResolutionService
+from yarvis_api.services.productive_auth import ProductiveSessionService
 
 
 def authority_envelope(
@@ -13,6 +14,11 @@ def authority_envelope(
     db: Session = Depends(get_db),
     selector: str | None = Header(default=None, alias="X-Yarvis-Organization-Selector"),
 ):
+    if request.app.state.yarvis.settings.auth_mode == "oidc":
+        _, envelope = ProductiveSessionService(request.app.state.yarvis.settings).authenticate(
+            db, request, mutation=request.method not in {"GET", "HEAD", "OPTIONS"}
+        )
+        return envelope
     authenticated = request.app.state.yarvis.authentication.authenticate(transport_authentication_request(request))
     return AuthorityResolutionService().resolve(
         db,

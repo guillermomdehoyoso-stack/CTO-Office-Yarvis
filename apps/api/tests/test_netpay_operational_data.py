@@ -252,8 +252,22 @@ def test_rfc_is_filtered_before_staging_and_never_persisted_or_returned():
 def test_operational_data_migration_round_trip():
     from alembic import command
     from alembic.config import Config
+    from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
 
     config = Config("alembic.ini")
-    command.downgrade(config, "20260819_40")
-    command.upgrade(config, "20260819_41")
-    command.current(config)
+    script_head = ScriptDirectory.from_config(config).get_current_head()
+
+    def current_revision():
+        with app.state.yarvis.persistence.create_session() as session:
+            return MigrationContext.configure(session.connection()).get_current_revision()
+
+    initial_head = current_revision()
+    assert initial_head == script_head
+    try:
+        command.downgrade(config, "20260819_40")
+        command.upgrade(config, "20260819_41")
+        assert current_revision() == "20260819_41"
+    finally:
+        command.upgrade(config, initial_head)
+        assert current_revision() == initial_head

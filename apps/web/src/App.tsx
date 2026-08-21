@@ -11,11 +11,16 @@ import { OperationalWorkspace } from './components/mission-work/OperationalWorks
 import { OperationalRadar } from './components/radar/OperationalRadar';
 import { CommercialIntakeDetail, NetpayCaseDetail, NetpayInboxWorkspace } from './components/netpay/NetpayInboxWorkspace';
 import { NetpayDataWorkspace } from './components/netpay/NetpayDataWorkspace';
+import { beginProductiveLogin, loadProductiveSession, productiveLogout } from './api/netpay';
 
-const api = 'http://localhost:8000';
+const api = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
+function csrfToken() {
+  return decodeURIComponent(document.cookie.split('; ').find((item) => item.startsWith('yarvis_csrf='))?.split('=')[1] || '');
+}
 
 async function getJson(path: string) {
-  const response = await fetch(api + path);
+  const response = await fetch(api + path, { credentials: 'include' });
   if (!response.ok) {
     throw new Error('API unavailable');
   }
@@ -25,7 +30,8 @@ async function getJson(path: string) {
 async function postJson(path: string, body?: unknown) {
   const response = await fetch(api + path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken() },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) {
@@ -40,12 +46,12 @@ async function uploadXlsx(file: File) {
   form.append('source_type', 'manual_upload');
   form.append('source_name', 'Manual XLSX Upload');
   form.append('classification', 'confidential');
-  const response = await fetch(api + '/data-intake/documents', { method: 'POST', body: form });
+  const response = await fetch(api + '/data-intake/documents', { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': csrfToken() }, body: form });
   if (!response.ok) throw new Error('Upload failed');
   return response.json();
 }
 
-function Layout() {
+function Layout({ productive = false }: { productive?: boolean }) {
   return (
     <main>
       <nav>
@@ -59,6 +65,7 @@ function Layout() {
         <Link to="/recovery-queue">Cola de recuperación</Link>
         <Link to="/workspace">Development Workspace</Link>
         <Link to="/mission-work">Mission Work</Link>
+        {productive ? <button onClick={async () => { await productiveLogout(); window.location.reload(); }}>Cerrar sesión</button> : null}
       </nav>
       <Routes>
         <Route path="/" element={<MissionControlPage />} />
@@ -80,6 +87,13 @@ function Layout() {
       </Routes>
     </main>
   );
+}
+
+function ProductiveAuthBoundary() {
+  const session = useQuery({ queryKey: ['productive-session'], queryFn: loadProductiveSession, retry: false });
+  if (session.isLoading) return <main><p>Cargando sesión…</p></main>;
+  if (session.isError) return <main><h1>Acceso a Yarvis</h1><p>Inicia sesión para continuar.</p><button onClick={() => beginProductiveLogin()}>Iniciar sesión</button></main>;
+  return <Layout productive />;
 }
 
 function MissionControlPage() {
@@ -346,7 +360,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Layout />
+      {import.meta.env.PROD ? <ProductiveAuthBoundary /> : <Layout />}
     </QueryClientProvider>
   );
 }

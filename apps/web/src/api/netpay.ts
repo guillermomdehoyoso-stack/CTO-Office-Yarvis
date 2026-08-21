@@ -98,10 +98,7 @@ export class NetpayApiError extends Error {
 
 export type NetpayRuntime = {
   baseUrl: string;
-  subject: string;
-  organizationSelector: string;
   organizationLabel: string;
-  authToken: string;
   capabilities: ReadonlySet<string>;
 };
 
@@ -109,11 +106,8 @@ function runtimeFromEnvironment(): NetpayRuntime {
   const env = import.meta.env;
   return {
     baseUrl: env.VITE_API_BASE_URL || 'http://localhost:8000',
-    subject: env.VITE_YARVIS_SUBJECT || '',
-    organizationSelector: env.VITE_YARVIS_ORGANIZATION_SELECTOR || '',
     organizationLabel: env.VITE_YARVIS_ORGANIZATION_LABEL || '',
-    authToken: env.VITE_YARVIS_AUTH_TOKEN || '',
-    capabilities: new Set((env.VITE_YARVIS_CAPABILITIES || '').split(',').map((item: string) => item.trim()).filter(Boolean)),
+    capabilities: new Set<string>(),
   };
 }
 
@@ -133,16 +127,12 @@ export class NetpayApiClient {
   }
 
   private async request<T>(path: string, init: RequestInit = {}, idempotencyKey?: string): Promise<T> {
-    if (!this.runtime.subject || !this.runtime.organizationSelector || !this.runtime.authToken) {
-      throw new NetpayApiError(0, 'unavailable', 'La identidad local de Netpay no está configurada.');
-    }
     const response = await fetch(`${this.runtime.baseUrl}${path}`, {
       ...init,
+      credentials: 'include',
       headers: {
         ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-        'X-Yarvis-Subject': this.runtime.subject,
-        'X-Yarvis-Auth-Token': this.runtime.authToken,
-        'X-Yarvis-Organization-Selector': this.runtime.organizationSelector,
+        ...(init.method && init.method !== 'GET' ? { 'X-CSRF-Token': csrfCookie() } : {}),
         ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
         ...(init.headers || {}),
       },
@@ -204,6 +194,19 @@ export class NetpayApiClient {
 }
 
 export const netpayApi = new NetpayApiClient();
+
+function csrfCookie() { return decodeURIComponent(document.cookie.split('; ').find((item) => item.startsWith('yarvis_csrf='))?.split('=')[1] || ''); }
+export type ProductiveSession = { authenticated: boolean; organization_id: string; organization_label: string; capabilities: string[]; expires_at: string };
+export async function loadProductiveSession(): Promise<ProductiveSession> {
+  const response = await fetch(`${runtimeFromEnvironment().baseUrl}/auth/session`, { credentials: 'include' });
+  if (!response.ok) throw new NetpayApiError(response.status, response.status === 403 ? 'forbidden' : 'unavailable', 'Authentication required');
+  const session = await response.json() as ProductiveSession;
+  netpayApi.runtime.organizationLabel = session.organization_label;
+  netpayApi.runtime.capabilities = new Set(session.capabilities);
+  return session;
+}
+export function beginProductiveLogin(path = '/netpay-inbox') { window.location.assign(`${runtimeFromEnvironment().baseUrl}/auth/login?redirect=${encodeURIComponent(path)}`); }
+export async function productiveLogout() { await fetch(`${runtimeFromEnvironment().baseUrl}/auth/logout`, { method: 'POST', credentials: 'include', headers: { 'X-CSRF-Token': csrfCookie() } }); }
 
 export function apiErrorMessage(error: unknown): string {
   if (!(error instanceof NetpayApiError)) return 'No fue posible conectar con Netpay Inbox.';

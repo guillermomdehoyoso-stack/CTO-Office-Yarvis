@@ -1,0 +1,89 @@
+# AUTH-PROD-001 operational runbook
+
+## Status and boundary
+
+This runbook describes the implemented productive authentication capability. It
+does not configure a provider, create secrets, open bootstrap, provision an
+identity or Membership, deploy Yarvis, or authorize production traffic. Those
+effects remain closed until `DEPLOY-PILOT-001` and its separate administrative
+authorization.
+
+## Configuration names
+
+Production must resolve these names from an approved secret/configuration
+manager; this repository contains no values:
+
+- `YARVIS_AUTH_MODE`
+- `YARVIS_OIDC_ISSUER`
+- `YARVIS_OIDC_CLIENT_ID`
+- `YARVIS_OIDC_CLIENT_SECRET`
+- `YARVIS_OIDC_ATTEMPT_ENCRYPTION_KEY`
+- `YARVIS_OIDC_REDIRECT_URI`
+- `YARVIS_OIDC_POST_LOGIN_REDIRECT_ALLOWLIST`
+- `YARVIS_OIDC_ALLOWED_ALGORITHMS`
+- `YARVIS_SESSION_COOKIE_NAME`
+- `YARVIS_SESSION_IDLE_SECONDS`
+- `YARVIS_SESSION_ABSOLUTE_SECONDS`
+- `YARVIS_SESSION_MAX_ACTIVE`
+- `YARVIS_CSRF_ALLOWED_ORIGINS`
+- `YARVIS_CORS_ORIGINS`
+- `YARVIS_BOOTSTRAP_ENABLED`
+- `YARVIS_BOOTSTRAP_WINDOW_SECONDS`
+- `YARVIS_AUTH_RATE_LIMIT_BACKEND`
+- `YARVIS_AUTH_DEPLOYMENT_REPLICAS`
+- `YARVIS_AUTH_CLEANUP_SESSION_RETENTION_DAYS`
+
+Production validation fails closed for incomplete OIDC configuration, insecure
+issuer/callback URLs, local or wildcard CORS, a non-`__Host-` cookie, policy
+duration drift, or a multi-replica topology without a shared rate-limit backend.
+The current composition intentionally refuses the `shared` backend until
+`DEPLOY-PILOT-001` supplies and wires approved shared infrastructure.
+
+## Runtime behavior
+
+`GET /auth/login` starts Authorization Code Flow with PKCE S256 and a one-use,
+ten-minute attempt. The provider callback uses `form_post`, preventing the code
+from entering the request URL. `POST /auth/callback` validates the configured
+issuer, discovery endpoints, allowlisted algorithm, JWKS signature, audience,
+timestamps, state and nonce; it requests only `openid` and stores no provider
+token or claims payload.
+
+Successful resolution requires an active `issuer + normalized_subject` binding,
+an active human Principal linked to Person, exactly one effective active
+Membership, an active Organization and a closed persisted role. It creates a
+hashed server-side session and a session-bound CSRF token. D1 authority is always
+evaluated by the backend. `GET /auth/session` returns only the Organization label,
+minimal capabilities and expiry. `POST /auth/logout` is CSRF-protected,
+idempotent and terminal.
+
+The deterministic header adapter remains available only when environment is
+`local` or `test` and auth mode is `deterministic`. Production startup requires
+OIDC. No productive Vite bundle reads or embeds `VITE_YARVIS_AUTH_TOKEN`.
+
+## Bootstrap and cleanup
+
+Bootstrap is disabled by default and has no web endpoint. The application
+service accepts only an externally authorized window and allowlist evidence,
+never frontend Organization, role or capability values. It is one-success,
+terminal, idempotent and bounded to the ratified 24-hour maximum. Creating or
+opening a real window and executing its canonical commands requires a later
+administrative authorization.
+
+`ProductiveAuthCleanupService` is the idempotent command surface for expired
+OIDC-attempt and terminal-session cleanup. AUTH-PROD-001 installs no scheduler.
+`DEPLOY-PILOT-001` must supply scheduling, retention readback, monitoring and
+incident procedures before restricted canary traffic.
+
+## Deployment and rollback checks
+
+Before a canary, verify migration head `20260820_42`, exact CORS/CSRF origins,
+secure cookie attributes, provider metadata/JWKS reachability, shared rate
+limiting when replicas exceed one, centralized sanitized audit, cleanup
+scheduling, PostgreSQL backups and restore reconciliation. Confirm no token,
+code, cookie, state, nonce, PKCE verifier, raw claims, RFC or unnecessary PII is
+present in frontend assets, logs, events or metrics.
+
+Rollback order is: stop new login, close bootstrap, revoke productive sessions,
+preserve security audit, roll back application release, and reconcile canonical
+Membership/binding/session state after restore. A restore must never reactivate
+revoked authority automatically.

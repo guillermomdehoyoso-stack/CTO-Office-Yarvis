@@ -13,9 +13,16 @@ from yarvis_api.module_registry import build_module_registry
 
 _PROPOSED_PLANNED = (ContractLifecycle.PROPOSED, ContractOperationalStatus.PLANNED)
 _RATIFIED_VERIFIED = (ContractLifecycle.RATIFIED, ContractOperationalStatus.VERIFIED)
+_RATIFIED_PLANNED = (ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED)
 
 CANONICAL_RUNTIME_BASELINE_V1 = (
-    ("IC-WORKSPACE-QRY-001", ContractType.QUERY, "mission_control", "operational workspace overview", *_PROPOSED_PLANNED),
+    (
+        "IC-WORKSPACE-QRY-001",
+        ContractType.QUERY,
+        "mission_control",
+        "operational workspace overview",
+        *_PROPOSED_PLANNED,
+    ),
     ("IC-TASK-CMD-001", ContractType.COMMAND, "operational_execution", "task creation", *_PROPOSED_PLANNED),
     ("IC-TASK-CMD-002", ContractType.COMMAND, "operational_execution", "task planning", *_PROPOSED_PLANNED),
     ("IC-TASK-CMD-003", ContractType.COMMAND, "operational_execution", "task assignment", *_PROPOSED_PLANNED),
@@ -53,7 +60,13 @@ CANONICAL_RUNTIME_BASELINE_V1 = (
     ("IC-MISSION-NTF-001", ContractType.NOTIFICATION, "mission_control", "communication", *_PROPOSED_PLANNED),
     ("IC-NETPAY-CMD-001", ContractType.COMMAND, "netpay_merchant_operations", "merchant candidate", *_PROPOSED_PLANNED),
     ("IC-NETPAY-CMD-002", ContractType.COMMAND, "netpay_merchant_operations", "case", *_PROPOSED_PLANNED),
-    ("IC-NETPAY-CMD-003", ContractType.COMMAND, "netpay_merchant_operations", "case classification", *_PROPOSED_PLANNED),
+    (
+        "IC-NETPAY-CMD-003",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "case classification",
+        *_PROPOSED_PLANNED,
+    ),
     ("IC-NETPAY-CMD-004", ContractType.COMMAND, "netpay_merchant_operations", "checklist", *_PROPOSED_PLANNED),
     ("IC-NETPAY-QRY-001", ContractType.QUERY, "netpay_merchant_operations", "case view", *_PROPOSED_PLANNED),
     ("IC-NETPAY-QRY-002", ContractType.QUERY, "netpay_merchant_operations", "checklist view", *_PROPOSED_PLANNED),
@@ -70,51 +83,360 @@ CANONICAL_RUNTIME_BASELINE_V1 = (
     ("IC-DOCUMENT-QRY-002", ContractType.QUERY, "document_registry", "version retrieval", *_RATIFIED_VERIFIED),
     ("IC-DOCUMENT-QRY-003", ContractType.QUERY, "document_registry", "association retrieval", *_RATIFIED_VERIFIED),
     ("IC-DOCUMENT-QRY-004", ContractType.QUERY, "document_registry", "subject retrieval", *_RATIFIED_VERIFIED),
-    ("IC-NETPAY-CMD-020", ContractType.COMMAND, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-021", ContractType.COMMAND, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-022", ContractType.COMMAND, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-023", ContractType.COMMAND, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-024", ContractType.COMMAND, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-025", ContractType.COMMAND, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-QRY-009", ContractType.QUERY, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-QRY-010", ContractType.QUERY, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-011", ContractType.EVENT, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-012", ContractType.EVENT, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-013", ContractType.EVENT, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-014", ContractType.EVENT, "netpay_merchant_operations", "commercial intake pre-master", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-026", ContractType.COMMAND, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-027", ContractType.COMMAND, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-028", ContractType.COMMAND, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-029", ContractType.COMMAND, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-030", ContractType.COMMAND, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-QRY-011", ContractType.QUERY, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-QRY-012", ContractType.QUERY, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-QRY-013", ContractType.QUERY, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-015", ContractType.EVENT, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-016", ContractType.EVENT, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-017", ContractType.EVENT, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-018", ContractType.EVENT, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-019", ContractType.EVENT, "netpay_merchant_operations", "operational data intake D1", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-009", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-010", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-011", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-012", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-013", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-014", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-015", ContractType.COMMAND, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-QRY-005", ContractType.QUERY, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-QRY-006", ContractType.QUERY, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-003", ContractType.EVENT, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-004", ContractType.EVENT, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-005", ContractType.EVENT, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-EVT-006", ContractType.EVENT, "netpay_merchant_operations", "service inbox", ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED),
-    ("IC-NETPAY-CMD-005", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
-    ("IC-NETPAY-CMD-006", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
-    ("IC-NETPAY-CMD-007", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
-    ("IC-NETPAY-CMD-008", ContractType.COMMAND, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
+    (
+        "IC-NETPAY-CMD-020",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-021",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-022",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-023",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-024",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-025",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-009",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-010",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-011",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-012",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-013",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-014",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "commercial intake pre-master",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-026",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-027",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-028",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-029",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-030",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-011",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-012",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-013",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-015",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-016",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-017",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-018",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-019",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "operational data intake D1",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-009",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-010",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-011",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-012",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-013",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-014",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-015",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-005",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-006",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-003",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-004",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-005",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-006",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "service inbox",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-005",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "tenant-owned master",
+        *_RATIFIED_VERIFIED,
+    ),
+    (
+        "IC-NETPAY-CMD-006",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "tenant-owned master",
+        *_RATIFIED_VERIFIED,
+    ),
+    (
+        "IC-NETPAY-CMD-007",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "tenant-owned master",
+        *_RATIFIED_VERIFIED,
+    ),
+    (
+        "IC-NETPAY-CMD-008",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "tenant-owned master",
+        *_RATIFIED_VERIFIED,
+    ),
     ("IC-NETPAY-QRY-003", ContractType.QUERY, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
     ("IC-NETPAY-QRY-004", ContractType.QUERY, "netpay_merchant_operations", "tenant-owned master", *_RATIFIED_VERIFIED),
 )
+
+AUTH_PROD_IDS = {
+    "IC-IDENTITY-CMD-002",
+    "IC-IDENTITY-CMD-003",
+    "IC-IDENTITY-CMD-004",
+    "IC-IDENTITY-CMD-005",
+    "IC-IDENTITY-QRY-002",
+    "IC-IDENTITY-QRY-003",
+    "IC-IDENTITY-EVT-002",
+    "IC-IDENTITY-EVT-003",
+    "IC-IDENTITY-EVT-004",
+    "IC-IDENTITY-EVT-005",
+    "IC-GOVERNANCE-CMD-001",
+    "IC-GOVERNANCE-CMD-002",
+    "IC-GOVERNANCE-CMD-003",
+    "IC-GOVERNANCE-QRY-003",
+    "IC-GOVERNANCE-QRY-004",
+    "IC-GOVERNANCE-EVT-002",
+}
 
 CANONICAL_CONTRACT_IDS = tuple(contract[0] for contract in CANONICAL_RUNTIME_BASELINE_V1)
 
@@ -122,20 +444,34 @@ CANONICAL_CONTRACT_IDS = tuple(contract[0] for contract in CANONICAL_RUNTIME_BAS
 def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() -> None:
     contracts = canonical_contracts()
 
-    assert tuple(
-        (
-            contract.interaction_contract_id,
-            contract.contract_type,
-            contract.owner_module_id,
-            contract.owning_capability,
-            contract.lifecycle,
-            contract.operational_status,
+    assert (
+        tuple(
+            (
+                contract.interaction_contract_id,
+                contract.contract_type,
+                contract.owner_module_id,
+                contract.owning_capability,
+                contract.lifecycle,
+                contract.operational_status,
+            )
+            for contract in contracts
+            if contract.interaction_contract_id not in AUTH_PROD_IDS
         )
-        for contract in contracts
-    ) == CANONICAL_RUNTIME_BASELINE_V1
-    assert tuple(contract.interaction_contract_id for contract in contracts) == CANONICAL_CONTRACT_IDS
-    assert len(contracts) == 99
-    assert len({contract.interaction_contract_id for contract in contracts}) == 99
+        == CANONICAL_RUNTIME_BASELINE_V1
+    )
+    assert (
+        tuple(
+            contract.interaction_contract_id
+            for contract in contracts
+            if contract.interaction_contract_id not in AUTH_PROD_IDS
+        )
+        == CANONICAL_CONTRACT_IDS
+    )
+    assert {
+        contract.interaction_contract_id for contract in contracts if contract.interaction_contract_id in AUTH_PROD_IDS
+    } == AUTH_PROD_IDS
+    assert len(contracts) == 115
+    assert len({contract.interaction_contract_id for contract in contracts}) == 115
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -148,6 +484,12 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
         (contract.lifecycle, contract.operational_status) == _PROPOSED_PLANNED
         for contract in contracts
         if contract.owner_module_id not in {"document_registry", "netpay_merchant_operations"}
+        and contract.interaction_contract_id not in AUTH_PROD_IDS
+    )
+    assert all(
+        (contract.lifecycle, contract.operational_status) == _RATIFIED_PLANNED
+        for contract in contracts
+        if contract.interaction_contract_id in AUTH_PROD_IDS
     )
     assert all(contract.architectural_steward is None for contract in contracts)
     assert all(contract.traceability_references == () for contract in contracts)
@@ -157,9 +499,9 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
     contracts = canonical_contracts()
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
-        ContractType.COMMAND: 49,
-        ContractType.QUERY: 24,
-        ContractType.EVENT: 24,
+        ContractType.COMMAND: 56,
+        ContractType.QUERY: 28,
+        ContractType.EVENT: 29,
         ContractType.NOTIFICATION: 2,
     }
     owner_counts = {
@@ -167,8 +509,8 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
         for owner in {contract.owner_module_id for contract in contracts}
     }
     assert owner_counts == {
-        "identity": 3,
-        "governance": 3,
+        "identity": 13,
+        "governance": 9,
         "relationship": 3,
         "observation_evidence": 6,
         "knowledge": 3,
