@@ -1,5 +1,6 @@
 """Application-owned synchronous persistence infrastructure."""
 
+from yarvis_api.persistence.application_trace_store import ApplicationTraceStore
 from yarvis_api.persistence.runtime import (
     PersistenceRuntime,
     PersistenceRuntimeDisposedError,
@@ -7,7 +8,6 @@ from yarvis_api.persistence.runtime import (
     build_persistence_runtime,
     sqlalchemy_url,
 )
-from yarvis_api.persistence.application_trace_store import ApplicationTraceStore
 from yarvis_api.persistence.unit_of_work import (
     NestedUnitOfWorkError,
     OperationScope,
