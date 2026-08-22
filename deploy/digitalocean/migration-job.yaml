@@ -1,0 +1,19 @@
+# Separate, controlled migration template. Do not merge this job into app.yaml:
+# App Platform PRE_DEPLOY jobs run on every deployment. Apply this template only
+# under an explicit migration authorization and with a separately provisioned app.
+name: yarvis-pilot-migrate
+jobs:
+  - name: yarvis-migrate
+    kind: PRE_DEPLOY
+    github:
+      repo: guillermomdehoyoso-stack/CTO-Office-Yarvis
+      branch: feat/operational-intake-spine
+      deploy_on_push: false
+    dockerfile_path: Dockerfile
+    run_command: alembic upgrade head
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    envs:
+      - key: YARVIS_MIGRATOR_DATABASE_URL
+        value: __REQUIRES_MIGRATOR_DATABASE_URL_FOR_YARVIS_MIGRATOR__
+        scope: RUN_TIME
+        type: SECRET
