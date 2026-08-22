@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import timedelta
 from urllib.parse import parse_qs, urlparse
 
@@ -28,7 +29,7 @@ from yarvis_api.models.productive_auth import (
 )
 from yarvis_api.services.auth_rate_limit import AuthRateLimiter, InMemoryAuthRateLimitBackend
 from yarvis_api.services.identity_provisioning import IdentityProvisioningService
-from yarvis_api.services.oidc import OIDCClient
+from yarvis_api.services.oidc import OIDCClient, oidc_denied
 from yarvis_api.services.productive_auth import ProductiveAuthCleanupService, ProductiveSessionService
 from yarvis_api.services.productive_bootstrap import ProductiveBootstrapService
 
@@ -190,6 +191,43 @@ def test_redirect_and_production_configuration_fail_closed():
             session_cookie_name="__Host-yarvis",
             auth_deployment_replicas=2,
         )
+
+
+def test_oidc_denial_logs_only_allowlisted_stage_and_preserves_public_reason(caplog):
+    sensitive = ("SENSITIVE_TOKEN_SENTINEL", "SENSITIVE_CODE_SENTINEL", "SENSITIVE_SECRET_SENTINEL")
+    caplog.set_level(logging.WARNING, logger="yarvis_api.services.oidc")
+
+    with pytest.raises(ApplicationError) as raised:
+        oidc_denied("not-an-allowlisted-stage")
+
+    assert raised.value.details == {"reason": "oidc_denied"}
+    messages = [record.getMessage() for record in caplog.records]
+    assert messages == ["oidc_authentication_denied stage=unspecified"]
+    assert not any(value in "\n".join(messages) for value in sensitive)
+
+
+def test_invalid_id_token_logs_stage_without_token_or_nonce(caplog, monkeypatch):
+    settings = _settings()
+    sensitive_token = "SENSITIVE_TOKEN_SENTINEL"
+    sensitive_nonce = "SENSITIVE_NONCE_SENTINEL"
+
+    async def fake_json(_self, _url, **_kwargs):
+        return {"keys": []}
+
+    monkeypatch.setattr(OIDCClient, "_json", fake_json)
+    caplog.set_level(logging.WARNING, logger="yarvis_api.services.oidc")
+    with pytest.raises(ApplicationError) as raised:
+        __import__("asyncio").run(
+            OIDCClient(settings).validate_id_token(
+                {"jwks_uri": "https://issuer.example/jwks"}, sensitive_token, sensitive_nonce
+            )
+        )
+
+    assert raised.value.details == {"reason": "oidc_denied"}
+    messages = [record.getMessage() for record in caplog.records]
+    assert messages == ["oidc_authentication_denied stage=jwt_header"]
+    assert sensitive_token not in "\n".join(messages)
+    assert sensitive_nonce not in "\n".join(messages)
 
 
 def test_state_expiry_and_pkce_attempt_fail_closed(monkeypatch):
