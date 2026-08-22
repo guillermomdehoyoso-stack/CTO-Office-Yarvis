@@ -33,14 +33,66 @@ _DENIAL_STAGES = frozenset(
         "unspecified",
     }
 )
+_TOKEN_RESPONSE_ERRORS = frozenset(
+    {
+        "invalid_client",
+        "invalid_grant",
+        "invalid_request",
+        "unauthorized_client",
+        "unsupported_grant_type",
+        "access_denied",
+    }
+)
 
-def oidc_denied(stage: str = "unspecified") -> NoReturn:
+
+def oidc_denied(
+    stage: str = "unspecified", *, http_status_family: str = "unspecified", oauth_error: str = "unspecified"
+) -> NoReturn:
     safe_stage = stage if stage in _DENIAL_STAGES else "unspecified"
-    logger.warning("oidc_authentication_denied stage=%s", safe_stage)
+    if safe_stage == "token_response":
+        safe_status = http_status_family if http_status_family in _TOKEN_RESPONSE_STATUS_FAMILIES else "http_other"
+        safe_error = oauth_error if oauth_error in _TOKEN_RESPONSE_ERRORS else "unspecified"
+        logger.warning(
+            "oidc_authentication_denied stage=%s http_status_family=%s oauth_error=%s",
+            safe_stage,
+            safe_status,
+            safe_error,
+        )
+    else:
+        logger.warning("oidc_authentication_denied stage=%s", safe_stage)
     raise ApplicationError(
         ApplicationErrorCode.AUTHORIZATION_DENIED,
         "authentication denied",
         {"reason": "oidc_denied"},
+    )
+
+
+_TOKEN_RESPONSE_STATUS_FAMILIES = frozenset(
+    {"http_400", "http_401", "http_403", "http_429", "http_5xx", "http_other"}
+)
+
+
+def _http_status_family(status_code: int) -> str:
+    if status_code in (400, 401, 403, 429):
+        return f"http_{status_code}"
+    if 500 <= status_code <= 599:
+        return "http_5xx"
+    return "http_other"
+
+
+def _token_response_denied(response: httpx.Response) -> NoReturn:
+    oauth_error = "unspecified"
+    if len(response.content) <= 262144:
+        try:
+            payload = response.json()
+        except ValueError:
+            payload = None
+        if isinstance(payload, dict) and payload.get("error") in _TOKEN_RESPONSE_ERRORS:
+            oauth_error = payload["error"]
+    oidc_denied(
+        "token_response",
+        http_status_family=_http_status_family(response.status_code),
+        oauth_error=oauth_error,
     )
 
 
@@ -59,6 +111,8 @@ class OIDCClient:
         except httpx.HTTPError:
             oidc_denied(fetch_stage)
         if response.status_code != 200 or len(response.content) > 262144:
+            if response_stage == "token_response":
+                _token_response_denied(response)
             oidc_denied(response_stage)
         try:
             payload = response.json()

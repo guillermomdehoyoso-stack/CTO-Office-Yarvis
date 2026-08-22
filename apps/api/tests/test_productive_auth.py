@@ -8,6 +8,7 @@ import pytest
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.asymmetric import rsa
 from fastapi.testclient import TestClient
+from httpx import Response
 from jwt.algorithms import RSAAlgorithm
 from pydantic import SecretStr
 from sqlalchemy import func, select
@@ -29,7 +30,7 @@ from yarvis_api.models.productive_auth import (
 )
 from yarvis_api.services.auth_rate_limit import AuthRateLimiter, InMemoryAuthRateLimitBackend
 from yarvis_api.services.identity_provisioning import IdentityProvisioningService
-from yarvis_api.services.oidc import OIDCClient, oidc_denied
+from yarvis_api.services.oidc import OIDCClient, _token_response_denied, oidc_denied
 from yarvis_api.services.productive_auth import ProductiveAuthCleanupService, ProductiveSessionService
 from yarvis_api.services.productive_bootstrap import ProductiveBootstrapService
 
@@ -228,6 +229,30 @@ def test_invalid_id_token_logs_stage_without_token_or_nonce(caplog, monkeypatch)
     assert messages == ["oidc_authentication_denied stage=jwt_header"]
     assert sensitive_token not in "\n".join(messages)
     assert sensitive_nonce not in "\n".join(messages)
+
+
+def test_token_response_diagnostic_logs_only_allowlisted_classification(caplog):
+    sensitive = ("SENSITIVE_CODE_SENTINEL", "SENSITIVE_SECRET_SENTINEL", "SENSITIVE_DESCRIPTION_SENTINEL")
+    response = Response(
+        401,
+        json={
+            "error": "invalid_client",
+            "error_description": sensitive[2],
+            "code": sensitive[0],
+            "client_secret": sensitive[1],
+        },
+    )
+    caplog.set_level(logging.WARNING, logger="yarvis_api.services.oidc")
+
+    with pytest.raises(ApplicationError) as raised:
+        _token_response_denied(response)
+
+    assert raised.value.details == {"reason": "oidc_denied"}
+    messages = [record.getMessage() for record in caplog.records]
+    assert messages == [
+        "oidc_authentication_denied stage=token_response http_status_family=http_401 oauth_error=invalid_client"
+    ]
+    assert not any(value in "\n".join(messages) for value in sensitive)
 
 
 def test_state_expiry_and_pkce_attempt_fail_closed(monkeypatch):
