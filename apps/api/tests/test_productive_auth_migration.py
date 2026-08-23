@@ -22,4 +22,5 @@ def test_productive_auth_migration_roundtrip():
             "identity_bootstrap_enrollment_receipts",
             "authentication_security_audit",
             "bootstrap_verified_identities",
+            "founder_bootstrap_receipts",
         } <= tables

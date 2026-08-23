@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import binascii
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -60,6 +62,9 @@ class Settings(BaseSettings):
     session_max_active: int = 3
     csrf_allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     bootstrap_enabled: bool = False
+    founder_bootstrap_enabled: bool = False
+    founder_bootstrap_public_key: str | None = None
+    founder_bootstrap_key_id: str = "founder-v1"
     bootstrap_window_seconds: int = 86400
     auth_rate_limit_backend: Literal["memory", "shared"] = "memory"
     auth_deployment_replicas: int = 1
@@ -162,6 +167,19 @@ class Settings(BaseSettings):
                 raise ValueError("multi-replica production authentication requires a shared rate-limit backend")
         if self.bootstrap_window_seconds > 86400:
             raise ValueError("bootstrap window cannot exceed 24 hours")
+        if self.founder_bootstrap_enabled:
+            if not self.founder_bootstrap_public_key:
+                raise ValueError("founder bootstrap requires a public key")
+            if not self.oidc_issuer:
+                raise ValueError("founder bootstrap requires an OIDC issuer")
+            try:
+                public_key = base64.b64decode(self.founder_bootstrap_public_key, validate=True)
+            except (ValueError, binascii.Error):
+                raise ValueError("founder bootstrap public key must be base64") from None
+            if len(public_key) != 32:
+                raise ValueError("founder bootstrap public key must be Ed25519 length")
+            if not self.founder_bootstrap_key_id.strip():
+                raise ValueError("founder bootstrap key id must be nonblank")
         if self.session_idle_seconds != 1800 or self.session_absolute_seconds != 28800:
             raise ValueError("session durations must match AUTH-POLICY-001")
         if self.session_max_active != 3:
