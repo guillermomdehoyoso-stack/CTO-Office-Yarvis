@@ -93,6 +93,8 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-IDENTITY-CMD-003 | CMD | Identity / Person-Principal association | LinkPrincipalToPerson: establish the reviewed canonical Person link for a human Principal | C | productive human authority chain |
 | IC-IDENTITY-CMD-004 | CMD | Identity / productive session | StartProductiveSession: create canonical server-side session state after successful technical authentication and authority resolution | C | productive authenticated access |
 | IC-IDENTITY-CMD-005 | CMD | Identity / productive session | RevokeProductiveSession: terminally revoke canonical server-side session state | C | logout, administrative revocation, authority loss |
+| IC-IDENTITY-CMD-006 | CMD | Identity / bootstrap Person creation | CreatePerson: create one reviewed human Person without credential or Membership authority | C | bounded productive bootstrap |
+| IC-IDENTITY-CMD-007 | CMD | Identity / bootstrap Principal creation | CreateHumanPrincipal: create one human Principal for a reviewed Person without external binding or Membership authority | C | bounded productive bootstrap |
 | IC-IDENTITY-QRY-001 | QRY | Identity / canonical reference | RetrieveCanonicalIdentity | C | all Tier 1 association |
 | IC-IDENTITY-QRY-002 | QRY | Identity / productive Principal resolution | ResolvePrincipal: resolve exactly one active Principal from an active verified binding | C | productive authentication boundary |
 | IC-IDENTITY-QRY-003 | QRY | Identity / productive session | GetCurrentSession: retrieve the minimal safe server-side session projection | C | authenticated application boundary |
@@ -101,15 +103,21 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-IDENTITY-EVT-003 | EVT | Identity / Person-Principal association | PrincipalLinkedToPerson: assert the reviewed human association | C | authority resolution and audit |
 | IC-IDENTITY-EVT-004 | EVT | Identity / productive session | ProductiveSessionStarted: assert canonical session creation using safe opaque references | C | security audit and session administration |
 | IC-IDENTITY-EVT-005 | EVT | Identity / productive session | ProductiveSessionRevoked: assert terminal session revocation | C | authorization invalidation and security audit |
+| IC-IDENTITY-EVT-006 | EVT | Identity / bootstrap Person creation | PersonCreated: assert one reviewed Person creation using safe opaque references | C | bounded productive bootstrap audit |
+| IC-IDENTITY-EVT-007 | EVT | Identity / bootstrap Principal creation | HumanPrincipalCreated: assert one reviewed human Principal creation using safe opaque references | C | bounded productive bootstrap audit |
 | IC-GOVERNANCE-CMD-001 | CMD | Governance / Membership | GrantMembership: create one explicitly authorized active PrincipalMembership | C | canonical Organization authority |
 | IC-GOVERNANCE-CMD-002 | CMD | Governance / Membership | RevokeMembership: terminally revoke one PrincipalMembership | C | authority withdrawal |
 | IC-GOVERNANCE-CMD-003 | CMD | Governance / administrative bootstrap | CloseBootstrapWindow: irreversibly close the bounded bootstrap window under approved policy | C | bootstrap termination |
+| IC-GOVERNANCE-CMD-004 | CMD | Governance / administrative bootstrap | OpenBootstrapWindow: open one bounded, expiring, single-success bootstrap window | C | productive bootstrap administration |
+| IC-GOVERNANCE-CMD-005 | CMD | Governance / administrative bootstrap | ExecuteBootstrapEnrollment: atomically orchestrate the approved initial canonical identity chain | C | productive bootstrap administration |
 | IC-GOVERNANCE-QRY-001 | QRY | Governance / authority | EvaluateAuthority; F-011 profile `1.1.0` ratified by `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md` | C | target-command authorization |
 | IC-GOVERNANCE-QRY-002 | QRY | Governance / policy/delegation | RetrieveApplicableDelegation | Co | work assignment |
 | IC-GOVERNANCE-QRY-003 | QRY | Governance / Membership resolution | ResolveEffectiveMembership: resolve active same-Organization Membership and closed role/capabilities without client authority | C | productive authority envelope |
 | IC-GOVERNANCE-QRY-004 | QRY | Governance / administrative bootstrap | GetBootstrapEligibility: return a minimal fail-closed eligibility decision under the approved bootstrap policy | C | bounded bootstrap orchestration |
 | IC-GOVERNANCE-EVT-001 | EVT | Governance / authority | AuthorityChanged; F-011 profile `1.1.0` ratified by `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md` | C | Execution, MC |
 | IC-GOVERNANCE-EVT-002 | EVT | Governance / administrative bootstrap | BootstrapWindowClosed: assert terminal bootstrap closure without identity evidence, secrets, or PII | C | security audit and bootstrap denial |
+| IC-GOVERNANCE-EVT-003 | EVT | Governance / administrative bootstrap | BootstrapWindowOpened: assert bounded bootstrap opening with safe opaque references | C | security audit and bootstrap control |
+| IC-GOVERNANCE-EVT-004 | EVT | Governance / administrative bootstrap | BootstrapEnrollmentCompleted: assert terminal successful enrollment without identity evidence or secrets | C | security audit and bootstrap control |
 | IC-RELATIONSHIP-CMD-001 | CMD | Relationship / association | EstablishCasePartyRelationship | Co | merchant/case association |
 | IC-RELATIONSHIP-QRY-001 | QRY | Relationship / association | RetrieveCaseRelationships | Co | case view |
 | IC-RELATIONSHIP-EVT-001 | EVT | Relationship / association | RelationshipRecorded | Co | Netpay, MC |
@@ -211,7 +219,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-NETPAY-EVT-002 | EVT | Netpay Merchant Operations / case | NetpayCaseStatusChanged | C | MC, notification |
 | IC-NETPAY-NTF-001 | NTF | Netpay Merchant Operations / communication | NotifyCaseActor | O | assigned/relevant actor |
 
-**Tier 1 effective totals:** 138 contracts — 62 Commands, 39 Queries, 35 Events, and 2 Notifications. These totals are computed from every individual ID represented by the registry rows, including compact ranges; the prior declared `116` total undercounted the pre-AUTH-CONTRACT-001 effective registry of 122 by six. The 16 AUTH-CONTRACT-001 additions are ratified contractual definitions but remain unimplemented and absent from the immutable Runtime Baseline V1 projection until a later implementation gate explicitly authorizes a prospective projection update.
+**Tier 1 effective totals:** 146 contracts — 66 Commands, 39 Queries, 39 Events, and 2 Notifications. These totals are computed from every individual ID represented by the registry rows, including compact ranges; the prior declared `116` total undercounted the pre-AUTH-CONTRACT-001 effective registry of 122 by six. The 16 AUTH-CONTRACT-001 additions and 8 AUTH-BOOTSTRAP-CONTRACT-002 additions are ratified contractual definitions but remain unimplemented and absent from the immutable Runtime Baseline V1 projection until a later implementation gate explicitly authorizes a prospective projection update.
 
 ### 7.1 Verified WS-001 Inbox Binding
 
@@ -233,8 +241,8 @@ The idempotency namespace is `(organization_id, idempotency_key)`. Its command f
 
 | Context | Tier 1 contracts | Coverage result |
 | --- | --- | --- |
-| Identity | CMD 001–005; QRY 001–003; EVT 001–005 | covered; AUTH-CONTRACT-001 additions are ratified/planned only |
-| Governance | CMD 001–003; QRY 001–004; EVT 001–002 | covered; AUTH-CONTRACT-001 additions are ratified/planned only |
+| Identity | CMD 001–007; QRY 001–003; EVT 001–007 | covered; AUTH-CONTRACT-001 and AUTH-BOOTSTRAP-CONTRACT-002 additions are ratified/planned only |
+| Governance | CMD 001–005; QRY 001–004; EVT 001–004 | covered; AUTH-CONTRACT-001 and AUTH-BOOTSTRAP-CONTRACT-002 additions are ratified/planned only |
 | Relationship | CMD/QRY/EVT 001 | covered |
 | Observation & Evidence | CMD 001–003; QRY 001; EVT 001–002 | covered |
 | Knowledge | CMD/QRY/EVT 001 | covered |
@@ -281,7 +289,7 @@ Tier 2 contains **6 Draft candidate families**, not ratified contracts: (1) Deci
 
 Dependencies follow greater architectural stability: Netpay depends on platform contracts; platform semantics do not depend on Netpay. Critical contracts are Identity resolution/reference, authority evaluation/change, evidence capture/validation, pending-action lifecycle, Netpay candidate/case/checklist/state, and their events. Critical contracts require trace propagation, evidence/provenance where applicable, compatibility assessment, and observability/conformance records.
 
-All Tier 1 entries are Proposed/Planned and initially compatible only with their own `1.0.0` semantic baseline, except the ratified `1.1.0` F-011 profiles of `IC-GOVERNANCE-QRY-001` and `IC-GOVERNANCE-EVT-001` recorded by `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md`, and the Ratified/Planned AUTH-CONTRACT-001 definitions recorded by `AUTH_CONTRACT_001_PRODUCTIVE_IDENTITY_AND_SESSION_CONTRACTS.md`. No replacement exists. A later compatibility/replacement matrix must state producer/consumer versions, change class, migration, deprecation window, and replacement identifier. No dependency cycle is accepted; no version may be embedded in an identifier.
+All Tier 1 entries are Proposed/Planned and initially compatible only with their own `1.0.0` semantic baseline, except the ratified `1.1.0` F-011 profiles of `IC-GOVERNANCE-QRY-001` and `IC-GOVERNANCE-EVT-001` recorded by `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md`, the Ratified/Planned AUTH-CONTRACT-001 definitions recorded by `AUTH_CONTRACT_001_PRODUCTIVE_IDENTITY_AND_SESSION_CONTRACTS.md`, and the Ratified/Planned AUTH-BOOTSTRAP-CONTRACT-002 definitions recorded by that document's prospective 2026-08-22 supplement. No replacement exists. A later compatibility/replacement matrix must state producer/consumer versions, change class, migration, deprecation window, and replacement identifier. No dependency cycle is accepted; no version may be embedded in an identifier.
 
 ## 12. Derived Non-Authoritative Views
 
