@@ -2,6 +2,7 @@
 
 import hashlib
 from datetime import timedelta
+from uuid import uuid4
 
 from cryptography.fernet import Fernet
 from sqlalchemy import select
@@ -38,6 +39,8 @@ class BootstrapIdentityHandoffService:
             issuer_hash=hashlib.sha256(issuer.encode()).hexdigest(),
             subject_encrypted=Fernet(encryption_key.encode()).encrypt(subject.encode()).decode(),
             expires_at=now + timedelta(minutes=10),
+            provenance="founder_bootstrap",
+            provenance_receipt_id=uuid4(),
         )
         db.add(item)
         db.add(
@@ -45,7 +48,7 @@ class BootstrapIdentityHandoffService:
                 event_type="bootstrap_identity_handoff",
                 outcome="verified",
                 reason_code="oidc_validated",
-                safe_details={"version": "1"},
+                safe_details={"version": "1", "provenance_receipt_id": str(item.provenance_receipt_id)},
             )
         )
         db.flush()

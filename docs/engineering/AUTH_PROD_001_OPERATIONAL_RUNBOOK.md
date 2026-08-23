@@ -77,6 +77,14 @@ email, Organization, role, handoff or identity identifiers. The file must stay
 outside the repository and be removed through the approved operational process
 after use. The command prints only a stable completion or error code.
 
+Before authorization is signed, the production-only, read-only command
+`python -m yarvis_api.founder_bootstrap_cli select-handoff` may return exactly
+one eligible opaque handoff reference. It selects only a current, unconsumed,
+issuer-matching handoff with explicit `founder_bootstrap` provenance and no
+completed enrollment. It prints only `founder_bootstrap_handoff_id=<opaque-id>`
+and fails closed on zero or multiple candidates. It neither creates nor opens a
+BootstrapWindow, and it does not consume or reserve the handoff.
+
 `ProductiveAuthCleanupService` is the idempotent command surface for expired
 OIDC-attempt and terminal-session cleanup. AUTH-PROD-001 installs no scheduler.
 `DEPLOY-PILOT-001` must supply scheduling, retention readback, monitoring and

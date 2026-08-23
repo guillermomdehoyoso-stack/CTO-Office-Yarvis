@@ -10,7 +10,7 @@ from uuid import UUID
 from cryptography.exceptions import InvalidSignature
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
-from sqlalchemy import select
+from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
@@ -50,6 +50,37 @@ def _hash(value: bytes | str) -> str:
 
 
 class FounderBootstrapAuthorizationService:
+    def select_eligible_handoff(self, db: Session, *, settings: Settings) -> BootstrapVerifiedIdentity:
+        """Return exactly one provenance-backed handoff without changing it."""
+        now = datetime.now(timezone.utc)
+        completed_enrollment = exists(
+            select(FounderBootstrapReceipt.id).where(
+                FounderBootstrapReceipt.handoff_id == BootstrapVerifiedIdentity.id,
+                FounderBootstrapReceipt.outcome == "enrolled",
+            )
+        )
+        candidates = list(
+            db.scalars(
+                select(BootstrapVerifiedIdentity)
+                .where(
+                    BootstrapVerifiedIdentity.provenance == "founder_bootstrap",
+                    BootstrapVerifiedIdentity.provenance_receipt_id.is_not(None),
+                    BootstrapVerifiedIdentity.issuer_hash == _hash(settings.oidc_issuer or ""),
+                    BootstrapVerifiedIdentity.expires_at > now,
+                    BootstrapVerifiedIdentity.consumed_at.is_(None),
+                    ~completed_enrollment,
+                )
+                .order_by(BootstrapVerifiedIdentity.created_at, BootstrapVerifiedIdentity.id)
+            )
+        )
+        if not candidates:
+            raise ApplicationError(
+                ApplicationErrorCode.RESOURCE_NOT_FOUND, "request denied", {"reason": "handoff_unavailable"}
+            )
+        if len(candidates) != 1:
+            raise ApplicationError(ApplicationErrorCode.CONFLICT, "request denied", {"reason": "handoff_ambiguous"})
+        return candidates[0]
+
     def _verified_payload(self, authorization: bytes, settings: Settings) -> dict[str, str]:
         try:
             envelope = json.loads(authorization)

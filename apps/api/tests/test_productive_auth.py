@@ -295,7 +295,9 @@ def test_bootstrap_handoff_encrypts_subject_and_records_only_safe_audit():
     assert subject not in handoff.subject_encrypted
     assert Fernet(key.encode()).decrypt(handoff.subject_encrypted.encode()).decode() == subject
     audit = next(item for item in db.added if isinstance(item, AuthenticationSecurityAudit))
-    assert audit.safe_details == {"version": "1"}
+    assert audit.safe_details == {"version": "1", "provenance_receipt_id": str(handoff.provenance_receipt_id)}
+    assert handoff.provenance == "founder_bootstrap"
+    assert handoff.provenance_receipt_id is not None
     assert subject not in repr(audit.safe_details)
     db.existing = handoff
     assert (

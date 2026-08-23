@@ -123,3 +123,24 @@ def test_enroll_redacts_application_error(monkeypatch, tmp_path, capsys) -> None
     assert captured.err == "founder_bootstrap_failed code=CONFLICT\n"
     assert "SENSITIVE" not in captured.out + captured.err
     assert session.commits == 0 and session.rollbacks == 1
+
+
+def test_select_handoff_prints_only_the_opaque_reference_and_never_consumes(monkeypatch, capsys) -> None:
+    session = _Session()
+    opaque_id = "00000000-0000-0000-0000-000000000001"
+
+    class Service:
+        def select_eligible_handoff(self, _db, *, settings):
+            assert settings.environment == "production"
+            return SimpleNamespace(id=opaque_id, subject_encrypted="SENSITIVE_SUBJECT_TOKEN")
+
+    monkeypatch.setattr(cli, "create_app", lambda: _app(_production_settings(), session))
+    monkeypatch.setattr(cli, "FounderBootstrapAuthorizationService", Service)
+    monkeypatch.setattr(sys, "argv", ["founder_bootstrap_cli", "select-handoff"])
+
+    assert cli.main() == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"founder_bootstrap_handoff_id={opaque_id}\n"
+    assert captured.err == ""
+    assert "SENSITIVE" not in captured.out + captured.err
+    assert session.commits == 0 and session.rollbacks == 1

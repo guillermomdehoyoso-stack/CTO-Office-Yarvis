@@ -11,6 +11,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from pydantic import SecretStr
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 from yarvis_api.clock import utc_now
@@ -44,16 +45,22 @@ def _settings(private_key: Ed25519PrivateKey) -> Settings:
 
 
 def _seed_handoff(
-    db, settings: Settings, *, expired: bool = False, consumed: bool = False
+    db,
+    settings: Settings,
+    *,
+    expired: bool = False,
+    consumed: bool = False,
+    issuer: str | None = None,
+    provenance: str | None = None,
 ) -> BootstrapVerifiedIdentity:
     now = utc_now()
-    issuer = settings.oidc_issuer
+    issuer = issuer or settings.oidc_issuer
     encryption_key = settings.oidc_attempt_encryption_key
     assert issuer is not None
     assert encryption_key is not None
     attempt = OIDCAuthenticationAttempt(
-        state_hash="a" * 64,
-        nonce_hash="b" * 64,
+        state_hash=hashlib.sha256(uuid4().bytes).hexdigest(),
+        nonce_hash=hashlib.sha256(uuid4().bytes).hexdigest(),
         pkce_verifier_encrypted="opaque-test-ciphertext",
         redirect_path="/",
         expires_at=now + timedelta(minutes=5),
@@ -68,10 +75,125 @@ def _seed_handoff(
         subject_encrypted=Fernet(encryption_key.get_secret_value().encode()).encrypt(b"synthetic-subject").decode(),
         expires_at=now - timedelta(seconds=1) if expired else now + timedelta(minutes=5),
         consumed_at=now if consumed else None,
+        provenance=provenance,
+        provenance_receipt_id=uuid4() if provenance is not None else None,
     )
     db.add(handoff)
     db.flush()
     return handoff
+
+
+def test_founder_handoff_selector_returns_only_one_current_provenanced_candidate(caplog) -> None:
+    from yarvis_api.main import app
+
+    private_key = Ed25519PrivateKey.generate()
+    settings = _settings(private_key)
+    sentinel = "synthetic-subject-must-not-log"
+    with app.state.yarvis.persistence.create_session() as db, caplog.at_level(logging.WARNING):
+        handoff = _seed_handoff(db, settings, provenance="founder_bootstrap")
+        selected = FounderBootstrapAuthorizationService().select_eligible_handoff(db, settings=settings)
+
+        assert selected.id == handoff.id
+        assert selected.consumed_at is None
+    assert sentinel not in caplog.text
+    assert "opaque-test-ciphertext" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    ("expired", "consumed", "provenance", "issuer"),
+    (
+        (False, False, None, None),
+        (True, False, "founder_bootstrap", None),
+        (False, True, "founder_bootstrap", None),
+        (False, False, "founder_bootstrap", "https://other-issuer.synthetic.example"),
+    ),
+)
+def test_founder_handoff_selector_excludes_noneligible_candidates(expired, consumed, provenance, issuer) -> None:
+    from yarvis_api.main import app
+
+    private_key = Ed25519PrivateKey.generate()
+    settings = _settings(private_key)
+    with app.state.yarvis.persistence.create_session() as db:
+        _seed_handoff(
+            db,
+            settings,
+            expired=expired,
+            consumed=consumed,
+            provenance=provenance,
+            issuer=issuer,
+        )
+        with pytest.raises(ApplicationError) as error:
+            FounderBootstrapAuthorizationService().select_eligible_handoff(db, settings=settings)
+        assert error.value.code == ApplicationErrorCode.RESOURCE_NOT_FOUND
+
+
+def test_founder_handoff_provenance_is_closed_and_historical_rows_stay_ineligible() -> None:
+    from yarvis_api.main import app
+
+    private_key = Ed25519PrivateKey.generate()
+    settings = _settings(private_key)
+    with app.state.yarvis.persistence.create_session() as db:
+        historical = _seed_handoff(db, settings)
+        assert historical.provenance is None and historical.provenance_receipt_id is None
+        attempt = OIDCAuthenticationAttempt(
+            state_hash=hashlib.sha256(uuid4().bytes).hexdigest(),
+            nonce_hash=hashlib.sha256(uuid4().bytes).hexdigest(),
+            pkce_verifier_encrypted="opaque-test-ciphertext",
+            redirect_path="/",
+            expires_at=utc_now() + timedelta(minutes=5),
+            status="consumed",
+            consumed_at=utc_now(),
+        )
+        db.add(attempt)
+        db.flush()
+        invalid = BootstrapVerifiedIdentity(
+            oidc_attempt_id=attempt.id,
+            issuer_hash=hashlib.sha256((settings.oidc_issuer or "").encode()).hexdigest(),
+            subject_encrypted="opaque-test-ciphertext",
+            expires_at=utc_now() + timedelta(minutes=5),
+            provenance="not_founder_bootstrap",
+            provenance_receipt_id=uuid4(),
+        )
+        db.add(invalid)
+        with pytest.raises(IntegrityError):
+            db.flush()
+        db.rollback()
+
+
+def test_founder_handoff_selector_excludes_completed_enrollment() -> None:
+    from yarvis_api.main import app
+
+    private_key = Ed25519PrivateKey.generate()
+    settings = _settings(private_key)
+    with app.state.yarvis.persistence.create_session() as db:
+        handoff = _seed_handoff(db, settings, provenance="founder_bootstrap")
+        db.add(
+            FounderBootstrapReceipt(
+                authorization_digest=hashlib.sha256(uuid4().bytes).hexdigest(),
+                nonce_hash=hashlib.sha256(uuid4().bytes).hexdigest(),
+                idempotency_key_hash=hashlib.sha256(uuid4().bytes).hexdigest(),
+                handoff_id=handoff.id,
+                expires_at=utc_now() + timedelta(minutes=5),
+                outcome="enrolled",
+            )
+        )
+        db.flush()
+        with pytest.raises(ApplicationError) as error:
+            FounderBootstrapAuthorizationService().select_eligible_handoff(db, settings=settings)
+        assert error.value.code == ApplicationErrorCode.RESOURCE_NOT_FOUND
+
+
+def test_founder_handoff_selector_fails_closed_for_multiple_candidates() -> None:
+    from yarvis_api.main import app
+
+    private_key = Ed25519PrivateKey.generate()
+    settings = _settings(private_key)
+    with app.state.yarvis.persistence.create_session() as db:
+        _seed_handoff(db, settings, provenance="founder_bootstrap")
+        _seed_handoff(db, settings, provenance="founder_bootstrap")
+        with pytest.raises(ApplicationError) as error:
+            FounderBootstrapAuthorizationService().select_eligible_handoff(db, settings=settings)
+        assert error.value.code == ApplicationErrorCode.CONFLICT
 
 
 def _authorization(

@@ -24,3 +24,13 @@ def test_productive_auth_migration_roundtrip():
             "bootstrap_verified_identities",
             "founder_bootstrap_receipts",
         } <= tables
+        columns = {column["name"] for column in inspect(connection).get_columns("bootstrap_verified_identities")}
+        assert {"provenance", "provenance_receipt_id"} <= columns
+    command.downgrade(config, "20260823_45")
+    with app.state.yarvis.persistence.engine.connect() as connection:
+        columns = {column["name"] for column in inspect(connection).get_columns("bootstrap_verified_identities")}
+        assert {"provenance", "provenance_receipt_id"}.isdisjoint(columns)
+    command.upgrade(config, "head")
+    with app.state.yarvis.persistence.engine.connect() as connection:
+        columns = {column["name"] for column in inspect(connection).get_columns("bootstrap_verified_identities")}
+        assert {"provenance", "provenance_receipt_id"} <= columns

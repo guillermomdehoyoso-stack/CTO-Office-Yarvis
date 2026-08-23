@@ -55,7 +55,15 @@ class BootstrapVerifiedIdentity(TimestampedUUIDMixin, Base):
     """One-use encrypted OIDC subject handoff; never exposes provider claims."""
 
     __tablename__ = "bootstrap_verified_identities"
-    __table_args__ = (UniqueConstraint("oidc_attempt_id", name="uq_bootstrap_verified_identity_attempt"),)
+    __table_args__ = (
+        UniqueConstraint("oidc_attempt_id", name="uq_bootstrap_verified_identity_attempt"),
+        UniqueConstraint("provenance_receipt_id", name="uq_bootstrap_verified_identity_provenance_receipt"),
+        CheckConstraint(
+            "(provenance IS NULL AND provenance_receipt_id IS NULL) "
+            "OR (provenance = 'founder_bootstrap' AND provenance_receipt_id IS NOT NULL)",
+            name="ck_bootstrap_verified_identity_provenance",
+        ),
+    )
     oidc_attempt_id: Mapped[object] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("oidc_authentication_attempts.id", ondelete="RESTRICT"), nullable=False
     )
@@ -63,6 +71,8 @@ class BootstrapVerifiedIdentity(TimestampedUUIDMixin, Base):
     subject_encrypted: Mapped[str] = mapped_column(String(1024), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(nullable=False, index=True)
     consumed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+    provenance: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    provenance_receipt_id: Mapped[object | None] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
 
 
 class FounderBootstrapReceipt(TimestampedUUIDMixin, Base):
