@@ -68,7 +68,7 @@ class BootstrapVerifiedIdentity(TimestampedUUIDMixin, Base):
 class FounderBootstrapReceipt(TimestampedUUIDMixin, Base):
     __tablename__ = "founder_bootstrap_receipts"
     __table_args__ = (
-        CheckConstraint("outcome IN ('prepared','consumed')", name="ck_founder_bootstrap_receipt_outcome"),
+        CheckConstraint("outcome IN ('prepared','consumed','enrolled')", name="ck_founder_bootstrap_receipt_outcome"),
         UniqueConstraint("nonce_hash", name="uq_founder_bootstrap_nonce"),
         UniqueConstraint("idempotency_key_hash", name="uq_founder_bootstrap_idempotency_key"),
     )
@@ -80,6 +80,15 @@ class FounderBootstrapReceipt(TimestampedUUIDMixin, Base):
     )
     expires_at: Mapped[datetime] = mapped_column(nullable=False)
     outcome: Mapped[str] = mapped_column(String(32), nullable=False, default="prepared")
+    person_id: Mapped[object | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("people.id", ondelete="RESTRICT")
+    )
+    principal_id: Mapped[object | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("principals.id", ondelete="RESTRICT")
+    )
+    membership_id: Mapped[object | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("principal_memberships.id", ondelete="RESTRICT")
+    )
 
 
 class ProductiveSession(TimestampedUUIDMixin, Base):

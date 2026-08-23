@@ -6,18 +6,24 @@ from datetime import timedelta
 from uuid import uuid4
 
 import pytest
+from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+from pydantic import SecretStr
 from sqlalchemy import func, select
 
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 from yarvis_api.clock import utc_now
 from yarvis_api.config import Settings
+from yarvis_api.models.domain_event import DomainEvent
+from yarvis_api.models.organization import Organization
 from yarvis_api.models.person import Person
 from yarvis_api.models.principal import Principal, PrincipalMembership
 from yarvis_api.models.productive_auth import (
     AuthenticationSecurityAudit,
     BootstrapVerifiedIdentity,
+    BootstrapWindow,
+    ExternalIdentityBinding,
     FounderBootstrapReceipt,
     OIDCAuthenticationAttempt,
 )
@@ -30,6 +36,7 @@ def _settings(private_key: Ed25519PrivateKey) -> Settings:
         environment="test",
         auth_mode="oidc",
         oidc_issuer="https://issuer.synthetic.example",
+        oidc_attempt_encryption_key=SecretStr(Fernet.generate_key().decode()),
         founder_bootstrap_enabled=True,
         founder_bootstrap_public_key=base64.b64encode(public_key).decode(),
         founder_bootstrap_key_id="synthetic-founder-v1",
@@ -41,7 +48,9 @@ def _seed_handoff(
 ) -> BootstrapVerifiedIdentity:
     now = utc_now()
     issuer = settings.oidc_issuer
+    encryption_key = settings.oidc_attempt_encryption_key
     assert issuer is not None
+    assert encryption_key is not None
     attempt = OIDCAuthenticationAttempt(
         state_hash="a" * 64,
         nonce_hash="b" * 64,
@@ -56,7 +65,7 @@ def _seed_handoff(
     handoff = BootstrapVerifiedIdentity(
         oidc_attempt_id=attempt.id,
         issuer_hash=hashlib.sha256(issuer.encode()).hexdigest(),
-        subject_encrypted="opaque-test-ciphertext",
+        subject_encrypted=Fernet(encryption_key.get_secret_value().encode()).encrypt(b"synthetic-subject").decode(),
         expires_at=now - timedelta(seconds=1) if expired else now + timedelta(minutes=5),
         consumed_at=now if consumed else None,
     )
@@ -168,6 +177,44 @@ def test_founder_authorization_rejects_replay_conflict_and_unavailable_handoff()
         with pytest.raises(ApplicationError) as error:
             service.prepare(db, authorization=idempotency_conflict, settings=settings)
         assert error.value.code == ApplicationErrorCode.CONFLICT
+
+
+def test_founder_enrollment_creates_one_complete_chain_and_terminally_closes() -> None:
+    from yarvis_api.main import app
+
+    private_key = Ed25519PrivateKey.generate()
+    settings = _settings(private_key)
+    service = FounderBootstrapAuthorizationService()
+    with app.state.yarvis.persistence.create_session() as db:
+        organization = Organization(legal_name="Synthetic founder organization", display_name="Synthetic founder")
+        db.add(organization)
+        db.flush()
+        handoff = _seed_handoff(db, settings)
+        authorization = _authorization(private_key, handoff, organization_id=organization.id)
+        receipt = service.enroll(db, authorization=authorization, settings=settings)
+        assert receipt.outcome == "enrolled"
+        assert receipt.person_id and receipt.principal_id and receipt.membership_id
+        assert service.enroll(db, authorization=authorization, settings=settings).id == receipt.id
+        assert db.scalar(select(func.count()).select_from(Person)) == 1
+        assert db.scalar(select(func.count()).select_from(Principal)) == 1
+        assert db.scalar(select(func.count()).select_from(PrincipalMembership)) == 1
+        assert db.scalar(select(func.count()).select_from(ExternalIdentityBinding)) == 1
+        assert db.scalar(select(func.count()).select_from(BootstrapWindow)) == 1
+        window = db.scalar(select(BootstrapWindow))
+        assert window is not None and window.status == "closed" and window.enrollment_completed is True
+        assert db.scalar(select(BootstrapVerifiedIdentity)).consumed_at is not None
+        events = db.scalars(select(DomainEvent)).all()
+        assert {event.event_type for event in events} >= {
+            "PersonCreated",
+            "HumanPrincipalCreated",
+            "AuthorityChanged",
+            "BootstrapWindowOpened",
+            "BootstrapEnrollmentCompleted",
+        }
+        assert all(set(event.payload) <= {"contract_version", "transition"} for event in events)
+        audit = db.scalar(select(AuthenticationSecurityAudit))
+        assert audit is not None and audit.safe_details == {"version": "1"}
+        db.commit()
 
 
 @pytest.mark.parametrize("expired,consumed", ((True, False), (False, True)))

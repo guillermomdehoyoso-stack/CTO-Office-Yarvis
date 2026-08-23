@@ -7,12 +7,13 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from yarvis_api.application.authority import IdentityAuthorityEnvelope
+from yarvis_api.application.authority import IdentityAuthorityEnvelope, permissions_for_role
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 from yarvis_api.clock import utc_now
 from yarvis_api.models.domain_event import record_event
+from yarvis_api.models.organization import Organization
 from yarvis_api.models.principal import Principal, PrincipalMembership, PrincipalMembershipCommand
-from yarvis_api.models.productive_auth import ProductiveSession
+from yarvis_api.models.productive_auth import BootstrapWindow, ProductiveSession
 
 
 def evaluate_authority(
@@ -117,6 +118,80 @@ def activate_membership(
             "principal_id": str(principal_id),
             "actor_principal_id": str(envelope.principal_id),
         },
+    )
+    return membership
+
+
+def grant_bootstrap_membership(
+    db: Session,
+    *,
+    window: BootstrapWindow,
+    principal_id: UUID,
+    organization_id: UUID,
+    role: str,
+    idempotency_key: str,
+) -> PrincipalMembership:
+    """Grant the one Membership allowed by a verified, open bootstrap window.
+
+    The caller is responsible for cryptographically verifying the external founder
+    authorization before opening the window. This bounded path is deliberately
+    separate from an operator envelope: no pre-existing principal may bootstrap
+    itself into authority.
+    """
+    if window.status != "open" or window.enrollment_completed:
+        raise ApplicationError(
+            ApplicationErrorCode.PRECONDITION_FAILED, "request denied", {"reason": "bootstrap_closed"}
+        )
+    organization = db.scalar(
+        select(Organization).where(Organization.id == organization_id, Organization.status == "active")
+    )
+    principal = db.scalar(select(Principal).where(Principal.id == principal_id, Principal.status == "active"))
+    if organization is None or principal is None:
+        raise ApplicationError(ApplicationErrorCode.RESOURCE_NOT_FOUND, "not found", {"reason": "bootstrap_target"})
+    permissions_for_role(role)
+    fingerprint = sha256(f"bootstrap_activate|{principal_id}|{role}".encode()).hexdigest()
+    command = db.scalar(
+        select(PrincipalMembershipCommand).where(
+            PrincipalMembershipCommand.organization_id == organization_id,
+            PrincipalMembershipCommand.idempotency_key == idempotency_key,
+        )
+    )
+    if command is not None:
+        if command.request_fingerprint != fingerprint:
+            raise ApplicationError(ApplicationErrorCode.CONFLICT, "request denied", {"reason": "idempotency_conflict"})
+        replayed = db.get(PrincipalMembership, command.membership_id)
+        if replayed is None:
+            raise ApplicationError(ApplicationErrorCode.CONFLICT, "request denied", {"reason": "membership_missing"})
+        return replayed
+    existing = db.scalar(
+        select(PrincipalMembership).where(
+            PrincipalMembership.principal_id == principal_id,
+            PrincipalMembership.organization_id == organization_id,
+        )
+    )
+    if existing is not None:
+        raise ApplicationError(ApplicationErrorCode.CONFLICT, "request denied", {"reason": "membership_existing"})
+    membership = PrincipalMembership(
+        principal_id=principal_id, organization_id=organization_id, role=role, status="active"
+    )
+    db.add(membership)
+    db.flush()
+    db.add(
+        PrincipalMembershipCommand(
+            organization_id=organization_id,
+            membership_id=membership.id,
+            command_type="activate",
+            idempotency_key=idempotency_key,
+            request_fingerprint=fingerprint,
+        )
+    )
+    record_event(
+        db,
+        event_type="AuthorityChanged",
+        aggregate_type="PrincipalMembership",
+        aggregate_id=membership.id,
+        organization_id=organization_id,
+        payload={"contract_version": "1.1.0", "transition": "activated"},
     )
     return membership
 
