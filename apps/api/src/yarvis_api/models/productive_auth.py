@@ -51,6 +51,20 @@ class OIDCAuthenticationAttempt(TimestampedUUIDMixin, Base):
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
 
 
+class BootstrapVerifiedIdentity(TimestampedUUIDMixin, Base):
+    """One-use encrypted OIDC subject handoff; never exposes provider claims."""
+
+    __tablename__ = "bootstrap_verified_identities"
+    __table_args__ = (UniqueConstraint("oidc_attempt_id", name="uq_bootstrap_verified_identity_attempt"),)
+    oidc_attempt_id: Mapped[object] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("oidc_authentication_attempts.id", ondelete="RESTRICT"), nullable=False
+    )
+    issuer_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    subject_encrypted: Mapped[str] = mapped_column(String(1024), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(nullable=False, index=True)
+    consumed_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+
 class ProductiveSession(TimestampedUUIDMixin, Base):
     __tablename__ = "productive_sessions"
     __table_args__ = (

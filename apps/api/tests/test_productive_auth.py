@@ -2,6 +2,7 @@ import json
 import logging
 from datetime import timedelta
 from urllib.parse import parse_qs, urlparse
+from uuid import uuid4
 
 import jwt
 import pytest
@@ -23,12 +24,14 @@ from yarvis_api.models.organization import Organization
 from yarvis_api.models.person import Person
 from yarvis_api.models.principal import Principal, PrincipalMembership
 from yarvis_api.models.productive_auth import (
+    AuthenticationSecurityAudit,
     BootstrapWindow,
     ExternalIdentityBinding,
     OIDCAuthenticationAttempt,
     ProductiveSession,
 )
 from yarvis_api.services.auth_rate_limit import AuthRateLimiter, InMemoryAuthRateLimitBackend
+from yarvis_api.services.bootstrap_handoff import BootstrapIdentityHandoffService
 from yarvis_api.services.identity_provisioning import IdentityProvisioningService
 from yarvis_api.services.oidc import OIDCClient, _token_response_denied, oidc_denied
 from yarvis_api.services.productive_auth import ProductiveAuthCleanupService, ProductiveSessionService
@@ -253,6 +256,58 @@ def test_token_response_diagnostic_logs_only_allowlisted_classification(caplog):
         "oidc_authentication_denied stage=token_response http_status_family=http_401 oauth_error=invalid_client"
     ]
     assert not any(value in "\n".join(messages) for value in sensitive)
+
+
+def test_bootstrap_handoff_encrypts_subject_and_records_only_safe_audit():
+    class FakeSession:
+        existing = None
+        added = []
+
+        def scalar(self, _statement):
+            return self.existing
+
+        def add(self, item):
+            self.added.append(item)
+
+        def flush(self):
+            return None
+
+    key = Fernet.generate_key().decode()
+    subject = "SENSITIVE_SUBJECT_SENTINEL"
+    attempt = OIDCAuthenticationAttempt(
+        id=uuid4(),
+        state_hash="a" * 64,
+        nonce_hash="b" * 64,
+        pkce_verifier_encrypted="ciphertext",
+        redirect_path="/",
+        expires_at=utc_now() + timedelta(minutes=10),
+        status="failed",
+    )
+    db = FakeSession()
+    handoff = BootstrapIdentityHandoffService().record(
+        db,
+        attempt=attempt,
+        issuer="https://issuer.example",
+        subject=subject,
+        encryption_key=key,
+    )
+
+    assert subject not in handoff.subject_encrypted
+    assert Fernet(key.encode()).decrypt(handoff.subject_encrypted.encode()).decode() == subject
+    audit = next(item for item in db.added if isinstance(item, AuthenticationSecurityAudit))
+    assert audit.safe_details == {"version": "1"}
+    assert subject not in repr(audit.safe_details)
+    db.existing = handoff
+    assert (
+        BootstrapIdentityHandoffService().record(
+            db,
+            attempt=attempt,
+            issuer="https://issuer.example",
+            subject=subject,
+            encryption_key=key,
+        )
+        is handoff
+    )
 
 
 def test_state_expiry_and_pkce_attempt_fail_closed(monkeypatch):

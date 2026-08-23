@@ -17,6 +17,7 @@ from yarvis_api.clock import utc_now
 from yarvis_api.database import get_db
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.productive_auth import OIDCAuthenticationAttempt
+from yarvis_api.services.bootstrap_handoff import BootstrapIdentityHandoffService
 from yarvis_api.services.oidc import OIDCClient, oidc_denied
 from yarvis_api.services.productive_auth import ProductiveSessionService
 
@@ -115,6 +116,16 @@ async def callback(
     d = await oidc.discovery()
     raw = await oidc.exchange(d, code=code, verifier=v)
     claims = await oidc.validate_id_token(d, raw, a.nonce_hash)
+    if s.bootstrap_enabled:
+        assert s.oidc_issuer is not None and s.oidc_attempt_encryption_key is not None
+        BootstrapIdentityHandoffService().record(
+            db,
+            attempt=a,
+            issuer=s.oidc_issuer,
+            subject=str(claims["sub"]),
+            encryption_key=s.oidc_attempt_encryption_key.get_secret_value(),
+        )
+        db.commit()
     service = ProductiveSessionService(s)
     principal = service.resolve_binding(db, s.oidc_issuer, str(claims["sub"]))
     _, raw_session, csrf, _ = service.create(db, principal)

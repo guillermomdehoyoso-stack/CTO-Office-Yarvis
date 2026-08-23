@@ -87,6 +87,7 @@ from yarvis_api.models.process import (
 )
 from yarvis_api.models.productive_auth import (
     AuthenticationSecurityAudit,
+    BootstrapVerifiedIdentity,
     BootstrapEnrollmentReceipt,
     BootstrapWindow,
     ExternalIdentityBinding,
@@ -156,6 +157,7 @@ __all__ = [
     "BootstrapWindow",
     "BootstrapEnrollmentReceipt",
     "AuthenticationSecurityAudit",
+    "BootstrapVerifiedIdentity",
     "ProcessDefinition",
     "ProcessInstance",
     "ProcessInstanceEvent",

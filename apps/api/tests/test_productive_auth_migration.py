@@ -10,7 +10,7 @@ def test_productive_auth_migration_roundtrip():
     command.downgrade(config, "20260819_41")
     with app.state.yarvis.persistence.engine.connect() as connection:
         assert "productive_sessions" not in inspect(connection).get_table_names()
-    command.upgrade(config, "20260820_42")
+    command.upgrade(config, "head")
     with app.state.yarvis.persistence.engine.connect() as connection:
         tables = set(inspect(connection).get_table_names())
         assert {
@@ -21,4 +21,5 @@ def test_productive_auth_migration_roundtrip():
             "identity_bootstrap_windows",
             "identity_bootstrap_enrollment_receipts",
             "authentication_security_audit",
+            "bootstrap_verified_identities",
         } <= tables
