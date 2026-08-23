@@ -49,6 +49,38 @@ def test_founder_enrollment_runner_is_separate_and_uses_only_its_administrative_
     assert "YARVIS_FOUNDER_BOOTSTRAP_ENABLED" in runner_spec
 
 
+def test_founder_handoff_selector_is_a_separate_read_only_one_shot_job() -> None:
+    selector_spec = (
+        REPOSITORY_ROOT / "deploy" / "digitalocean" / "founder-handoff-selector-job.yaml"
+    ).read_text(encoding="utf-8")
+    runtime_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "app.yaml").read_text(encoding="utf-8")
+
+    command = "python -m yarvis_api.founder_bootstrap_cli select-handoff"
+
+    assert "name: yarvis-pilot-founder-select-handoff" in selector_spec
+    assert "name: yarvis-founder-select-handoff" in selector_spec
+    assert "deploy_on_push: false" in selector_spec
+    assert f"run_command: {command}" in selector_spec
+    assert selector_spec.count(command) == 1
+    assert "YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL" in selector_spec
+    for forbidden in (
+        "YARVIS_DATABASE_URL",
+        "YARVIS_MIGRATOR_DATABASE_URL",
+        "YARVIS_FOUNDER_ENROLLMENT_AUTHORIZATION",
+        "YARVIS_FOUNDER_BOOTSTRAP_ENABLED",
+        "YARVIS_FOUNDER_BOOTSTRAP_PUBLIC_KEY",
+        "YARVIS_FOUNDER_BOOTSTRAP_KEY_ID",
+        "--authorization-file",
+        "founder_bootstrap_cli enroll",
+    ):
+        assert forbidden not in selector_spec
+    assert "select-handoff" not in runtime_spec
+    assert "YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL" not in runtime_spec
+    assert "__REQUIRES_FOUNDER_BOOTSTRAP_DATABASE_URL__" in selector_spec
+    assert "@netpay.com.mx" not in selector_spec
+    assert "BEGIN " not in selector_spec
+
+
 def test_founder_runner_administrative_database_variable_is_accepted_without_runtime_alias() -> None:
     settings = Settings.model_validate(
         {"YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL": "postgresql://synthetic:synthetic@db.test/yarvis"}

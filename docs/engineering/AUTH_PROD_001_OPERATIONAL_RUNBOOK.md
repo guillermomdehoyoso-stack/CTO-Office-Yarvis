@@ -85,6 +85,37 @@ completed enrollment. It prints only `founder_bootstrap_handoff_id=<opaque-id>`
 and fails closed on zero or multiple candidates. It neither creates nor opens a
 BootstrapWindow, and it does not consume or reserve the handoff.
 
+### Founder ceremony procedure
+
+The following is a manual, separately authorized procedure. No component
+executes these steps automatically, and this runbook does not itself authorize
+any login, deployment, signing, enrollment, or identity creation.
+
+1. Temporarily enable the bootstrap flow only under the applicable ceremony
+   authorization so one verified OIDC identity handoff can be recorded.
+2. Complete exactly one approved Google login through the normal productive
+   flow.
+3. Immediately return the runtime bootstrap flow to its disabled state before
+   any selector component is created or run.
+4. Create the separate, one-shot `yarvis-pilot-founder-select-handoff` Job and
+   execute its sole command: `python -m yarvis_api.founder_bootstrap_cli
+   select-handoff`.
+5. Remove the selector Job immediately after its single execution. Its only
+   successful output is the opaque `founder_bootstrap_handoff_id` reference.
+6. An external, offline signer prepares the Founder authorization from that
+   opaque reference; the signer, private key, signature, and authorization
+   material never enter the selector, runtime, or repository.
+7. Under the separately authorized enrollment ceremony, create and run the
+   distinct `yarvis-pilot-founder-enroll` Job once.
+8. Verify only stable, sanitized completion and health evidence; do not expose
+   identity, OIDC, signature, or secret material.
+9. Remove the enrollment Job, its temporary variables, and all temporary
+   ceremony material through the approved operational process.
+
+The runtime web service, Alembic migrator, handoff selector, offline signer,
+and enrollment runner remain separate components with separate credentials and
+purposes.
+
 `ProductiveAuthCleanupService` is the idempotent command surface for expired
 OIDC-attempt and terminal-session cleanup. AUTH-PROD-001 installs no scheduler.
 `DEPLOY-PILOT-001` must supply scheduling, retention readback, monitoring and
