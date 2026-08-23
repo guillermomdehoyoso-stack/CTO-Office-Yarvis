@@ -69,6 +69,14 @@ terminal, idempotent and bounded to the ratified 24-hour maximum. Creating or
 opening a real window and executing its canonical commands requires a later
 administrative authorization.
 
+When that authorization is active, the non-HTTP administrative entry point is
+`python -m yarvis_api.founder_bootstrap_cli enroll --authorization-file <secure-temporary-file>`.
+The signed authorization is the sole command input: it carries the opaque
+handoff reference and idempotency key, so the CLI accepts no separate subject,
+email, Organization, role, handoff or identity identifiers. The file must stay
+outside the repository and be removed through the approved operational process
+after use. The command prints only a stable completion or error code.
+
 `ProductiveAuthCleanupService` is the idempotent command surface for expired
 OIDC-attempt and terminal-session cleanup. AUTH-PROD-001 installs no scheduler.
 `DEPLOY-PILOT-001` must supply scheduling, retention readback, monitoring and
