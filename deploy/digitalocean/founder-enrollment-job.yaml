@@ -1,0 +1,107 @@
+# Separate, one-shot administrative runner. Do not merge this job into app.yaml
+# or migration-job.yaml. Apply it only under a dedicated ceremony authorization,
+# execute it once, then delete this separate App Platform component.
+name: yarvis-pilot-founder-enroll
+jobs:
+  - name: yarvis-founder-enroll
+    kind: PRE_DEPLOY
+    github:
+      repo: guillermomdehoyoso-stack/CTO-Office-Yarvis
+      branch: feat/operational-intake-spine
+      deploy_on_push: false
+    dockerfile_path: Dockerfile
+    # The authorization is written only to a mode-0600 file in the ephemeral
+    # job filesystem, removed on every exit path, then passed only by file path.
+    # Do not enable shell tracing for this command.
+    run_command: >-
+      sh -ec 'umask 077; authorization_file="$(mktemp /tmp/yarvis-founder-authorization.XXXXXX)"; trap '"'"'rm -f "$authorization_file"'"'"' EXIT HUP INT TERM; printf %s "$YARVIS_FOUNDER_ENROLLMENT_AUTHORIZATION" > "$authorization_file"; unset YARVIS_FOUNDER_ENROLLMENT_AUTHORIZATION; python -m yarvis_api.founder_bootstrap_cli enroll --authorization-file "$authorization_file"'
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    envs:
+      - key: YARVIS_ENVIRONMENT
+        value: production
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_AUTH_MODE
+        value: oidc
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_FOUNDER_BOOTSTRAP_ENABLED
+        value: __REQUIRES_FOUNDER_BOOTSTRAP_ENABLED_FOR_SINGLE_RUN__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_BOOTSTRAP_WINDOW_SECONDS
+        value: "600"
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_SESSION_COOKIE_NAME
+        value: __Host-yarvis_session
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_SESSION_IDLE_SECONDS
+        value: "1800"
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_SESSION_ABSOLUTE_SECONDS
+        value: "28800"
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_SESSION_MAX_ACTIVE
+        value: "3"
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_AUTH_DEPLOYMENT_REPLICAS
+        value: "1"
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_AUTH_RATE_LIMIT_BACKEND
+        value: memory
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_OIDC_POST_LOGIN_REDIRECT_ALLOWLIST
+        value: /
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL
+        value: __REQUIRES_FOUNDER_BOOTSTRAP_DATABASE_URL__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_FOUNDER_ENROLLMENT_AUTHORIZATION
+        value: __REQUIRES_FOUNDER_ENROLLMENT_AUTHORIZATION__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_FOUNDER_BOOTSTRAP_PUBLIC_KEY
+        value: __REQUIRES_FOUNDER_BOOTSTRAP_PUBLIC_KEY__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_FOUNDER_BOOTSTRAP_KEY_ID
+        value: __REQUIRES_FOUNDER_BOOTSTRAP_KEY_ID__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_OIDC_ISSUER
+        value: __REQUIRES_OIDC_ISSUER__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_OIDC_CLIENT_ID
+        value: __REQUIRES_OIDC_CLIENT_ID__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_OIDC_CLIENT_SECRET
+        value: __REQUIRES_OIDC_CLIENT_SECRET__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_OIDC_ATTEMPT_ENCRYPTION_KEY
+        value: __REQUIRES_OIDC_ATTEMPT_ENCRYPTION_KEY__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_OIDC_REDIRECT_URI
+        value: __REQUIRES_OIDC_REDIRECT_URI__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_CORS_ORIGINS
+        value: __REQUIRES_CORS_ORIGINS__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_CSRF_ALLOWED_ORIGINS
+        value: __REQUIRES_CSRF_ALLOWED_ORIGINS__
+        scope: RUN_TIME
+        type: SECRET

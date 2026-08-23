@@ -34,7 +34,12 @@ class Settings(BaseSettings):
     api_docs_enabled: bool = True
     database_url_secret: SecretStr = Field(
         default=SecretStr(DEFAULT_LOCAL_DATABASE_URL),
-        validation_alias=AliasChoices("database_url", "YARVIS_DATABASE_URL", "DATABASE_URL"),
+        validation_alias=AliasChoices(
+            "database_url",
+            "YARVIS_DATABASE_URL",
+            "YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL",
+            "DATABASE_URL",
+        ),
         repr=False,
     )
     document_storage_root: str = Field(

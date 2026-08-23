@@ -42,3 +42,33 @@ must not be used as a secret file.
 
 No Cloud Storage or other persistent XLSX store is configured. D1 retains its
 existing process-and-discard behavior.
+
+## Founder Enrollment runner
+
+`founder-enrollment-job.yaml` is a third, separate App Platform component. It
+is neither part of `yarvis-pilot` nor `yarvis-pilot-migrate`; its
+`deploy_on_push` setting is `false`, so a runtime deployment cannot start it.
+It is an intentionally one-shot administrative runner: create or deploy this
+component only under a ceremony authorization, wait for its single Job result,
+then delete the component and its component-scoped encrypted secrets.
+
+`yarvis-pilot` retains Founder Bootstrap disabled by default. The separate Job
+has no committed enabled value: its single-run enablement is an encrypted,
+component-scoped input that must be set only for the authorized Job execution.
+
+The runner receives only `YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL`, a dedicated
+least-privilege administrative PostgreSQL credential. It never receives
+`YARVIS_DATABASE_URL` or `YARVIS_MIGRATOR_DATABASE_URL`. The signed
+authorization, founder public key, key identifier, and the productive OIDC
+configuration required for fail-closed startup are component-scoped encrypted
+secrets. No private founder key is configured, copied, or stored by this
+package.
+
+The Job creates a mode-0600 authorization file in its ephemeral filesystem,
+invokes exactly `python -m yarvis_api.founder_bootstrap_cli enroll
+--authorization-file <temporary-file>`, unsets the authorization environment
+variable, and removes the file on every shell exit path. Do not enable shell
+tracing or copy Job logs outside the approved sanitized operational record.
+App Platform's retry semantics and physical media erasure guarantees are not
+determined by this repository; the component must be deleted after its result,
+and the signed authorization and handoff remain independently single-use.
