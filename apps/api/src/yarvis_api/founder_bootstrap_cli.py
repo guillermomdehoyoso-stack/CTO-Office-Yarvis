@@ -48,11 +48,12 @@ def main() -> int:
             selector_settings = FounderHandoffSelectorSettings()
             with _selector_session(selector_settings) as db:
                 handoff = FounderBootstrapAuthorizationService().select_eligible_handoff(db)
+                handoff_id = str(handoff.id)
                 db.rollback()
         except ApplicationError as error:
             print(f"founder_bootstrap_failed code={error.code}", file=sys.stderr)
             return 2
-        print(f"founder_bootstrap_handoff_id={handoff.id}")
+        print(f"founder_bootstrap_handoff_id={handoff_id}")
         return 0
     app = create_app()
     settings = app.state.yarvis.settings

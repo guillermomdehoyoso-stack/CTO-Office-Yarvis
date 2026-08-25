@@ -7,6 +7,7 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from pydantic import SecretStr
+from sqlalchemy.orm.exc import DetachedInstanceError
 
 from yarvis_api import founder_bootstrap_cli as cli
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
@@ -148,6 +149,37 @@ def test_select_handoff_prints_only_the_opaque_reference_and_never_consumes(monk
     assert captured.out == f"founder_bootstrap_handoff_id={opaque_id}\n"
     assert captured.err == ""
     assert "SENSITIVE" not in captured.out + captured.err
+    assert session.commits == 0 and session.rollbacks == 1
+
+
+def test_select_handoff_materializes_the_opaque_id_before_rollback(monkeypatch, capsys) -> None:
+    session = _Session()
+    opaque_id = "00000000-0000-0000-0000-000000000002"
+
+    class DetachedAfterRollback:
+        @property
+        def id(self):
+            if session.rollbacks:
+                raise DetachedInstanceError("synthetic detached handoff")
+            return opaque_id
+
+    class Service:
+        def select_eligible_handoff(self, _db):
+            return DetachedAfterRollback()
+
+    monkeypatch.setattr(
+        cli,
+        "FounderHandoffSelectorSettings",
+        lambda: SimpleNamespace(environment="production", database_url="postgresql://synthetic/select"),
+    )
+    monkeypatch.setattr(cli, "_selector_session", lambda _settings: session)
+    monkeypatch.setattr(cli, "FounderBootstrapAuthorizationService", Service)
+    monkeypatch.setattr(sys, "argv", ["founder_bootstrap_cli", "select-handoff"])
+
+    assert cli.main() == 0
+    captured = capsys.readouterr()
+    assert captured.out == f"founder_bootstrap_handoff_id={opaque_id}\n"
+    assert captured.err == ""
     assert session.commits == 0 and session.rollbacks == 1
 
 
