@@ -3,6 +3,8 @@ import hashlib
 import json
 import logging
 from datetime import timedelta
+from types import SimpleNamespace
+from typing import cast
 from uuid import uuid4
 
 import pytest
@@ -12,6 +14,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from pydantic import SecretStr
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 from yarvis_api.clock import utc_now
@@ -194,6 +197,25 @@ def test_founder_handoff_selector_fails_closed_for_multiple_candidates() -> None
         with pytest.raises(ApplicationError) as error:
             FounderBootstrapAuthorizationService().select_eligible_handoff(db, settings=settings)
         assert error.value.code == ApplicationErrorCode.CONFLICT
+
+
+@pytest.mark.parametrize(
+    ("organizations", "expected"),
+    (
+        ((), ApplicationErrorCode.RESOURCE_NOT_FOUND),
+        ((SimpleNamespace(), SimpleNamespace()), ApplicationErrorCode.CONFLICT),
+    ),
+)
+def test_founder_organization_selector_fails_closed_without_exactly_one_active_candidate(
+    organizations, expected
+) -> None:
+    class ReadOnlySession:
+        def scalars(self, _statement):
+            return iter(organizations)
+
+    with pytest.raises(ApplicationError) as error:
+        FounderBootstrapAuthorizationService().select_active_organization(cast(Session, ReadOnlySession()))
+    assert error.value.code == expected
 
 
 def _authorization(

@@ -14,7 +14,7 @@ from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
-from yarvis_api.config import Settings
+from yarvis_api.config import FounderHandoffSelectorSettings, Settings
 from yarvis_api.models.domain_event import record_event
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.person import Person
@@ -51,7 +51,7 @@ def _hash(value: bytes | str) -> str:
 
 class FounderBootstrapAuthorizationService:
     def select_eligible_handoff(
-        self, db: Session, *, settings: Settings | None = None
+        self, db: Session, *, settings: Settings | FounderHandoffSelectorSettings | None = None
     ) -> BootstrapVerifiedIdentity:
         """Return exactly one provenance-backed handoff without changing it."""
         now = datetime.now(timezone.utc)
@@ -83,6 +83,25 @@ class FounderBootstrapAuthorizationService:
             )
         if len(candidates) != 1:
             raise ApplicationError(ApplicationErrorCode.CONFLICT, "request denied", {"reason": "handoff_ambiguous"})
+        return candidates[0]
+
+    def select_active_organization(self, db: Session) -> Organization:
+        """Return exactly one active Organization without changing persistent state."""
+        candidates = list(
+            db.scalars(
+                select(Organization)
+                .where(Organization.status == "active")
+                .order_by(Organization.created_at, Organization.id)
+            )
+        )
+        if not candidates:
+            raise ApplicationError(
+                ApplicationErrorCode.RESOURCE_NOT_FOUND, "request denied", {"reason": "organization_unavailable"}
+            )
+        if len(candidates) != 1:
+            raise ApplicationError(
+                ApplicationErrorCode.CONFLICT, "request denied", {"reason": "organization_ambiguous"}
+            )
         return candidates[0]
 
     def _verified_payload(self, authorization: bytes, settings: Settings) -> dict[str, str]:

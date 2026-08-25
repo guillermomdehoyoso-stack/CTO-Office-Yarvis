@@ -63,6 +63,7 @@ def test_founder_handoff_selector_is_a_separate_read_only_one_shot_job() -> None
     assert f"run_command: {command}" in selector_spec
     assert selector_spec.count(command) == 1
     assert "YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL" in selector_spec
+    assert "YARVIS_OIDC_ISSUER" in selector_spec
     for forbidden in (
         "YARVIS_DATABASE_URL",
         "YARVIS_MIGRATOR_DATABASE_URL",
@@ -73,7 +74,10 @@ def test_founder_handoff_selector_is_a_separate_read_only_one_shot_job() -> None
         "--authorization-file",
         "founder_bootstrap_cli enroll",
         "YARVIS_AUTH_MODE",
-        "YARVIS_OIDC_",
+        "YARVIS_OIDC_CLIENT_ID",
+        "YARVIS_OIDC_CLIENT_SECRET",
+        "YARVIS_OIDC_ATTEMPT_ENCRYPTION_KEY",
+        "YARVIS_OIDC_REDIRECT_URI",
     ):
         assert forbidden not in selector_spec
     assert "select-handoff" not in runtime_spec

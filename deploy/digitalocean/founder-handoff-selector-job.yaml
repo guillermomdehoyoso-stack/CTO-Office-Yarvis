@@ -22,3 +22,7 @@ jobs:
         value: __REQUIRES_FOUNDER_BOOTSTRAP_DATABASE_URL__
         scope: RUN_TIME
         type: SECRET
+      - key: YARVIS_OIDC_ISSUER
+        value: __REQUIRES_OIDC_ISSUER__
+        scope: RUN_TIME
+        type: SECRET

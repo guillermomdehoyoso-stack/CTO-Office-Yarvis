@@ -38,26 +38,41 @@ def _selector_session(settings: FounderHandoffSelectorSettings) -> Iterator[Sess
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Administer one signed founder-bootstrap authorization.")
-    parser.add_argument("operation", choices=("verify", "consume", "enroll", "select-handoff"))
+    parser.add_argument("operation", choices=("verify", "consume", "enroll", "select-handoff", "select-organization"))
     input_group = parser.add_mutually_exclusive_group(required=False)
     input_group.add_argument("--authorization-file", type=Path)
     input_group.add_argument("--authorization-stdin", action="store_true")
     args = parser.parse_args()
-    if args.operation == "select-handoff":
+    if args.operation in {"select-handoff", "select-organization"}:
+        output_key = (
+            "founder_bootstrap_handoff_id"
+            if args.operation == "select-handoff"
+            else "founder_bootstrap_organization_id"
+        )
+        selected_id = ""
         try:
             selector_settings = FounderHandoffSelectorSettings()
             with _selector_session(selector_settings) as db:
-                handoff = FounderBootstrapAuthorizationService().select_eligible_handoff(db)
-                handoff_id = str(handoff.id)
-                db.rollback()
+                service = FounderBootstrapAuthorizationService()
+                try:
+                    if args.operation == "select-handoff":
+                        selected_id = str(service.select_eligible_handoff(db, settings=selector_settings).id)
+                    else:
+                        selected_id = str(service.select_active_organization(db).id)
+                finally:
+                    db.rollback()
         except ApplicationError as error:
             print(f"founder_bootstrap_failed code={error.code}", file=sys.stderr)
             return 2
-        print(f"founder_bootstrap_handoff_id={handoff_id}")
+        print(f"{output_key}={selected_id}")
         return 0
     app = create_app()
     settings = app.state.yarvis.settings
-    if args.operation != "select-handoff" and args.authorization_file is None and not args.authorization_stdin:
+    if (
+        args.operation not in {"select-handoff", "select-organization"}
+        and args.authorization_file is None
+        and not args.authorization_stdin
+    ):
         parser.error("exactly one authorization input is required")
     if args.operation == "consume" and app.state.yarvis.settings.environment != "test":
         parser.error("consume is available only in the synthetic test environment")

@@ -215,6 +215,11 @@ class FounderHandoffSelectorSettings(BaseSettings):
         validation_alias=AliasChoices("YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL"),
         repr=False,
     )
+    oidc_issuer: str = Field(
+        default="",
+        validation_alias=AliasChoices("YARVIS_OIDC_ISSUER"),
+        repr=False,
+    )
 
     @property
     def database_url(self) -> str:
@@ -233,6 +238,8 @@ class FounderHandoffSelectorSettings(BaseSettings):
             raise ValueError("founder handoff selection requires the production environment")
         if not self.database_url:
             raise ValueError("founder handoff selection requires an administrative database URL")
+        if not self.oidc_issuer.startswith("https://"):
+            raise ValueError("founder handoff selection requires an HTTPS OIDC issuer")
         return self
 
 
