@@ -10,7 +10,7 @@ from pydantic import SecretStr
 
 from yarvis_api import founder_bootstrap_cli as cli
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
-from yarvis_api.config import Settings
+from yarvis_api.config import FounderHandoffSelectorSettings, Settings
 
 
 class _Session:
@@ -130,11 +130,16 @@ def test_select_handoff_prints_only_the_opaque_reference_and_never_consumes(monk
     opaque_id = "00000000-0000-0000-0000-000000000001"
 
     class Service:
-        def select_eligible_handoff(self, _db, *, settings):
-            assert settings.environment == "production"
+        def select_eligible_handoff(self, _db):
             return SimpleNamespace(id=opaque_id, subject_encrypted="SENSITIVE_SUBJECT_TOKEN")
 
-    monkeypatch.setattr(cli, "create_app", lambda: _app(_production_settings(), session))
+    monkeypatch.setattr(
+        cli,
+        "FounderHandoffSelectorSettings",
+        lambda: SimpleNamespace(environment="production", database_url="postgresql://synthetic/select"),
+    )
+    monkeypatch.setattr(cli, "_selector_session", lambda _settings: session)
+    monkeypatch.setattr(cli, "create_app", lambda: (_ for _ in ()).throw(AssertionError("must not initialize app")))
     monkeypatch.setattr(cli, "FounderBootstrapAuthorizationService", Service)
     monkeypatch.setattr(sys, "argv", ["founder_bootstrap_cli", "select-handoff"])
 
@@ -144,3 +149,22 @@ def test_select_handoff_prints_only_the_opaque_reference_and_never_consumes(monk
     assert captured.err == ""
     assert "SENSITIVE" not in captured.out + captured.err
     assert session.commits == 0 and session.rollbacks == 1
+
+
+def test_select_handoff_settings_require_only_production_and_administrative_database_url(monkeypatch) -> None:
+    monkeypatch.setenv("YARVIS_ENVIRONMENT", "production")
+    monkeypatch.setenv("YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL", "postgresql://synthetic:synthetic@db.synthetic/yarvis")
+    for name in (
+        "YARVIS_AUTH_MODE",
+        "YARVIS_OIDC_ISSUER",
+        "YARVIS_OIDC_CLIENT_ID",
+        "YARVIS_OIDC_CLIENT_SECRET",
+        "YARVIS_OIDC_ATTEMPT_ENCRYPTION_KEY",
+        "YARVIS_OIDC_REDIRECT_URI",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+    settings = FounderHandoffSelectorSettings()
+
+    assert settings.environment == "production"
+    assert settings.database_url == "postgresql://synthetic:synthetic@db.synthetic/yarvis"

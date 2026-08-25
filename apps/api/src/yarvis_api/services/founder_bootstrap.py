@@ -50,7 +50,9 @@ def _hash(value: bytes | str) -> str:
 
 
 class FounderBootstrapAuthorizationService:
-    def select_eligible_handoff(self, db: Session, *, settings: Settings) -> BootstrapVerifiedIdentity:
+    def select_eligible_handoff(
+        self, db: Session, *, settings: Settings | None = None
+    ) -> BootstrapVerifiedIdentity:
         """Return exactly one provenance-backed handoff without changing it."""
         now = datetime.now(timezone.utc)
         completed_enrollment = exists(
@@ -59,17 +61,19 @@ class FounderBootstrapAuthorizationService:
                 FounderBootstrapReceipt.outcome == "enrolled",
             )
         )
+        criteria = [
+            BootstrapVerifiedIdentity.provenance == "founder_bootstrap",
+            BootstrapVerifiedIdentity.provenance_receipt_id.is_not(None),
+            BootstrapVerifiedIdentity.expires_at > now,
+            BootstrapVerifiedIdentity.consumed_at.is_(None),
+            ~completed_enrollment,
+        ]
+        if settings is not None:
+            criteria.append(BootstrapVerifiedIdentity.issuer_hash == _hash(settings.oidc_issuer or ""))
         candidates = list(
             db.scalars(
                 select(BootstrapVerifiedIdentity)
-                .where(
-                    BootstrapVerifiedIdentity.provenance == "founder_bootstrap",
-                    BootstrapVerifiedIdentity.provenance_receipt_id.is_not(None),
-                    BootstrapVerifiedIdentity.issuer_hash == _hash(settings.oidc_issuer or ""),
-                    BootstrapVerifiedIdentity.expires_at > now,
-                    BootstrapVerifiedIdentity.consumed_at.is_(None),
-                    ~completed_enrollment,
-                )
+                .where(*criteria)
                 .order_by(BootstrapVerifiedIdentity.created_at, BootstrapVerifiedIdentity.id)
             )
         )

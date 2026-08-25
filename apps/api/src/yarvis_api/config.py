@@ -196,6 +196,46 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.csrf_allowed_origins.split(",") if origin.strip()]
 
 
+class FounderHandoffSelectorSettings(BaseSettings):
+    """Minimal non-HTTP production configuration for the read-only handoff selector."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="YARVIS_",
+        env_file=None,
+        extra="ignore",
+        hide_input_in_errors=True,
+        populate_by_name=True,
+    )
+
+    environment: Environment = Field(
+        default="local", validation_alias=AliasChoices("environment", "YARVIS_ENVIRONMENT")
+    )
+    database_url_secret: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias=AliasChoices("YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL"),
+        repr=False,
+    )
+
+    @property
+    def database_url(self) -> str:
+        return self.database_url_secret.get_secret_value()
+
+    @field_validator("database_url_secret")
+    @classmethod
+    def validate_database_url(cls, value: SecretStr) -> SecretStr:
+        if not value.get_secret_value().startswith(("postgresql://", "postgres://", "postgresql+psycopg://")):
+            raise ValueError("database URL must use a PostgreSQL scheme")
+        return value
+
+    @model_validator(mode="after")
+    def validate_production_only(self) -> FounderHandoffSelectorSettings:
+        if self.environment != "production":
+            raise ValueError("founder handoff selection requires the production environment")
+        if not self.database_url:
+            raise ValueError("founder handoff selection requires an administrative database URL")
+        return self
+
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

@@ -72,6 +72,8 @@ def test_founder_handoff_selector_is_a_separate_read_only_one_shot_job() -> None
         "YARVIS_FOUNDER_BOOTSTRAP_KEY_ID",
         "--authorization-file",
         "founder_bootstrap_cli enroll",
+        "YARVIS_AUTH_MODE",
+        "YARVIS_OIDC_",
     ):
         assert forbidden not in selector_spec
     assert "select-handoff" not in runtime_spec

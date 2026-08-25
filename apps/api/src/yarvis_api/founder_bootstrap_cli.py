@@ -2,10 +2,17 @@
 
 import argparse
 import sys
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from yarvis_api.application.errors import ApplicationError
 from yarvis_api.bootstrap import create_app
+from yarvis_api.config import FounderHandoffSelectorSettings
+from yarvis_api.persistence import sqlalchemy_url
 from yarvis_api.services.founder_bootstrap import FounderBootstrapAuthorizationService
 
 
@@ -18,6 +25,17 @@ def _authorization_bytes(args: argparse.Namespace, parser: argparse.ArgumentPars
     raise AssertionError("unreachable")
 
 
+@contextmanager
+def _selector_session(settings: FounderHandoffSelectorSettings) -> Iterator[Session]:
+    engine = create_engine(sqlalchemy_url(settings.database_url), pool_pre_ping=True)
+    session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    try:
+        with session_factory() as db:
+            yield db
+    finally:
+        engine.dispose()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Administer one signed founder-bootstrap authorization.")
     parser.add_argument("operation", choices=("verify", "consume", "enroll", "select-handoff"))
@@ -25,22 +43,28 @@ def main() -> int:
     input_group.add_argument("--authorization-file", type=Path)
     input_group.add_argument("--authorization-stdin", action="store_true")
     args = parser.parse_args()
+    if args.operation == "select-handoff":
+        try:
+            selector_settings = FounderHandoffSelectorSettings()
+            with _selector_session(selector_settings) as db:
+                handoff = FounderBootstrapAuthorizationService().select_eligible_handoff(db)
+                db.rollback()
+        except ApplicationError as error:
+            print(f"founder_bootstrap_failed code={error.code}", file=sys.stderr)
+            return 2
+        print(f"founder_bootstrap_handoff_id={handoff.id}")
+        return 0
     app = create_app()
     settings = app.state.yarvis.settings
     if args.operation != "select-handoff" and args.authorization_file is None and not args.authorization_stdin:
         parser.error("exactly one authorization input is required")
     if args.operation == "consume" and app.state.yarvis.settings.environment != "test":
         parser.error("consume is available only in the synthetic test environment")
-    if args.operation in {"enroll", "select-handoff"} and settings.environment != "production":
+    if args.operation == "enroll" and settings.environment != "production":
         parser.error(f"{args.operation} requires the production environment")
     with app.state.yarvis.persistence.create_session() as db:
         service = FounderBootstrapAuthorizationService()
         try:
-            if args.operation == "select-handoff":
-                handoff = service.select_eligible_handoff(db, settings=settings)
-                db.rollback()
-                print(f"founder_bootstrap_handoff_id={handoff.id}")
-                return 0
             payload = _authorization_bytes(args, parser)
             if args.operation == "enroll":
                 receipt = service.enroll(db, authorization=payload, settings=settings)
