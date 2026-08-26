@@ -243,6 +243,51 @@ class FounderHandoffSelectorSettings(BaseSettings):
         return self
 
 
+class FounderFirstOrganizationSettings(BaseSettings):
+    """Minimal non-HTTP configuration for the first-Organization ceremony only."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="YARVIS_", env_file=None, extra="ignore", hide_input_in_errors=True, populate_by_name=True
+    )
+
+    environment: Environment = Field(
+        default="local", validation_alias=AliasChoices("environment", "YARVIS_ENVIRONMENT")
+    )
+    database_url_secret: SecretStr = Field(
+        default=SecretStr(""), validation_alias=AliasChoices("YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL"), repr=False
+    )
+    founder_bootstrap_enabled: bool = False
+    founder_bootstrap_public_key: str | None = None
+    founder_bootstrap_key_id: str = "founder-v1"
+
+    @property
+    def database_url(self) -> str:
+        return self.database_url_secret.get_secret_value()
+
+    @field_validator("database_url_secret")
+    @classmethod
+    def validate_database_url(cls, value: SecretStr) -> SecretStr:
+        if not value.get_secret_value().startswith(("postgresql://", "postgres://", "postgresql+psycopg://")):
+            raise ValueError("database URL must use a PostgreSQL scheme")
+        return value
+
+    @model_validator(mode="after")
+    def validate_first_organization_runner(self) -> FounderFirstOrganizationSettings:
+        if self.environment != "production":
+            raise ValueError("first Organization creation requires the production environment")
+        if not self.founder_bootstrap_enabled:
+            raise ValueError("first Organization creation requires explicit founder bootstrap enablement")
+        if not self.founder_bootstrap_public_key or not self.founder_bootstrap_key_id.strip():
+            raise ValueError("first Organization creation requires founder key configuration")
+        try:
+            public_key = base64.b64decode(self.founder_bootstrap_public_key, validate=True)
+        except (ValueError, binascii.Error):
+            raise ValueError("founder bootstrap public key must be base64") from None
+        if len(public_key) != 32:
+            raise ValueError("founder bootstrap public key must be Ed25519 length")
+        return self
+
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

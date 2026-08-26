@@ -110,6 +110,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-GOVERNANCE-CMD-003 | CMD | Governance / administrative bootstrap | CloseBootstrapWindow: irreversibly close the bounded bootstrap window under approved policy | C | bootstrap termination |
 | IC-GOVERNANCE-CMD-004 | CMD | Governance / administrative bootstrap | OpenBootstrapWindow: open one bounded, expiring, single-success bootstrap window | C | productive bootstrap administration |
 | IC-GOVERNANCE-CMD-005 | CMD | Governance / administrative bootstrap | ExecuteBootstrapEnrollment: atomically orchestrate the approved initial canonical identity chain | C | productive bootstrap administration |
+| IC-GOVERNANCE-CMD-006 | CMD | Governance / administrative bootstrap | CreateFirstOrganization: create exactly one active initial Organization under separately signed Founder authority only when no Organization exists | C | productive bootstrap prerequisite |
 | IC-GOVERNANCE-QRY-001 | QRY | Governance / authority | EvaluateAuthority; F-011 profile `1.1.0` ratified by `F-011_GOVERNANCE_CONTRACT_AMENDMENT_001.md` | C | target-command authorization |
 | IC-GOVERNANCE-QRY-002 | QRY | Governance / policy/delegation | RetrieveApplicableDelegation | Co | work assignment |
 | IC-GOVERNANCE-QRY-003 | QRY | Governance / Membership resolution | ResolveEffectiveMembership: resolve active same-Organization Membership and closed role/capabilities without client authority | C | productive authority envelope |
@@ -118,6 +119,7 @@ All entries are version `1.0.0`, lifecycle `Proposed`, operational status `Plann
 | IC-GOVERNANCE-EVT-002 | EVT | Governance / administrative bootstrap | BootstrapWindowClosed: assert terminal bootstrap closure without identity evidence, secrets, or PII | C | security audit and bootstrap denial |
 | IC-GOVERNANCE-EVT-003 | EVT | Governance / administrative bootstrap | BootstrapWindowOpened: assert bounded bootstrap opening with safe opaque references | C | security audit and bootstrap control |
 | IC-GOVERNANCE-EVT-004 | EVT | Governance / administrative bootstrap | BootstrapEnrollmentCompleted: assert terminal successful enrollment without identity evidence or secrets | C | security audit and bootstrap control |
+| IC-GOVERNANCE-EVT-005 | EVT | Governance / administrative bootstrap | FirstOrganizationCreated: assert one initial Organization creation with opaque references, version and outcome only | C | security audit and bootstrap prerequisite |
 | IC-RELATIONSHIP-CMD-001 | CMD | Relationship / association | EstablishCasePartyRelationship | Co | merchant/case association |
 | IC-RELATIONSHIP-QRY-001 | QRY | Relationship / association | RetrieveCaseRelationships | Co | case view |
 | IC-RELATIONSHIP-EVT-001 | EVT | Relationship / association | RelationshipRecorded | Co | Netpay, MC |

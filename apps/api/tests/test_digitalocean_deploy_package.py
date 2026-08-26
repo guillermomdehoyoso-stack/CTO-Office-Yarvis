@@ -18,9 +18,7 @@ REPOSITORY_ROOT = _repository_root()
 
 def test_digitalocean_runtime_package_keeps_database_credentials_separate() -> None:
     runtime_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "app.yaml").read_text(encoding="utf-8")
-    migration_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "migration-job.yaml").read_text(
-        encoding="utf-8"
-    )
+    migration_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "migration-job.yaml").read_text(encoding="utf-8")
 
     assert "name: yarvis-pilot" in runtime_spec
     assert "http_port: 8080" in runtime_spec
@@ -50,9 +48,9 @@ def test_founder_enrollment_runner_is_separate_and_uses_only_its_administrative_
 
 
 def test_founder_handoff_selector_is_a_separate_read_only_one_shot_job() -> None:
-    selector_spec = (
-        REPOSITORY_ROOT / "deploy" / "digitalocean" / "founder-handoff-selector-job.yaml"
-    ).read_text(encoding="utf-8")
+    selector_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "founder-handoff-selector-job.yaml").read_text(
+        encoding="utf-8"
+    )
     runtime_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "app.yaml").read_text(encoding="utf-8")
 
     command = "python -m yarvis_api.founder_bootstrap_cli select-handoff"
@@ -88,9 +86,9 @@ def test_founder_handoff_selector_is_a_separate_read_only_one_shot_job() -> None
 
 
 def test_founder_organization_selector_is_a_separate_read_only_one_shot_job() -> None:
-    selector_spec = (
-        REPOSITORY_ROOT / "deploy" / "digitalocean" / "founder-organization-selector-job.yaml"
-    ).read_text(encoding="utf-8")
+    selector_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "founder-organization-selector-job.yaml").read_text(
+        encoding="utf-8"
+    )
     runtime_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "app.yaml").read_text(encoding="utf-8")
 
     command = "python -m yarvis_api.founder_bootstrap_cli select-organization"
@@ -124,6 +122,29 @@ def test_founder_organization_selector_is_a_separate_read_only_one_shot_job() ->
     assert "founder_bootstrap_organization_id=<opaque-id>" in selector_spec
     assert "@netpay.com.mx" not in selector_spec
     assert "BEGIN " not in selector_spec
+
+
+def test_first_organization_runner_is_isolated_and_never_deploys_on_push() -> None:
+    spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "founder-first-organization-job.yaml").read_text(
+        encoding="utf-8"
+    )
+    runtime_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "app.yaml").read_text(encoding="utf-8")
+
+    assert "name: yarvis-pilot-first-org" in spec and len("yarvis-pilot-first-org") <= 32
+    command = "python -m yarvis_api.founder_bootstrap_cli create-first-organization --authorization-file"
+    assert command in spec and spec.count(command) == 1 and "deploy_on_push: false" in spec
+    assert "PYTHONPATH=/app/src" in spec
+    assert "YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL" in spec
+    assert "YARVIS_FOUNDER_FIRST_ORGANIZATION_AUTHORIZATION" in spec
+    for forbidden in (
+        "YARVIS_DATABASE_URL",
+        "YARVIS_MIGRATOR_DATABASE_URL",
+        "YARVIS_OIDC_CLIENT_SECRET",
+        "select-handoff",
+        "founder_bootstrap_cli enroll",
+    ):
+        assert forbidden not in spec
+    assert "create-first-organization" not in runtime_spec
 
 
 def test_founder_runner_administrative_database_variable_is_accepted_without_runtime_alias() -> None:

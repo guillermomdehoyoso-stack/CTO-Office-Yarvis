@@ -89,3 +89,36 @@ immediately. The expected successful output is exactly
 Organizations fail closed with a stable code and no Organization name. It never
 receives `YARVIS_DATABASE_URL`, `YARVIS_MIGRATOR_DATABASE_URL`, enrollment
 authorization, founder keys, or runtime OIDC client credentials.
+
+## First Organization runner
+
+`founder-first-organization-job.yaml` is a separate one-shot component for
+`IC-GOVERNANCE-CMD-006 CreateFirstOrganization`. It is not the runtime,
+migrator, selector, or enrollment runner, and `deploy_on_push` is `false`.
+Create it only after migration `20260823_47`, execute it once with its
+component-scoped values, then delete the component and all temporary values.
+It never receives `YARVIS_DATABASE_URL` or `YARVIS_MIGRATOR_DATABASE_URL`.
+
+The authorization is written to a mode-0600 temporary file, unset from the
+environment, and removed on every shell exit path. Successful CLI output is
+only `founder_bootstrap_first_organization_created status=created` or
+`status=replayed`.
+
+The dedicated Founder administrative role needs `CONNECT` on the target
+database; `USAGE` on schema `public`; `SELECT, INSERT` on
+`public.organizations`, `public.first_organization_receipts`,
+`public.authentication_security_audit`, and `public.domain_events`; and
+`USAGE` on `public.domain_events_event_sequence_seq`. It needs no `UPDATE`,
+`DELETE`, `CREATE`, rights on identity/Membership tables, or runtime/migrator
+credentials. These are proposed grants only; their execution and exact role
+name require separate human infrastructure authorization.
+
+```sql
+GRANT CONNECT ON DATABASE yarvis TO <founder_admin_role>;
+GRANT USAGE ON SCHEMA public TO <founder_admin_role>;
+GRANT SELECT, INSERT ON TABLE public.organizations,
+  public.first_organization_receipts,
+  public.authentication_security_audit,
+  public.domain_events TO <founder_admin_role>;
+GRANT USAGE ON SEQUENCE public.domain_events_event_sequence_seq TO <founder_admin_role>;
+```

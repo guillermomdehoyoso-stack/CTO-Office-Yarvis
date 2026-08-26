@@ -109,6 +109,14 @@ All new Commands require controlled audit fields: opaque aggregate and actor ref
 
 Existing `IC-GOVERNANCE-QRY-001 EvaluateAuthority` remains the final target authorization decision. Existing `IC-GOVERNANCE-QRY-003 ResolveEffectiveMembership` supplies persisted context only. Existing `IC-GOVERNANCE-EVT-001 AuthorityChanged` remains the sole Membership activation and revocation Event; CMD-005 must obtain it only through `IC-GOVERNANCE-CMD-001 GrantMembership` and allocates no synonymous Membership Event. `IC-GOVERNANCE-CMD-003 CloseBootstrapWindow` remains the terminal manual, expiry, incident or post-success closure mechanism.
 
+## 8B. Ratified supplement — AUTH-FOUNDER-FIRST-ORGANIZATION-001 (2026-08-26)
+
+`IC-GOVERNANCE-CMD-006 CreateFirstOrganization` is the sole non-HTTP Founder administrative command for the initial Organization prerequisite. It accepts only a separately signed Ed25519 authorization with purpose `create_first_organization`, version `1`, key identifier, ratified Organization fields, issued/expiry timestamps, nonce and idempotency key. It proceeds only when no Organization exists, creates exactly one active Organization atomically, and cannot create Person, Principal, Identity Binding, Membership, session, BootstrapWindow or handoff.
+
+Its durable receipt stores only authorization digest, nonce/idempotency hashes, request fingerprint, opaque Organization reference, timestamps and outcome. Equivalent replay returns the prior outcome; a nonce, idempotency key or authorization reused with incompatible material fails closed as `idempotency_conflict`. The operation uses a transaction-scoped concurrency guard; any pre-existing Organization fails closed.
+
+`IC-GOVERNANCE-EVT-005 FirstOrganizationCreated` records only opaque aggregate/Organization references, contract version and allowlisted outcome. Its paired sanitized audit excludes legal/display names, signature, public key, authorization material, identity, claims, tokens and secrets. `AuthorityChanged` is not emitted because this command changes no Membership or authority.
+
 ## 8. Explicit non-effects and next gate
 
 These contracts are assigned but not registered in runtime, dispatchable, authorized for execution, or implemented. This record does not modify `canonical_contracts.py`, contract tests, application modules, endpoints, `authentication.py`, D1, schemas, migrations, configuration, secrets, Google/OIDC resources, data, Person, Principal, binding, Membership, role, session, or bootstrap state.

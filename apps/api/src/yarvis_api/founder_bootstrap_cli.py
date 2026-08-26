@@ -11,8 +11,9 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from yarvis_api.application.errors import ApplicationError
 from yarvis_api.bootstrap import create_app
-from yarvis_api.config import FounderHandoffSelectorSettings
+from yarvis_api.config import FounderFirstOrganizationSettings, FounderHandoffSelectorSettings
 from yarvis_api.persistence import sqlalchemy_url
+from yarvis_api.services.first_organization import FirstOrganizationAuthorizationService
 from yarvis_api.services.founder_bootstrap import FounderBootstrapAuthorizationService
 
 
@@ -26,7 +27,7 @@ def _authorization_bytes(args: argparse.Namespace, parser: argparse.ArgumentPars
 
 
 @contextmanager
-def _selector_session(settings: FounderHandoffSelectorSettings) -> Iterator[Session]:
+def _selector_session(settings: FounderHandoffSelectorSettings | FounderFirstOrganizationSettings) -> Iterator[Session]:
     engine = create_engine(sqlalchemy_url(settings.database_url), pool_pre_ping=True)
     session_factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     try:
@@ -38,7 +39,10 @@ def _selector_session(settings: FounderHandoffSelectorSettings) -> Iterator[Sess
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Administer one signed founder-bootstrap authorization.")
-    parser.add_argument("operation", choices=("verify", "consume", "enroll", "select-handoff", "select-organization"))
+    parser.add_argument(
+        "operation",
+        choices=("verify", "consume", "enroll", "select-handoff", "select-organization", "create-first-organization"),
+    )
     input_group = parser.add_mutually_exclusive_group(required=False)
     input_group.add_argument("--authorization-file", type=Path)
     input_group.add_argument("--authorization-stdin", action="store_true")
@@ -65,6 +69,25 @@ def main() -> int:
             print(f"founder_bootstrap_failed code={error.code}", file=sys.stderr)
             return 2
         print(f"{output_key}={selected_id}")
+        return 0
+    if args.operation == "create-first-organization":
+        try:
+            settings = FounderFirstOrganizationSettings()
+            authorization = _authorization_bytes(args, parser)
+            with _selector_session(settings) as db:
+                result = FirstOrganizationAuthorizationService().create(
+                    db, authorization=authorization, settings=settings
+                )
+                db.commit()
+        except ApplicationError as error:
+            try:
+                db.rollback()
+            except UnboundLocalError:
+                pass
+            print(f"founder_bootstrap_failed code={error.code}", file=sys.stderr)
+            return 2
+        status = "replayed" if result.replayed else "created"
+        print(f"founder_bootstrap_first_organization_created status={status}")
         return 0
     app = create_app()
     settings = app.state.yarvis.settings

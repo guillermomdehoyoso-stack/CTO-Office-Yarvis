@@ -11,7 +11,7 @@ from sqlalchemy.orm.exc import DetachedInstanceError
 
 from yarvis_api import founder_bootstrap_cli as cli
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
-from yarvis_api.config import FounderHandoffSelectorSettings, Settings
+from yarvis_api.config import FounderFirstOrganizationSettings, FounderHandoffSelectorSettings, Settings
 
 
 class _Session:
@@ -139,7 +139,9 @@ def test_select_handoff_prints_only_the_opaque_reference_and_never_consumes(monk
         cli,
         "FounderHandoffSelectorSettings",
         lambda: SimpleNamespace(
-            environment="production", database_url="postgresql://synthetic/select", oidc_issuer="https://issuer.synthetic.example"
+            environment="production",
+            database_url="postgresql://synthetic/select",
+            oidc_issuer="https://issuer.synthetic.example",
         ),
     )
     monkeypatch.setattr(cli, "_selector_session", lambda _settings: session)
@@ -175,7 +177,9 @@ def test_select_handoff_materializes_the_opaque_id_before_rollback(monkeypatch, 
         cli,
         "FounderHandoffSelectorSettings",
         lambda: SimpleNamespace(
-            environment="production", database_url="postgresql://synthetic/select", oidc_issuer="https://issuer.synthetic.example"
+            environment="production",
+            database_url="postgresql://synthetic/select",
+            oidc_issuer="https://issuer.synthetic.example",
         ),
     )
     monkeypatch.setattr(cli, "_selector_session", lambda _settings: session)
@@ -228,7 +232,9 @@ def test_select_organization_prints_only_the_opaque_reference_and_never_writes(m
         cli,
         "FounderHandoffSelectorSettings",
         lambda: SimpleNamespace(
-            environment="production", database_url="postgresql://synthetic/select", oidc_issuer="https://issuer.synthetic.example"
+            environment="production",
+            database_url="postgresql://synthetic/select",
+            oidc_issuer="https://issuer.synthetic.example",
         ),
     )
     monkeypatch.setattr(cli, "_selector_session", lambda _settings: session)
@@ -255,7 +261,9 @@ def test_select_organization_fails_closed_for_zero_or_multiple_candidates(monkey
         cli,
         "FounderHandoffSelectorSettings",
         lambda: SimpleNamespace(
-            environment="production", database_url="postgresql://synthetic/select", oidc_issuer="https://issuer.synthetic.example"
+            environment="production",
+            database_url="postgresql://synthetic/select",
+            oidc_issuer="https://issuer.synthetic.example",
         ),
     )
     monkeypatch.setattr(cli, "_selector_session", lambda _settings: session)
@@ -268,3 +276,52 @@ def test_select_organization_fails_closed_for_zero_or_multiple_candidates(monkey
     assert captured.err == f"founder_bootstrap_failed code={code}\n"
     assert "SENSITIVE" not in captured.out + captured.err
     assert session.commits == 0 and session.rollbacks == 1
+
+
+def test_create_first_organization_uses_signed_file_and_redacts_all_material(monkeypatch, tmp_path, capsys) -> None:
+    authorization = tmp_path / "authorization.bin"
+    authorization.write_bytes(b"SENSITIVE_SIGNED_AUTHORIZATION")
+    session = _Session()
+
+    class Service:
+        def create(self, _db, *, authorization: bytes, settings):
+            assert authorization == b"SENSITIVE_SIGNED_AUTHORIZATION"
+            assert settings.environment == "production"
+            return SimpleNamespace(replayed=False)
+
+    monkeypatch.setattr(
+        cli,
+        "FounderFirstOrganizationSettings",
+        lambda: SimpleNamespace(environment="production", database_url="postgresql://synthetic/create"),
+    )
+    monkeypatch.setattr(cli, "_selector_session", lambda _settings: session)
+    monkeypatch.setattr(cli, "FirstOrganizationAuthorizationService", Service)
+    monkeypatch.setattr(
+        sys, "argv", ["founder_bootstrap_cli", "create-first-organization", "--authorization-file", str(authorization)]
+    )
+
+    assert cli.main() == 0
+    captured = capsys.readouterr()
+    assert captured.out == "founder_bootstrap_first_organization_created status=created\n"
+    assert captured.err == ""
+    assert "SENSITIVE" not in captured.out + captured.err
+    assert session.commits == 1 and session.rollbacks == 0
+
+
+def test_create_first_organization_settings_require_only_administrative_founder_inputs(monkeypatch) -> None:
+    private_key = Ed25519PrivateKey.generate()
+    public_key = private_key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)
+    monkeypatch.setenv("YARVIS_ENVIRONMENT", "production")
+    monkeypatch.setenv("YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL", "postgresql://synthetic:synthetic@db.synthetic/yarvis")
+    monkeypatch.setenv("YARVIS_FOUNDER_BOOTSTRAP_ENABLED", "true")
+    monkeypatch.setenv("YARVIS_FOUNDER_BOOTSTRAP_PUBLIC_KEY", base64.b64encode(public_key).decode())
+    monkeypatch.setenv("YARVIS_FOUNDER_BOOTSTRAP_KEY_ID", "synthetic-founder-v1")
+    for name in (
+        "YARVIS_AUTH_MODE",
+        "YARVIS_OIDC_CLIENT_ID",
+        "YARVIS_OIDC_CLIENT_SECRET",
+        "YARVIS_OIDC_ATTEMPT_ENCRYPTION_KEY",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+    assert FounderFirstOrganizationSettings().environment == "production"

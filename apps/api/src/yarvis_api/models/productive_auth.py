@@ -101,6 +101,25 @@ class FounderBootstrapReceipt(TimestampedUUIDMixin, Base):
     )
 
 
+class FirstOrganizationReceipt(TimestampedUUIDMixin, Base):
+    """Durable, opaque replay record for IC-GOVERNANCE-CMD-006 only."""
+
+    __tablename__ = "first_organization_receipts"
+    __table_args__ = (
+        UniqueConstraint("authorization_digest", name="uq_first_organization_receipt_authorization"),
+        UniqueConstraint("nonce_hash", name="uq_first_organization_receipt_nonce"),
+        UniqueConstraint("idempotency_key_hash", name="uq_first_organization_receipt_idempotency_key"),
+    )
+    authorization_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    nonce_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    idempotency_key_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    organization_id: Mapped[object] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False
+    )
+    outcome: Mapped[str] = mapped_column(String(16), nullable=False, default="created")
+
+
 class ProductiveSession(TimestampedUUIDMixin, Base):
     __tablename__ = "productive_sessions"
     __table_args__ = (
