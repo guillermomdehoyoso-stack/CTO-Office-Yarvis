@@ -87,6 +87,45 @@ def test_founder_handoff_selector_is_a_separate_read_only_one_shot_job() -> None
     assert "BEGIN " not in selector_spec
 
 
+def test_founder_organization_selector_is_a_separate_read_only_one_shot_job() -> None:
+    selector_spec = (
+        REPOSITORY_ROOT / "deploy" / "digitalocean" / "founder-organization-selector-job.yaml"
+    ).read_text(encoding="utf-8")
+    runtime_spec = (REPOSITORY_ROOT / "deploy" / "digitalocean" / "app.yaml").read_text(encoding="utf-8")
+
+    command = "python -m yarvis_api.founder_bootstrap_cli select-organization"
+
+    assert "name: yarvis-pilot-organization-selector" in selector_spec
+    assert "name: yarvis-founder-select-organization" in selector_spec
+    assert "deploy_on_push: false" in selector_spec
+    assert f"run_command: {command}" in selector_spec
+    assert selector_spec.count(command) == 1
+    assert "YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL" in selector_spec
+    assert "YARVIS_OIDC_ISSUER" in selector_spec
+    for forbidden in (
+        "YARVIS_DATABASE_URL",
+        "YARVIS_MIGRATOR_DATABASE_URL",
+        "YARVIS_FOUNDER_ENROLLMENT_AUTHORIZATION",
+        "YARVIS_FOUNDER_BOOTSTRAP_ENABLED",
+        "YARVIS_FOUNDER_BOOTSTRAP_PUBLIC_KEY",
+        "YARVIS_FOUNDER_BOOTSTRAP_KEY_ID",
+        "--authorization-file",
+        "founder_bootstrap_cli enroll",
+        "select-handoff",
+        "YARVIS_AUTH_MODE",
+        "YARVIS_OIDC_CLIENT_ID",
+        "YARVIS_OIDC_CLIENT_SECRET",
+        "YARVIS_OIDC_ATTEMPT_ENCRYPTION_KEY",
+        "YARVIS_OIDC_REDIRECT_URI",
+    ):
+        assert forbidden not in selector_spec
+    assert "select-organization" not in runtime_spec
+    assert "YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL" not in runtime_spec
+    assert "founder_bootstrap_organization_id=<opaque-id>" in selector_spec
+    assert "@netpay.com.mx" not in selector_spec
+    assert "BEGIN " not in selector_spec
+
+
 def test_founder_runner_administrative_database_variable_is_accepted_without_runtime_alias() -> None:
     settings = Settings.model_validate(
         {"YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL": "postgresql://synthetic:synthetic@db.test/yarvis"}

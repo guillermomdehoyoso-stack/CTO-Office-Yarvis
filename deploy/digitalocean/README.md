@@ -72,3 +72,20 @@ tracing or copy Job logs outside the approved sanitized operational record.
 App Platform's retry semantics and physical media erasure guarantees are not
 determined by this repository; the component must be deleted after its result,
 and the signed authorization and handoff remain independently single-use.
+
+## Founder Organization selector
+
+`founder-organization-selector-job.yaml` is a fourth, separate and one-shot
+App Platform component. It runs only `python -m yarvis_api.founder_bootstrap_cli
+select-organization`; it cannot enroll, create a BootstrapWindow, or select a
+handoff. `deploy_on_push` is `false`.
+
+Create it only under a dedicated ceremony authorization, supply only
+`YARVIS_ENVIRONMENT`, `YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL`, and
+`YARVIS_OIDC_ISSUER` as component-scoped values, run it once, capture only its
+sanitized result, and delete the component and its administrative credential
+immediately. The expected successful output is exactly
+`founder_bootstrap_organization_id=<opaque-id>`. Zero or multiple active
+Organizations fail closed with a stable code and no Organization name. It never
+receives `YARVIS_DATABASE_URL`, `YARVIS_MIGRATOR_DATABASE_URL`, enrollment
+authorization, founder keys, or runtime OIDC client credentials.

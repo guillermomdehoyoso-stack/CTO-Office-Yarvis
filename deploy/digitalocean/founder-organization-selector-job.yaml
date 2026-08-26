@@ -1,0 +1,29 @@
+# Separate, one-shot administrative Organization selector. Do not merge this
+# job into app.yaml, migration-job.yaml, founder-handoff-selector-job.yaml, or
+# founder-enrollment-job.yaml. Apply it only under a ceremony authorization,
+# execute it once, then delete this component immediately.
+name: yarvis-pilot-organization-selector
+jobs:
+  - name: yarvis-founder-select-organization
+    kind: PRE_DEPLOY
+    github:
+      repo: guillermomdehoyoso-stack/CTO-Office-Yarvis
+      branch: feat/operational-intake-spine
+      deploy_on_push: false
+    dockerfile_path: Dockerfile
+    # Permitted successful stdout only: founder_bootstrap_organization_id=<opaque-id>
+    run_command: python -m yarvis_api.founder_bootstrap_cli select-organization
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    envs:
+      - key: YARVIS_ENVIRONMENT
+        value: production
+        scope: RUN_TIME
+        type: GENERAL
+      - key: YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL
+        value: __REQUIRES_FOUNDER_BOOTSTRAP_DATABASE_URL__
+        scope: RUN_TIME
+        type: SECRET
+      - key: YARVIS_OIDC_ISSUER
+        value: __REQUIRES_OIDC_ISSUER__
+        scope: RUN_TIME
+        type: SECRET
