@@ -49,7 +49,7 @@ flowchart LR
 | TD-001 | Generic `DomainEvent` remains append-only by convention rather than a database update/delete guard. | Event infrastructure | High |
 | TD-002 | Process is not reconciled with `canonical_modules.py`. | Module governance | High |
 | TD-003 | Legacy route-owned persistence coexists with service/Unit-of-Work ownership. | Application boundary conformance | High |
-| TD-004 | Authentication is deterministic and restricted to local/test environments. | Production governance | High |
+| TD-004 | Superseded — see [ADR-015](../decisions/ADR-015_PRODUCTION_SECRETS_IAC_OWNERSHIP.md): production OIDC login and founder bootstrap are operational; the remaining concern is configuration governance. | Production governance | Closed |
 | TD-005 | Dispatcher has no registered handlers; worker/scheduler runtime is absent. | Foundation execution | High |
 | TD-006 | The frontend contains governed Mission Work/Workspace and older simple API surfaces. | UI boundary consistency | Medium |
 | TD-007 | Frontend production build can be blocked by an `EPERM` lock on generated `dist/assets`. | Local build environment | Medium |
@@ -61,3 +61,10 @@ The earlier sequence that treated Process Runtime, Mission Work/Process associat
 Operational Economics foundation, and Operational Workspace as planned is complete.
 Those statements remain historical evidence only; AC-002 is the current navigation
 point.
+
+TD-004 is superseded by the productive execution of the founder-bootstrap
+ceremony on 2026-09-03/04: live OIDC login, `create-first-organization`, and
+`enroll` completed against the production environment. The remaining gap is
+configuration-governance drift in production connection strings and deployment
+templates, governed by [ADR-015](../decisions/ADR-015_PRODUCTION_SECRETS_IAC_OWNERSHIP.md),
+not an absence of production authentication capability.
