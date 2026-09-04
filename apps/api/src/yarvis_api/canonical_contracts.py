@@ -10,6 +10,20 @@ from yarvis_api.contract_registry import (
 
 CANONICAL_CONTRACTS: tuple[ContractDefinition, ...] = (
     ContractDefinition(
+        interaction_contract_id="IC-PLATFORM-CMD-DISPATCH-PROBE",
+        version="1.0.0",
+        contract_type=ContractType.COMMAND,
+        owner_module_id="platform",
+        owning_context="Platform",
+        owning_capability="dispatch mechanics",
+        name="DispatchMechanicsProbe",
+        semantic_purpose="Prove zero-persistence synchronous Dispatch mechanics",
+        lifecycle=ContractLifecycle.RATIFIED,
+        operational_status=ContractOperationalStatus.VERIFIED,
+        criticality=ContractCriticality.CORE,
+        primary_consumer_or_use_case="Dispatch mechanics probe",
+    ),
+    ContractDefinition(
         interaction_contract_id="IC-WORKSPACE-QRY-001",
         version="1.0.0",
         contract_type=ContractType.QUERY,

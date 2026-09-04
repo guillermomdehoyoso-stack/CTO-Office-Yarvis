@@ -21,7 +21,14 @@ from yarvis_api.canonical_contracts import canonical_contracts
 from yarvis_api.canonical_modules import canonical_modules
 from yarvis_api.config import Settings, get_settings
 from yarvis_api.contract_registry import ContractDefinition, ContractRegistry, build_contract_registry
-from yarvis_api.dispatch import Dispatcher, HandlerDefinition, HandlerRegistry, build_handler_registry
+from yarvis_api.dispatch import (
+    CommandEnvelope,
+    CommandUnitOfWork,
+    Dispatcher,
+    HandlerDefinition,
+    HandlerRegistry,
+    build_handler_registry,
+)
 from yarvis_api.module_registry import ApplicationModule, ModuleRegistry, build_module_registry
 from yarvis_api.modules.deterministic_inbound import DeterministicInboundInboxAdapter
 from yarvis_api.observability.logging import configure_structured_logging
@@ -64,6 +71,21 @@ from yarvis_api.services.process_work_association import (
 )
 from yarvis_api.services.workspace.io import resolve_workspace_repository_root
 from yarvis_api.services.workspace.platform import WorkspacePlatform
+
+
+def _dispatch_mechanics_probe_handler(_command: CommandEnvelope, unit_of_work: CommandUnitOfWork) -> None:
+    """Prove the F-009 explicit-commit path without business persistence."""
+
+    unit_of_work.commit()
+
+
+_DISPATCH_MECHANICS_PROBE_HANDLER = HandlerDefinition(
+    interaction_contract_id="IC-PLATFORM-CMD-DISPATCH-PROBE",
+    owner_module_id="platform",
+    owning_context="Platform",
+    handler=_dispatch_mechanics_probe_handler,
+    handler_name="dispatch_mechanics_probe",
+)
 
 
 @dataclass(slots=True)
@@ -291,7 +313,11 @@ def create_app(
     handler_registry = build_handler_registry(
         module_registry,
         contract_registry,
-        () if handlers is None else handlers,
+        (
+            (_DISPATCH_MECHANICS_PROBE_HANDLER,)
+            if handlers is None and modules is None and contracts is None
+            else handlers or ()
+        ),
     )
     dispatcher = Dispatcher(contract_registry, handler_registry, persistence_runtime)
     observability_metrics = ObservabilityMetrics()

@@ -50,10 +50,11 @@ flowchart LR
 | TD-002 | Process is not reconciled with `canonical_modules.py`. | Module governance | High |
 | TD-003 | Legacy route-owned persistence coexists with service/Unit-of-Work ownership. | Application boundary conformance | High |
 | TD-004 | Superseded — see [ADR-015](../decisions/ADR-015_PRODUCTION_SECRETS_IAC_OWNERSHIP.md): production OIDC login and founder bootstrap are operational; the remaining concern is configuration governance. | Production governance | Closed |
-| TD-005 | Dispatcher has no registered handlers; worker/scheduler runtime is absent. | Foundation execution | High |
+| TD-005 | Dispatcher mechanism proven with the zero-persistence `IC-PLATFORM-CMD-DISPATCH-PROBE` handler; zero business handlers are wired. Worker/scheduler runtime remains absent. | Foundation execution | High |
 | TD-006 | The frontend contains governed Mission Work/Workspace and older simple API surfaces. | UI boundary consistency | Medium |
 | TD-007 | Frontend production build can be blocked by an `EPERM` lock on generated `dist/assets`. | Local build environment | Medium |
 | TD-008 | Development current-state/sprint documents required AC-002 reconciliation after WS-006E/F. | Development Operating System | Medium |
+| TD-009 | Repository/Session-injection design for real Command handlers remains unresolved and unauthorized; existing service-owned transactions cannot be wired through Dispatch until separately ratified. | Dispatch handler composition | High |
 
 ## Superseded Planning Statements
 

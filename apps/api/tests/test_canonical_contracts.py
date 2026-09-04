@@ -17,6 +17,13 @@ _RATIFIED_PLANNED = (ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANN
 
 CANONICAL_RUNTIME_BASELINE_V1 = (
     (
+        "IC-PLATFORM-CMD-DISPATCH-PROBE",
+        ContractType.COMMAND,
+        "platform",
+        "dispatch mechanics",
+        *_RATIFIED_VERIFIED,
+    ),
+    (
         "IC-WORKSPACE-QRY-001",
         ContractType.QUERY,
         "mission_control",
@@ -470,8 +477,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
     assert {
         contract.interaction_contract_id for contract in contracts if contract.interaction_contract_id in AUTH_PROD_IDS
     } == AUTH_PROD_IDS
-    assert len(contracts) == 115
-    assert len({contract.interaction_contract_id for contract in contracts}) == 115
+    assert len(contracts) == 116
+    assert len({contract.interaction_contract_id for contract in contracts}) == 116
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -483,7 +490,7 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
     assert all(
         (contract.lifecycle, contract.operational_status) == _PROPOSED_PLANNED
         for contract in contracts
-        if contract.owner_module_id not in {"document_registry", "netpay_merchant_operations"}
+        if contract.owner_module_id not in {"document_registry", "netpay_merchant_operations", "platform"}
         and contract.interaction_contract_id not in AUTH_PROD_IDS
     )
     assert all(
@@ -499,7 +506,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
     contracts = canonical_contracts()
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
-        ContractType.COMMAND: 56,
+        ContractType.COMMAND: 57,
         ContractType.QUERY: 28,
         ContractType.EVENT: 29,
         ContractType.NOTIFICATION: 2,
@@ -509,6 +516,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
         for owner in {contract.owner_module_id for contract in contracts}
     }
     assert owner_counts == {
+        "platform": 1,
         "identity": 13,
         "governance": 9,
         "relationship": 3,

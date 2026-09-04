@@ -4,6 +4,7 @@ from yarvis_api.config import Settings
 from yarvis_api.module_registry import ApplicationModule
 
 CANONICAL_MODULE_IDS = (
+    "platform",
     "identity",
     "governance",
     "relationship",

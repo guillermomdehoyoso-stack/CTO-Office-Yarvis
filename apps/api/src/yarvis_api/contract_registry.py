@@ -9,7 +9,9 @@ from enum import StrEnum
 
 from yarvis_api.module_registry import ModuleRegistry
 
-INTERACTION_CONTRACT_ID_PATTERN = re.compile(r"^IC-[A-Z0-9]+(?:-[A-Z0-9]+)*-(?:CMD|QRY|EVT|NTF)-\d{3}$")
+INTERACTION_CONTRACT_ID_PATTERN = re.compile(
+    r"^(?:IC-[A-Z0-9]+(?:-[A-Z0-9]+)*-(?:CMD|QRY|EVT|NTF)-\d{3}|IC-PLATFORM-CMD-DISPATCH-PROBE)$"
+)
 SEMANTIC_VERSION_PATTERN = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$")
 
 

@@ -134,7 +134,7 @@ def test_default_and_explicit_empty_contract_composition_are_isolated() -> None:
     # AUTH-CONTRACT-001 adds 16 runtime contracts to the prior 99-contract baseline.
     # The documentary catalog remains a distinct projection from this runtime composition.
     assert default_contracts == CANONICAL_CONTRACTS
-    assert len(default_contracts) == 115
+    assert len(default_contracts) == 116
     assert {
         "IC-TASK-CMD-001",
         "IC-TASK-CMD-002",
@@ -153,4 +153,6 @@ def test_default_and_explicit_empty_contract_composition_are_isolated() -> None:
     assert empty_app.state.yarvis.contract_registry.list() == ()
     assert default_contracts != empty_app.state.yarvis.contract_registry.list()
     assert default_app.state.yarvis.handler_registry.is_sealed is True
-    assert default_app.state.yarvis.handler_registry.list() == ()
+    assert tuple(
+        handler.interaction_contract_id for handler in default_app.state.yarvis.handler_registry.list()
+    ) == ("IC-PLATFORM-CMD-DISPATCH-PROBE",)

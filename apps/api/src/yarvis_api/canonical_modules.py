@@ -3,6 +3,7 @@
 from yarvis_api.module_registry import ApplicationModule
 
 CANONICAL_MODULES: tuple[ApplicationModule, ...] = (
+    ApplicationModule(module_id="platform", display_name="Platform"),
     ApplicationModule(module_id="identity", display_name="Identity"),
     ApplicationModule(module_id="governance", display_name="Governance"),
     ApplicationModule(module_id="relationship", display_name="Relationship"),
