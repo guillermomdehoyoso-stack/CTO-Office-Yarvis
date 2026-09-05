@@ -54,7 +54,7 @@ flowchart LR
 | TD-006 | The frontend contains governed Mission Work/Workspace and older simple API surfaces. | UI boundary consistency | Medium |
 | TD-007 | Frontend production build can be blocked by an `EPERM` lock on generated `dist/assets`. | Local build environment | Medium |
 | TD-008 | Development current-state/sprint documents required AC-002 reconciliation after WS-006E/F. | Development Operating System | Medium |
-| TD-009 | Repository/Session-injection design for real Command handlers remains unresolved and unauthorized; existing service-owned transactions cannot be wired through Dispatch until separately ratified. | Dispatch handler composition | High |
+| TD-009 | Closed on 2026-09-05 by [ADR-017](../decisions/ADR-017_RATIFY_DISPATCH_HANDLER_FACTORY_COMPOSITION.md): the bounded Handler-factory composition mechanism was implemented and passed its Evidence Gate at commit `1314ef27460ceed30c36770f015b330a1862775b`. This closure does not authorize ArchiveDocument, business Repositories, business Command handlers, HTTP routes, or service transaction migrations. | Dispatch handler composition | Closed |
 
 ## Superseded Planning Statements
 

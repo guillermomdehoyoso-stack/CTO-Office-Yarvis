@@ -6,8 +6,12 @@
 
 **Date:** 2026-09-04
 **Decision authority:** Guillermo de Hoyos, Architecture Authority
+**Conformance authority:** Guillermo de Hoyos, Architecture Authority
+**Conformance decision date:** 2026-09-05
 **Authorized implementation package:** `ADR-017 authorized platform implementation package` only.
 **Accepted exceptions:** None.
+**Implementation status:** IMPLEMENTED — CONFORMANT — EVIDENCE GATE PASSED
+**Implementation commit:** `1314ef27460ceed30c36770f015b330a1862775b`
 
 ## Proposal Identity and Evidence
 
@@ -175,11 +179,44 @@ The authorized package is complete only when evidence demonstrates:
     suite, and `git diff --check` pass.
 11. Review confirms no file outside the Authorized File Boundary changed.
 
+## Implementation and Conformance Evidence
+
+The `ADR-017 authorized platform implementation package` was implemented in
+commit `1314ef27460ceed30c36770f015b330a1862775b`. The local branch and
+`origin/feat/operational-intake-spine` were verified at that same commit.
+
+The final ADR-017 gate returned `PASS` with no accepted exceptions:
+
+| Evidence | Result |
+| --- | --- |
+| PostgreSQL-backed Dispatch test | `1 passed in 14.35s` |
+| Relevant Dispatch/Registry/UnitOfWork/ADR-016 suite | `35 passed in 78.60s` |
+| Focused HandlerRegistry tests | `7 passed` |
+| Focused Ruff check | PASS |
+| Focused Ruff format check | PASS |
+| Focused Pyright | `0 errors, 0 warnings` |
+| `git diff --check` | PASS |
+| Authorized File Boundary review | PASS — no file outside the boundary changed |
+
+The implementation adds no business Handler or Repository and changes no
+canonical contract, HTTP route, business service, persistent model, migration,
+database schema, authentication, Founder Bootstrap, configuration, deployment,
+or default runtime Handler registration. The ADR-016 platform probe remains
+the only Handler registered by the default runtime composition root.
+
+This evidence closes only the platform-level Handler-factory composition work
+authorized by ADR-017. It does not authorize `ArchiveDocument`,
+`SqlDocumentRepository`, any business Repository, any of the 56 business
+Commands, or any route migration.
+
 ## TD-009 Status
 
-Acceptance of this ADR does not close TD-009. TD-009 remains open until the
-exact authorized platform-level package is implemented, tested, reviewed, and
-accompanied by conformance evidence.
+TD-009 was closed on 2026-09-05 after the exact authorized platform-level
+package was implemented, tested, independently reviewed, and accompanied by
+the conformance evidence above. Closure resolves only the Handler-factory
+composition question recorded by TD-009. It grants no implementation authority
+for `ArchiveDocument`, a business Repository, a business Command Handler, or an
+HTTP route.
 
 ## ArchiveDocument Boundary
 
