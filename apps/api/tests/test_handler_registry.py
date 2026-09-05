@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
+from typing import cast
 
 import pytest
 
@@ -18,6 +20,7 @@ from yarvis_api.dispatch import (
     HandlerOwnershipError,
     HandlerRegistry,
     HandlerRegistrySealedError,
+    InvalidHandlerDefinitionError,
     MissingHandlerError,
     UnknownDispatchContractError,
     UnsupportedContractKindError,
@@ -110,5 +113,68 @@ def test_handler_definition_rejects_coroutine_functions() -> None:
     async def async_handler(_command: object, _unit_of_work: object) -> None:
         await asyncio.sleep(0)
 
+    modules, contracts = registries(command_contract())
     with pytest.raises(Exception, match="synchronous callable"):
-        definition(handler=async_handler)
+        build_handler_registry(modules, contracts, (definition(handler=async_handler),))
+
+
+def test_handler_definition_preserves_static_positional_compatibility() -> None:
+    positional = HandlerDefinition("IC-TEST-CMD-001", "test.owner", "Test", handler, "test_handler")
+
+    assert positional.handler is handler
+    assert positional.handler_name == "test_handler"
+    assert positional.handler_factory is None
+
+
+def test_handler_definition_requires_exactly_one_synchronous_resolution_mode() -> None:
+    def factory(_session: object):
+        return handler
+
+    async def async_factory(_session: object):
+        return handler
+
+    modules, contracts = registries(command_contract())
+    with pytest.raises(InvalidHandlerDefinitionError, match="exactly one"):
+        build_handler_registry(modules, contracts, (definition(handler=None),))
+    with pytest.raises(InvalidHandlerDefinitionError, match="exactly one"):
+        build_handler_registry(modules, contracts, (definition(handler_factory=factory),))
+    with pytest.raises(InvalidHandlerDefinitionError, match="synchronous callable"):
+        build_handler_registry(modules, contracts, (definition(handler=None, handler_factory=async_factory),))
+    with pytest.raises(InvalidHandlerDefinitionError, match="synchronous callable"):
+        build_handler_registry(modules, contracts, (definition(handler=cast(object, "not callable")),))
+
+    factory_definition = definition(handler=None, handler_factory=factory)
+    factory_registry = build_handler_registry(modules, contracts, (factory_definition,))
+    assert factory_definition.handler is None
+    assert factory_definition.handler_factory is factory
+    assert factory_registry.get("IC-TEST-CMD-001") is factory_definition
+
+
+def test_handler_registry_rejects_async_callable_instances_and_accepts_sync_callable_instances() -> None:
+    class AsyncCallable:
+        async def __call__(self, *_arguments: object) -> None:
+            return None
+
+    class SyncCallable:
+        def __call__(self, *_arguments: object) -> None:
+            return None
+
+    modules, contracts = registries(command_contract())
+    with pytest.raises(InvalidHandlerDefinitionError, match="synchronous callable"):
+        build_handler_registry(modules, contracts, (definition(handler=AsyncCallable()),))
+    with pytest.raises(InvalidHandlerDefinitionError, match="synchronous callable"):
+        build_handler_registry(modules, contracts, (definition(handler=None, handler_factory=AsyncCallable()),))
+
+    synchronous_definition = definition(handler=SyncCallable())
+    synchronous_registry = build_handler_registry(modules, contracts, (synchronous_definition,))
+    assert synchronous_registry.get("IC-TEST-CMD-001") is synchronous_definition
+
+
+def test_dispatch_models_has_no_runtime_sqlalchemy_import() -> None:
+    import yarvis_api.dispatch.models as models
+
+    source = inspect.getsource(models)
+    sqlalchemy_import = "    from sqlalchemy.orm import Session"
+    import_index = source.splitlines().index(sqlalchemy_import)
+
+    assert source.splitlines()[import_index - 1] == "if TYPE_CHECKING:"

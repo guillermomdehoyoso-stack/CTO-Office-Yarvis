@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import inspect
 from collections.abc import Iterable
 
 from yarvis_api.contract_registry import ContractRegistry, ContractType
@@ -10,12 +11,22 @@ from yarvis_api.dispatch.errors import (
     HandlerOwnershipError,
     HandlerRegistryError,
     HandlerRegistrySealedError,
+    InvalidHandlerDefinitionError,
     MissingHandlerError,
     UnknownDispatchContractError,
     UnsupportedContractKindError,
 )
 from yarvis_api.dispatch.models import HandlerDefinition
 from yarvis_api.module_registry import ModuleRegistry
+
+
+def _is_async_callable(value: object) -> bool:
+    """Return whether a callable is implemented by an async function or method."""
+
+    if inspect.iscoroutinefunction(value):
+        return True
+    dunder_call = getattr(value, "__call__", None)
+    return dunder_call is not None and inspect.iscoroutinefunction(dunder_call)
 
 
 class HandlerRegistry:
@@ -36,6 +47,7 @@ class HandlerRegistry:
     def register(self, definition: HandlerDefinition) -> None:
         if self.is_sealed:
             raise HandlerRegistrySealedError("handler registry is sealed")
+        self._validate_resolution_mode(definition)
         contract = self._contract_registry.get(definition.interaction_contract_id)
         if contract is None:
             raise UnknownDispatchContractError(f"unknown interaction contract: {definition.interaction_contract_id}")
@@ -55,6 +67,16 @@ class HandlerRegistry:
         if definition.interaction_contract_id in self._handlers:
             raise DuplicateHandlerError(f"duplicate Command handler: {definition.interaction_contract_id}")
         self._handlers[definition.interaction_contract_id] = definition
+
+    @staticmethod
+    def _validate_resolution_mode(definition: HandlerDefinition) -> None:
+        has_handler = definition.handler is not None
+        has_handler_factory = definition.handler_factory is not None
+        if has_handler == has_handler_factory:
+            raise InvalidHandlerDefinitionError("exactly one of handler or handler_factory must be provided")
+        selected = definition.handler if has_handler else definition.handler_factory
+        if not callable(selected) or _is_async_callable(selected):
+            raise InvalidHandlerDefinitionError("handler or handler_factory must be a synchronous callable")
 
     def register_many(self, definitions: Iterable[HandlerDefinition]) -> None:
         for definition in definitions:

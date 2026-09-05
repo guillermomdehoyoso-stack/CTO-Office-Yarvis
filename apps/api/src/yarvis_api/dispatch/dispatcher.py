@@ -94,7 +94,12 @@ class Dispatcher:
         try:
             with unit_of_work:
                 facade = _CommandUnitOfWorkFacade(unit_of_work)
-                result = handler_definition.handler(command, facade)
+                handler = handler_definition.handler
+                if handler is None:
+                    handler_factory = handler_definition.handler_factory
+                    assert handler_factory is not None
+                    handler = handler_factory(unit_of_work.session)
+                result = handler(command, facade)
                 self._verify_terminal_state(unit_of_work.state)
                 return result
         finally:

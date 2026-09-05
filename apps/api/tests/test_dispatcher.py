@@ -23,7 +23,7 @@ from yarvis_api.dispatch import (
     build_handler_registry,
 )
 from yarvis_api.module_registry import ApplicationModule, build_module_registry
-from yarvis_api.persistence import PersistenceRuntime, UnitOfWorkState
+from yarvis_api.persistence import OperationScope, PersistenceRuntime, UnitOfWork, UnitOfWorkState
 
 
 @dataclass
@@ -67,6 +67,25 @@ class CloseFailingSession(FakeSession):
 class CloseFailingRuntime(FakeRuntime):
     def create_session(self) -> FakeSession:
         session = CloseFailingSession()
+        self.sessions.append(session)
+        return session
+
+
+@dataclass
+class CleanupFailingSession(FakeSession):
+    def rollback(self) -> None:
+        self.rollback_calls += 1
+        raise RuntimeError("rollback cleanup failure")
+
+    def close(self) -> None:
+        self.close_calls += 1
+        raise RuntimeError("close cleanup failure")
+
+
+@dataclass
+class CleanupFailingRuntime(FakeRuntime):
+    def create_session(self) -> FakeSession:
+        session = CleanupFailingSession()
         self.sessions.append(session)
         return session
 
@@ -217,6 +236,121 @@ def test_disposal_failure_after_commit_withholds_the_handler_result() -> None:
     with pytest.raises(RuntimeError, match="close failure"):
         subject.dispatch(CommandEnvelope("IC-TEST-CMD-001", "safe"))
     assert runtime.sessions[0].commit_calls == 1
+
+
+def test_factory_receives_the_active_unit_of_work_session_and_its_handler_commits() -> None:
+    observed: dict[str, object] = {}
+
+    def handler(command: CommandEnvelope, unit_of_work: object) -> str:
+        observed["command"] = command
+        assert not hasattr(unit_of_work, "session")
+        unit_of_work.commit()  # type: ignore[attr-defined]
+        return "factory-completed"
+
+    def factory(session: object):
+        observed["session"] = session
+        return handler
+
+    modules = build_module_registry((ApplicationModule("test.owner", "Test owner"),))
+    contracts = build_contract_registry(modules, (contract(),))
+    handlers = build_handler_registry(
+        modules,
+        contracts,
+        (
+            HandlerDefinition(
+                "IC-TEST-CMD-001",
+                "test.owner",
+                "Test",
+                None,
+                "factory_handler",
+                factory,
+            ),
+        ),
+    )
+    runtime = FakeRuntime([])
+    subject = Dispatcher(contracts, handlers, cast(PersistenceRuntime, runtime))
+
+    assert subject.dispatch(CommandEnvelope("IC-TEST-CMD-001", "safe")) == "factory-completed"
+    assert observed["command"].contract_id == "IC-TEST-CMD-001"  # type: ignore[union-attr]
+    assert observed["session"] is runtime.sessions[0]
+    assert runtime.sessions[0].begin_calls == 1
+    assert runtime.sessions[0].commit_calls == 1
+    assert runtime.sessions[0].close_calls == 1
+
+
+def test_factory_failure_prevents_handler_invocation_and_uses_existing_cleanup() -> None:
+    observed = {"handler_invoked": False}
+
+    def handler(_command: CommandEnvelope, _unit_of_work: object) -> None:
+        observed["handler_invoked"] = True
+
+    def factory(_session: object):
+        raise RuntimeError("factory failure")
+
+    modules = build_module_registry((ApplicationModule("test.owner", "Test owner"),))
+    contracts = build_contract_registry(modules, (contract(),))
+    handlers = build_handler_registry(
+        modules,
+        contracts,
+        (HandlerDefinition("IC-TEST-CMD-001", "test.owner", "Test", None, "factory_handler", factory),),
+    )
+    runtime = FakeRuntime([])
+    observed_unit_of_work: list[UnitOfWork] = []
+
+    def unit_of_work_factory(persistence: PersistenceRuntime, scope: OperationScope) -> UnitOfWork:
+        unit_of_work = UnitOfWork(persistence, scope)
+        observed_unit_of_work.append(unit_of_work)
+        return unit_of_work
+
+    subject = Dispatcher(
+        contracts,
+        handlers,
+        cast(PersistenceRuntime, runtime),
+        unit_of_work_factory=unit_of_work_factory,
+    )
+
+    with pytest.raises(RuntimeError, match="factory failure"):
+        subject.dispatch(CommandEnvelope("IC-TEST-CMD-001", "safe"))
+
+    assert observed["handler_invoked"] is False
+    assert runtime.sessions[0].rollback_calls == 1
+    assert runtime.sessions[0].close_calls == 1
+    assert observed_unit_of_work[0].state == UnitOfWorkState.DISPOSED
+
+
+def test_factory_failure_preserves_primary_error_when_cleanup_double_fails() -> None:
+    def factory(_session: object):
+        raise RuntimeError("factory failure")
+
+    modules = build_module_registry((ApplicationModule("test.owner", "Test owner"),))
+    contracts = build_contract_registry(modules, (contract(),))
+    handlers = build_handler_registry(
+        modules,
+        contracts,
+        (HandlerDefinition("IC-TEST-CMD-001", "test.owner", "Test", None, "factory_handler", factory),),
+    )
+    runtime = CleanupFailingRuntime([])
+    observed_unit_of_work: list[UnitOfWork] = []
+
+    def unit_of_work_factory(persistence: PersistenceRuntime, scope: OperationScope) -> UnitOfWork:
+        unit_of_work = UnitOfWork(persistence, scope)
+        observed_unit_of_work.append(unit_of_work)
+        return unit_of_work
+
+    subject = Dispatcher(
+        contracts,
+        handlers,
+        cast(PersistenceRuntime, runtime),
+        unit_of_work_factory=unit_of_work_factory,
+    )
+
+    with pytest.raises(RuntimeError, match="factory failure") as error:
+        subject.dispatch(CommandEnvelope("IC-TEST-CMD-001", "safe"))
+
+    assert any("cleanup failed" in note for note in error.value.__notes__)
+    assert runtime.sessions[0].rollback_calls == 1
+    assert runtime.sessions[0].close_calls == 1
+    assert observed_unit_of_work[0].state == UnitOfWorkState.FAILED
 
 
 def test_separate_dispatches_create_separate_sessions() -> None:

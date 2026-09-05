@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import inspect
 from collections.abc import Callable
 from dataclasses import dataclass, fields, is_dataclass
 from types import MappingProxyType
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from yarvis_api.dispatch.errors import InvalidHandlerDefinitionError
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 
 def _freeze_payload(value: object) -> object:
@@ -83,6 +85,7 @@ class CommandUnitOfWork(Protocol):
 
 
 CommandHandler = Callable[[CommandEnvelope, CommandUnitOfWork], object | None]
+HandlerFactory = Callable[["Session"], "CommandHandler"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -92,13 +95,12 @@ class HandlerDefinition:
     interaction_contract_id: str
     owner_module_id: str
     owning_context: str
-    handler: CommandHandler
-    handler_name: str
+    handler: CommandHandler | None = None
+    handler_name: str = ""
+    handler_factory: HandlerFactory | None = None
 
     def __post_init__(self) -> None:
         for field_name in ("interaction_contract_id", "owner_module_id", "owning_context", "handler_name"):
             value = getattr(self, field_name)
             if not isinstance(value, str) or not value.strip():
                 raise InvalidHandlerDefinitionError(f"{field_name} must be nonblank")
-        if not callable(self.handler) or inspect.iscoroutinefunction(self.handler):
-            raise InvalidHandlerDefinitionError("handler must be a synchronous callable")
