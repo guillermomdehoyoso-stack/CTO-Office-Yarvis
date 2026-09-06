@@ -529,6 +529,59 @@ constructed fixture oracles. It is not a measurement over real email, does not
 satisfy Amendment 018's productive 8-of-10 classification criterion and cannot
 be cited as real-pilot evidence.
 
+## Implementation and Conformance Evidence
+
+Implementation was limited to:
+
+- `synthetic_netpay_intake.py`;
+- `synthetic_netpay_intake_app.py`; and
+- `test_synthetic_netpay_intake.py`.
+
+The accepted functional evidence proves:
+
+- an immutable manifest of 10 fixtures covering all five categories;
+- an independent oracle;
+- atomicity, concurrency, idempotency and checkpoint behavior;
+- sanitization and redaction before the 4096-byte UTF-8 limit;
+- explicit synthetic human decisions;
+- the synthetic Commercial Intake boundary projection;
+- productive isolation;
+- cumulative peer, Host, Origin/Referer and CSRF controls;
+- restrictive CSP and escaped rendering;
+- the fixed entrypoint and human validation of the real TCP process;
+- Post/Redirect/Get navigation; and
+- fail-closed disable behavior.
+
+Post-commit results were:
+
+- focused synthetic suite: `37 passed, 1 warning in 73.30s`;
+- bootstrap/main/NetPay Inbox regression:
+  `17 passed, 1 warning in 44.89s`;
+- Ruff check: PASS;
+- Ruff format `--check`: PASS;
+- Pyright: `0 errors, 0 warnings, 0 informations`;
+- `git diff --check`: PASS;
+- `git show --check HEAD`: PASS;
+- Authorized File Boundary: PASS; and
+- HUMAN VALIDATION: PASS.
+
+The warning is a deprecation warning internal to Starlette TestClient and is
+not a package failure.
+
+Peer evidence is separated by layer: remote, IPv4 and IPv6 peer behavior was
+tested through TestClient/ASGI; `client=None` was tested through a manual ASGI
+scope; Uvicorn configuration was tested through interception; and the real
+Uvicorn TCP process on `127.0.0.1:8765` was confirmed through human validation.
+The ASGI remote-peer test is not represented as a real remote TCP connection.
+
+An additional smoke attempt in the automation environment did not find the
+local Windows interpreter, opened no listener and is not used as evidence.
+
+The ADR-018 authorized synthetic Netpay intake package is terminally
+IMPLEMENTED — CONFORMANT — EVIDENCE GATE PASSED, with no exceptions. This
+completion neither satisfies nor opens any productive gate in Implementation
+Roadmap Amendment 018.
+
 ## Rollback
 
 Rollback consists exclusively of reverting or deleting the three files in the
@@ -641,6 +694,11 @@ Each requires separate authority.
 - Hash basis: **Canonical UTF-8 without BOM, with CRLF and lone CR normalized to LF before hashing**
 - Authorized package: **`ADR-018 authorized synthetic Netpay intake package`**
 - Accepted exceptions: **None**
+- Implementation status: **IMPLEMENTED — CONFORMANT — EVIDENCE GATE PASSED**
+- Implementation commit: **`6682dd8add34063ac989dbd75ee8ec660ad0d99c`**
+- Conformance authority: **Guillermo de Hoyos, Architecture Authority**
+- Conformance decision date: **2026-09-06**
+- Conformance exceptions: **None**
 
 This act authorizes implementation only within the exact Authorized File
 Boundary, Evidence Gate, isolation requirements and rollback defined by this
