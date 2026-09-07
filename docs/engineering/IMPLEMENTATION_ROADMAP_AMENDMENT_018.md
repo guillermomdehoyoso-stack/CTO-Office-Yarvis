@@ -793,6 +793,16 @@ pilot may be considered until:
 No synthetic package, fake adapter or local test waives or satisfies these
 productive prerequisites.
 
+### Canonical Identity evidence status
+
+Architecture Authority accepted the evidence recorded in
+`NETPAY_MVP2D1_CANONICAL_IDENTITY_GATE_EVIDENCE.md` as satisfying exclusively
+§3.2 and §8.2. This acceptance satisfies only the Canonical Identity
+prerequisite referenced by §12.2; it does not satisfy §12.2 as a whole, open
+§8.3 or any later productive gate, or authorize contracts, roles,
+implementation, secrets, Google resources, OAuth, Gmail, mailbox access,
+synchronization, deployment or a real pilot.
+
 ## Architecture Authority Ratification
 
 - Decision: **RATIFIED — DESIGN AUTHORITY ONLY**
