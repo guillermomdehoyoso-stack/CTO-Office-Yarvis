@@ -96,6 +96,16 @@ CANONICAL_RUNTIME_BASELINE_V1 = (
     ("IC-NETPAY-EVT-001", ContractType.EVENT, "netpay_merchant_operations", "case", *_PROPOSED_PLANNED),
     ("IC-NETPAY-EVT-002", ContractType.EVENT, "netpay_merchant_operations", "case", *_PROPOSED_PLANNED),
     ("IC-NETPAY-NTF-001", ContractType.NOTIFICATION, "netpay_merchant_operations", "communication", *_PROPOSED_PLANNED),
+    ("IC-DOCUMENT-CMD-001", ContractType.COMMAND, "document_registry", "document creation", *_RATIFIED_VERIFIED),
+    ("IC-DOCUMENT-CMD-002", ContractType.COMMAND, "document_registry", "metadata update", *_RATIFIED_VERIFIED),
+    ("IC-DOCUMENT-CMD-003", ContractType.COMMAND, "document_registry", "version creation", *_RATIFIED_VERIFIED),
+    ("IC-DOCUMENT-CMD-004", ContractType.COMMAND, "document_registry", "document archival", *_RATIFIED_VERIFIED),
+    ("IC-DOCUMENT-CMD-005", ContractType.COMMAND, "document_registry", "association link", *_RATIFIED_VERIFIED),
+    ("IC-DOCUMENT-CMD-006", ContractType.COMMAND, "document_registry", "association unlink", *_RATIFIED_VERIFIED),
+    ("IC-DOCUMENT-QRY-001", ContractType.QUERY, "document_registry", "document retrieval", *_RATIFIED_VERIFIED),
+    ("IC-DOCUMENT-QRY-002", ContractType.QUERY, "document_registry", "version retrieval", *_RATIFIED_VERIFIED),
+    ("IC-DOCUMENT-QRY-003", ContractType.QUERY, "document_registry", "association retrieval", *_RATIFIED_VERIFIED),
+    ("IC-DOCUMENT-QRY-004", ContractType.QUERY, "document_registry", "subject retrieval", *_RATIFIED_VERIFIED),
     (
         "IC-NETPAY-CMD-016",
         ContractType.COMMAND,
@@ -152,16 +162,6 @@ CANONICAL_RUNTIME_BASELINE_V1 = (
         "Netpay Gmail intake",
         *_RATIFIED_PLANNED,
     ),
-    ("IC-DOCUMENT-CMD-001", ContractType.COMMAND, "document_registry", "document creation", *_RATIFIED_VERIFIED),
-    ("IC-DOCUMENT-CMD-002", ContractType.COMMAND, "document_registry", "metadata update", *_RATIFIED_VERIFIED),
-    ("IC-DOCUMENT-CMD-003", ContractType.COMMAND, "document_registry", "version creation", *_RATIFIED_VERIFIED),
-    ("IC-DOCUMENT-CMD-004", ContractType.COMMAND, "document_registry", "document archival", *_RATIFIED_VERIFIED),
-    ("IC-DOCUMENT-CMD-005", ContractType.COMMAND, "document_registry", "association link", *_RATIFIED_VERIFIED),
-    ("IC-DOCUMENT-CMD-006", ContractType.COMMAND, "document_registry", "association unlink", *_RATIFIED_VERIFIED),
-    ("IC-DOCUMENT-QRY-001", ContractType.QUERY, "document_registry", "document retrieval", *_RATIFIED_VERIFIED),
-    ("IC-DOCUMENT-QRY-002", ContractType.QUERY, "document_registry", "version retrieval", *_RATIFIED_VERIFIED),
-    ("IC-DOCUMENT-QRY-003", ContractType.QUERY, "document_registry", "association retrieval", *_RATIFIED_VERIFIED),
-    ("IC-DOCUMENT-QRY-004", ContractType.QUERY, "document_registry", "subject retrieval", *_RATIFIED_VERIFIED),
     (
         "IC-NETPAY-CMD-020",
         ContractType.COMMAND,
@@ -700,3 +700,19 @@ def test_adr019_excluded_contract_ids_remain_absent_and_unreserved() -> None:
 
     assert "IC-NETPAY-CMD-019" not in contract_ids
     assert "IC-NETPAY-EVT-009" not in contract_ids
+
+
+def test_adr019_contracts_are_immediately_before_commercial_intake_in_the_assembled_catalog() -> None:
+    assembled_ids = tuple(contract.interaction_contract_id for contract in canonical_contracts())
+    commercial_intake_index = assembled_ids.index("IC-NETPAY-CMD-020")
+
+    assert assembled_ids[commercial_intake_index - 8 : commercial_intake_index] == (
+        "IC-NETPAY-CMD-016",
+        "IC-NETPAY-CMD-017",
+        "IC-NETPAY-CMD-018",
+        "IC-NETPAY-QRY-007",
+        "IC-NETPAY-QRY-008",
+        "IC-NETPAY-EVT-007",
+        "IC-NETPAY-EVT-008",
+        "IC-NETPAY-EVT-010",
+    )
