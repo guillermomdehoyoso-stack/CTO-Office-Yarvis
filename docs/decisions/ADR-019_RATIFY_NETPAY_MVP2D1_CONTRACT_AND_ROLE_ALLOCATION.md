@@ -3,7 +3,7 @@
 
 ## Status
 
-**PROPOSED — DRAFT — NO IMPLEMENTATION OR ASSIGNMENT AUTHORITY**
+**ACCEPTED — ARCHITECTURAL AUTHORITY ONLY — NO IMPLEMENTATION OR ASSIGNMENT AUTHORITY**
 
 ## Date
 
@@ -744,20 +744,32 @@ the architecture accepted in the normative proposal.
 
 ## Future Architecture Authority Act
 
-- Decision: **[not recorded]**
-- Architecture Authority: **[not recorded]**
-- Decision date: **[not recorded]**
-- Accepted ADR Draft SHA-256: **[not recorded]**
-- Ratified proposal commit: **[not recorded]**
-- Ratified proposal SHA-256: **[not recorded]**
-- Accepted scope: **[not recorded]**
-- Authorized implementation package: **[not recorded]**
-- Authorized File Boundary: **[not recorded]**
-- Evidence Gate: **[not recorded]**
-- Accepted risks: **[not recorded]**
-- Accepted exceptions: **[not recorded]**
-- Downstream authority: **[not recorded]**
+- Decision: **ACCEPTED — ARCHITECTURAL AUTHORITY ONLY**
+- Architecture Authority: **Guillermo de Hoyos, Architecture Authority**
+- Decision date: **2026-09-07**
+- Accepted ADR Draft commit: **`522ffb56db442a8e8d5969a3e82634ce45fbfa9b`**
+- Accepted ADR Draft SHA-256: **`D371114809C0233557F7CF8B39DDADA0431090E12A8C9001A35A74935E38570A`**
+- Hash basis: **Canonical UTF-8 without BOM, with CRLF and lone CR normalized to LF before hashing**
+- Independent review verdict: **ACCEPT**
+- Mandatory findings pending: **None**
+- Accepted scope: **The architectural decisions, contracts, invariants, package separation, limits and Evidence Gates defined in ADR-019**
+- Authorized implementation packages: **None**
+- Authorized File Boundaries: **None**
+- Accepted exceptions: **None**
+- Downstream authority: **None**
 
-This block is intentionally empty. While it remains empty, this ADR is not an
-Accepted decision and grants no implementation, assignment, operational or
-downstream authority.
+This ratification does not satisfy or close Amendment 018 §8.3. It does not
+authorize implementing Package A, registering the eight contracts in runtime,
+implementing Package B, or resolving by implication any Package B element
+marked `TO BE DETERMINED`.
+
+It does not authorize creating the temporary role, its Intake permissions or
+the temporal resolver; modifying `ROLE_PERMISSIONS` or productive call sites;
+or assigning any role or permission to Guillermo de Hoyos or any other person.
+
+It does not authorize migrations, productive data, configuration, secrets,
+Google resources, OAuth, Gmail, mailbox access, synchronization, deployment or
+a pilot. It does not open §8.5 or any later gate.
+
+Any implementation of Package A, design or implementation of Package B,
+effective assignment or closure of §8.3 requires separate later authority.
