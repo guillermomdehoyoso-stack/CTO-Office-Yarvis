@@ -660,6 +660,80 @@ CANONICAL_CONTRACTS += tuple(
         interaction_contract_id=contract_id,
         version="1.0.0",
         contract_type=contract_type,
+        owner_module_id="netpay_merchant_operations",
+        owning_context="Netpay Merchant Operations",
+        owning_capability="Netpay Gmail intake",
+        name=name,
+        semantic_purpose=purpose,
+        lifecycle=ContractLifecycle.RATIFIED,
+        operational_status=ContractOperationalStatus.PLANNED,
+        criticality=ContractCriticality.CORE,
+        primary_consumer_or_use_case="Netpay MVP-2D1 Manual Review Variant",
+        architectural_steward=None,
+        traceability_references=(
+            "IMPLEMENTATION_ROADMAP_AMENDMENT_018.md",
+            "NETPAY_MVP2D1_CONTRACT_AND_ROLE_ALLOCATION_PROPOSAL.md",
+            "ADR-019_RATIFY_NETPAY_MVP2D1_CONTRACT_AND_ROLE_ALLOCATION.md",
+        ),
+    )
+    for contract_id, contract_type, name, purpose in (
+        (
+            "IC-NETPAY-CMD-016",
+            ContractType.COMMAND,
+            "ConfigureNetpayGmailConnector",
+            "Define logical configuration and lifecycle transitions for one explicit, Organization-bound mailbox "
+            "configuration",
+        ),
+        (
+            "IC-NETPAY-CMD-017",
+            ContractType.COMMAND,
+            "SynchronizeNetpayGmailConnector",
+            "Represent a future human-triggered synchronization request for one explicit mailbox configuration",
+        ),
+        (
+            "IC-NETPAY-CMD-018",
+            ContractType.COMMAND,
+            "ReviewNetpayIntakeCandidate",
+            "Record an explicit human review of one tenant-owned candidate",
+        ),
+        (
+            "IC-NETPAY-QRY-007",
+            ContractType.QUERY,
+            "ListNetpayIntakeCandidates",
+            "Return a tenant-scoped list of safe candidate summaries and an allowlisted connector-health summary",
+        ),
+        (
+            "IC-NETPAY-QRY-008",
+            ContractType.QUERY,
+            "RetrieveNetpayIntakeCandidate",
+            "Return one safe, tenant-scoped candidate detail for human review",
+        ),
+        (
+            "IC-NETPAY-EVT-007",
+            ContractType.EVENT,
+            "NetpayIntakeCandidateReceived",
+            "Record receipt of a tenant-owned Netpay intake candidate",
+        ),
+        (
+            "IC-NETPAY-EVT-008",
+            ContractType.EVENT,
+            "NetpayIntakeCandidateReviewed",
+            "Record an explicit human review of a tenant-owned Netpay intake candidate",
+        ),
+        (
+            "IC-NETPAY-EVT-010",
+            ContractType.EVENT,
+            "NetpayGmailConnectorSyncFailed",
+            "Record a safe Netpay Gmail connector synchronization failure fact",
+        ),
+    )
+)
+
+CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(
+        interaction_contract_id=contract_id,
+        version="1.0.0",
+        contract_type=contract_type,
         owner_module_id="document_registry",
         owning_context="Document Registry",
         owning_capability=capability,

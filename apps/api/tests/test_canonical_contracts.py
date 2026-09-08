@@ -15,6 +15,22 @@ _PROPOSED_PLANNED = (ContractLifecycle.PROPOSED, ContractOperationalStatus.PLANN
 _RATIFIED_VERIFIED = (ContractLifecycle.RATIFIED, ContractOperationalStatus.VERIFIED)
 _RATIFIED_PLANNED = (ContractLifecycle.RATIFIED, ContractOperationalStatus.PLANNED)
 
+ADR_019_CONTRACT_IDS = (
+    "IC-NETPAY-CMD-016",
+    "IC-NETPAY-CMD-017",
+    "IC-NETPAY-CMD-018",
+    "IC-NETPAY-QRY-007",
+    "IC-NETPAY-QRY-008",
+    "IC-NETPAY-EVT-007",
+    "IC-NETPAY-EVT-008",
+    "IC-NETPAY-EVT-010",
+)
+ADR_019_TRACEABILITY = (
+    "IMPLEMENTATION_ROADMAP_AMENDMENT_018.md",
+    "NETPAY_MVP2D1_CONTRACT_AND_ROLE_ALLOCATION_PROPOSAL.md",
+    "ADR-019_RATIFY_NETPAY_MVP2D1_CONTRACT_AND_ROLE_ALLOCATION.md",
+)
+
 CANONICAL_RUNTIME_BASELINE_V1 = (
     (
         "IC-PLATFORM-CMD-DISPATCH-PROBE",
@@ -80,6 +96,62 @@ CANONICAL_RUNTIME_BASELINE_V1 = (
     ("IC-NETPAY-EVT-001", ContractType.EVENT, "netpay_merchant_operations", "case", *_PROPOSED_PLANNED),
     ("IC-NETPAY-EVT-002", ContractType.EVENT, "netpay_merchant_operations", "case", *_PROPOSED_PLANNED),
     ("IC-NETPAY-NTF-001", ContractType.NOTIFICATION, "netpay_merchant_operations", "communication", *_PROPOSED_PLANNED),
+    (
+        "IC-NETPAY-CMD-016",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-017",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-018",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-007",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-008",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-007",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-008",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-010",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
     ("IC-DOCUMENT-CMD-001", ContractType.COMMAND, "document_registry", "document creation", *_RATIFIED_VERIFIED),
     ("IC-DOCUMENT-CMD-002", ContractType.COMMAND, "document_registry", "metadata update", *_RATIFIED_VERIFIED),
     ("IC-DOCUMENT-CMD-003", ContractType.COMMAND, "document_registry", "version creation", *_RATIFIED_VERIFIED),
@@ -477,8 +549,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
     assert {
         contract.interaction_contract_id for contract in contracts if contract.interaction_contract_id in AUTH_PROD_IDS
     } == AUTH_PROD_IDS
-    assert len(contracts) == 116
-    assert len({contract.interaction_contract_id for contract in contracts}) == 116
+    assert len(contracts) == 124
+    assert len({contract.interaction_contract_id for contract in contracts}) == 124
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -499,16 +571,21 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
         if contract.interaction_contract_id in AUTH_PROD_IDS
     )
     assert all(contract.architectural_steward is None for contract in contracts)
-    assert all(contract.traceability_references == () for contract in contracts)
+    assert all(
+        contract.traceability_references == ADR_019_TRACEABILITY
+        if contract.interaction_contract_id in ADR_019_CONTRACT_IDS
+        else contract.traceability_references == ()
+        for contract in contracts
+    )
 
 
 def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions() -> None:
     contracts = canonical_contracts()
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
-        ContractType.COMMAND: 57,
-        ContractType.QUERY: 28,
-        ContractType.EVENT: 29,
+        ContractType.COMMAND: 60,
+        ContractType.QUERY: 30,
+        ContractType.EVENT: 32,
         ContractType.NOTIFICATION: 2,
     }
     owner_counts = {
@@ -524,7 +601,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
         "knowledge": 3,
         "execution": 6,
         "mission_control": 5,
-        "netpay_merchant_operations": 53,
+        "netpay_merchant_operations": 61,
         "operational_execution": 7,
         "document_registry": 10,
     }
@@ -544,3 +621,82 @@ def test_canonical_contracts_validate_against_canonical_modules_and_required_met
         for contract in contracts
         for forbidden_field in ("message_type", "result_type", "handler", "transport", "persistence")
     )
+
+
+def test_adr019_package_a_contracts_have_exact_ratified_metadata() -> None:
+    by_id = {contract.interaction_contract_id: contract for contract in canonical_contracts()}
+    expected = (
+        (
+            "IC-NETPAY-CMD-016",
+            ContractType.COMMAND,
+            "ConfigureNetpayGmailConnector",
+            "Define logical configuration and lifecycle transitions for one explicit, Organization-bound mailbox "
+            "configuration",
+        ),
+        (
+            "IC-NETPAY-CMD-017",
+            ContractType.COMMAND,
+            "SynchronizeNetpayGmailConnector",
+            "Represent a future human-triggered synchronization request for one explicit mailbox configuration",
+        ),
+        (
+            "IC-NETPAY-CMD-018",
+            ContractType.COMMAND,
+            "ReviewNetpayIntakeCandidate",
+            "Record an explicit human review of one tenant-owned candidate",
+        ),
+        (
+            "IC-NETPAY-QRY-007",
+            ContractType.QUERY,
+            "ListNetpayIntakeCandidates",
+            "Return a tenant-scoped list of safe candidate summaries and an allowlisted connector-health summary",
+        ),
+        (
+            "IC-NETPAY-QRY-008",
+            ContractType.QUERY,
+            "RetrieveNetpayIntakeCandidate",
+            "Return one safe, tenant-scoped candidate detail for human review",
+        ),
+        (
+            "IC-NETPAY-EVT-007",
+            ContractType.EVENT,
+            "NetpayIntakeCandidateReceived",
+            "Record receipt of a tenant-owned Netpay intake candidate",
+        ),
+        (
+            "IC-NETPAY-EVT-008",
+            ContractType.EVENT,
+            "NetpayIntakeCandidateReviewed",
+            "Record an explicit human review of a tenant-owned Netpay intake candidate",
+        ),
+        (
+            "IC-NETPAY-EVT-010",
+            ContractType.EVENT,
+            "NetpayGmailConnectorSyncFailed",
+            "Record a safe Netpay Gmail connector synchronization failure fact",
+        ),
+    )
+
+    assert tuple(contract_id for contract_id, _, _, _ in expected) == ADR_019_CONTRACT_IDS
+    for contract_id, contract_type, name, semantic_purpose in expected:
+        contract = by_id[contract_id]
+        assert contract.version == "1.0.0"
+        assert contract.contract_type == contract_type
+        assert contract.owner_module_id == "netpay_merchant_operations"
+        assert contract.owning_context == "Netpay Merchant Operations"
+        assert contract.owning_capability == "Netpay Gmail intake"
+        assert contract.name == name
+        assert contract.semantic_purpose == semantic_purpose
+        assert contract.lifecycle == ContractLifecycle.RATIFIED
+        assert contract.operational_status == ContractOperationalStatus.PLANNED
+        assert contract.criticality == ContractCriticality.CORE
+        assert contract.primary_consumer_or_use_case == "Netpay MVP-2D1 Manual Review Variant"
+        assert contract.architectural_steward is None
+        assert contract.traceability_references == ADR_019_TRACEABILITY
+
+
+def test_adr019_excluded_contract_ids_remain_absent_and_unreserved() -> None:
+    contract_ids = {contract.interaction_contract_id for contract in canonical_contracts()}
+
+    assert "IC-NETPAY-CMD-019" not in contract_ids
+    assert "IC-NETPAY-EVT-009" not in contract_ids

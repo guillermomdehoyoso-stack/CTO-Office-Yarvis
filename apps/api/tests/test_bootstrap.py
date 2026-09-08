@@ -131,10 +131,10 @@ def test_default_and_explicit_empty_contract_composition_are_isolated() -> None:
     default_contract_ids = {contract.interaction_contract_id for contract in default_contracts}
 
     assert default_app.state.yarvis.contract_registry.is_sealed is True
-    # AUTH-CONTRACT-001 adds 16 runtime contracts to the prior 99-contract baseline.
+    # ADR-019 Package A adds 8 planned Netpay Gmail intake contracts to the prior 116-contract baseline.
     # The documentary catalog remains a distinct projection from this runtime composition.
     assert default_contracts == CANONICAL_CONTRACTS
-    assert len(default_contracts) == 116
+    assert len(default_contracts) == 124
     assert {
         "IC-TASK-CMD-001",
         "IC-TASK-CMD-002",
@@ -145,14 +145,18 @@ def test_default_and_explicit_empty_contract_composition_are_isolated() -> None:
         "IC-TASK-CMD-007",
     }.issubset(default_contract_ids)
     assert {
-        "IC-NETPAY-CMD-005", "IC-NETPAY-CMD-006", "IC-NETPAY-CMD-007",
-        "IC-NETPAY-CMD-008", "IC-NETPAY-QRY-003", "IC-NETPAY-QRY-004",
+        "IC-NETPAY-CMD-005",
+        "IC-NETPAY-CMD-006",
+        "IC-NETPAY-CMD-007",
+        "IC-NETPAY-CMD-008",
+        "IC-NETPAY-QRY-003",
+        "IC-NETPAY-QRY-004",
     }.issubset(default_contract_ids)
     assert "IC-WORKSPACE-QRY-001" in default_contract_ids
     assert empty_app.state.yarvis.contract_registry.is_sealed is True
     assert empty_app.state.yarvis.contract_registry.list() == ()
     assert default_contracts != empty_app.state.yarvis.contract_registry.list()
     assert default_app.state.yarvis.handler_registry.is_sealed is True
-    assert tuple(
-        handler.interaction_contract_id for handler in default_app.state.yarvis.handler_registry.list()
-    ) == ("IC-PLATFORM-CMD-DISPATCH-PROBE",)
+    assert tuple(handler.interaction_contract_id for handler in default_app.state.yarvis.handler_registry.list()) == (
+        "IC-PLATFORM-CMD-DISPATCH-PROBE",
+    )
