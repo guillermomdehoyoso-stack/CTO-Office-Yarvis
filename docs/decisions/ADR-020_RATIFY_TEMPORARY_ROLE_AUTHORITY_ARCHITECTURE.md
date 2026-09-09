@@ -1,10 +1,12 @@
 # ADR-020 — Ratify Temporary Role Authority Architecture
 
-Status: **PROPOSED — DRAFT — NO CONTRACT REGISTRATION, IMPLEMENTATION, RELEASE OR ASSIGNMENT AUTHORITY**
+Status: **RATIFIED — ARCHITECTURE ONLY — NO CONTRACT REGISTRATION, IMPLEMENTATION, RELEASE OR ASSIGNMENT AUTHORITY**
 
 Draft date: 2026-09-09
 
-Ratification readiness: **PENDING INDEPENDENT REVIEW**. T-01, T-02 and T-03 are individually RESOLVED AT DESIGN LEVEL. This correction records no independent acceptance or ratification.
+Ratification recorded: **2026-09-09**, Architecture Authority local decision date, without adjustment to server or UTC time. Authority: Guillermo de Hoyos. Terminal independent verdict: **ACCEPT**, expressly accepted by Architecture Authority with no mandatory findings pending. Architecture only; no implementation conformance or downstream authority.
+
+Documentary precedence: sections 20-22 record the subsequent ratification of the exact reviewed version. Earlier Proposed/draft, pending-review and future-act wording is retained as historical context of that version, not the current lifecycle or an unfulfilled ratification condition. Its reviewed architectural decisions remain unchanged and are now ratified, including the prospective 336/720-hour precision; no historical effect is created. All candidate boundaries, implementation prerequisites and authority exclusions remain binding. The earlier prohibition on publication concerned the drafting delivery; this act authorizes only recording and publishing this ratification in this file.
 
 Scope: Superior architecture for ADR-019 Package B — Expiry-aware Temporary Role Authority.
 
@@ -782,50 +784,58 @@ There is no downstream implementation, release, composition, operation or assign
 
 The sequence after this draft is independent architectural review, any expressly authorized documentary corrections, and a separate Architecture Authority act deciding architectural ratification. Each implementation work package then requires its own exact authorization and evidence/conformance sequence. This draft performs none of those future acts. No staging, commit or push is authorized for this drafting delivery.
 
-## 20. Independent Review Disposition - corrections PENDING
+## 20. Independent Review Disposition - ACCEPT
 
-| Review field | Current value |
+| Review field | Recorded value |
 | --- | --- |
-| Published-version review | ACCEPT WITH AMENDMENTS; T-01 HIGH, T-02 MEDIUM, T-03 HIGH |
-| Review status of this correction | PENDING independent review; Proposed, not ratified |
-| Reviewer | [not recorded] |
-| Reviewed ADR commit and canonical SHA-256 | [not recorded] |
-| Review date | [not recorded] |
-| Verdict | [not recorded] |
-| Mandatory findings and dispositions | T-01, T-02 and T-03 individually RESOLVED AT DESIGN LEVEL; no implementation conformance or new independent acceptance |
-| Architecture acceptance / implementation conformance | Not granted by this draft |
+| Earlier published-version review | ACCEPT WITH AMENDMENTS; T-01 HIGH, T-02 MEDIUM, T-03 HIGH; retained as historical review |
+| Terminal independent verdict | ACCEPT, expressly accepted by Guillermo de Hoyos in the ratification act below |
+| Reviewed ADR commit | `93d19155ae08d0782b7fe16b3d5a950faee4663f` |
+| Reviewed ADR canonical SHA-256 | `4AB2820E0717BB9BC5889AE89E6C915FF0785F7C905092D07E3D55242DDC5544` |
+| Independent reviewer / separate report reference / review date | Not supplied in the ratification act; no identity, report or date is inferred |
+| Mandatory findings pending | None, as expressly declared by Architecture Authority |
+| Finding dispositions | B-01 through B-13, R-01 through R-06 and T-01 through T-03: RESOLVED AT DESIGN LEVEL only |
+| Architecture acceptance / implementation conformance | Architecture ratified by section 21; neither implemented nor conformant is declared |
 
-Review must independently verify faithful transfer from the accepted proposal, all individual B/R dispositions, constraint/trigger feasibility, temporal/transaction claims, writer races, the five modes, anti-bypass, alternative A, all ten candidate IDs, the 26 existing and 18 new candidate paths, the bounded clarification and cases A-G in section 9.4, future gates and authority limits. Documentary validation is not this independent review. The accepted source's terminal ACCEPT must not be reused as this ADR's verdict.
+This records the terminal verdict accepted by Architecture Authority; it does not manufacture a new independent review or reuse the source proposal's ACCEPT as this ADR's verdict.
 
-## 21. Future Architecture Authority Act
+## 21. Architecture Authority Act
 
-Every value in this block is deliberately unrecorded. Neither the source proposal's signature/date nor this draft's creation date populates this future act. This blank template grants no authority.
-
-| Field | Value |
+| Field | Recorded value |
 | --- | --- |
-| Act ID | [not recorded] |
-| Architecture Authority | [not recorded] |
-| Decision | [not recorded] |
-| Decision date | [not recorded] |
-| Accepted ADR draft commit | [not recorded] |
-| Accepted ADR draft canonical SHA-256 | [not recorded] |
-| Hash basis | [not recorded] |
-| Independent reviewer and review reference | [not recorded] |
-| Independent review verdict | [not recorded] |
-| Mandatory findings pending | [not recorded] |
-| Accepted architectural scope | [not recorded] |
-| Authorized implementation work packages | [not recorded] |
-| Authorized File Boundaries | [not recorded] |
-| Evidence Gates | [not recorded] |
-| Rollback authority | [not recorded] |
-| Contract registration or promotion authority | [not recorded] |
-| Release or default composition authority | [not recorded] |
-| Operational assignment authority | [not recorded] |
-| Exceptions | [not recorded] |
-| Downstream authority | [not recorded] |
+| Act ID | ADR-020 ratification recorded in this section; no separate external act ID supplied |
+| Architecture Authority | Guillermo de Hoyos, Architecture Authority of Yarvis |
+| Decision | RATIFY ADR-020 - Temporary Role Authority Architecture; architectural decisions only |
+| Decision date | 2026-09-09, local date of Architecture Authority; not adjusted to server or UTC time |
+| Accepted ADR draft commit | `93d19155ae08d0782b7fe16b3d5a950faee4663f` |
+| Accepted ADR draft canonical SHA-256 | `4AB2820E0717BB9BC5889AE89E6C915FF0785F7C905092D07E3D55242DDC5544` |
+| Hash basis | Strict UTF-8 without BOM; CRLF and CR normalized to LF |
+| Independent reviewer and review reference | Terminal independent ACCEPT expressly accepted in this act; reviewer identity and separate report reference not supplied |
+| Independent review verdict | ACCEPT |
+| Mandatory findings pending | None |
+| Accepted architectural scope | Decisions in the identified ADR-020 version, including B-01 to B-13, R-01 to R-06 and T-01 to T-03 as resolved at design level only |
+| Authorized implementation work packages | None; B1, B2 and B3 remain separately governed and unauthorized |
+| Authorized File Boundaries | Only this ADR for documentary recording/publication; no implementation boundary authorized |
+| Evidence Gates | Candidate implementation gates retained; none passed or authorized by this act |
+| Rollback authority | No implementation or operational rollback authority granted |
+| Contract registration or promotion authority | None; no registration, reservation or promotion |
+| Release or default composition authority | None |
+| Operational assignment authority | None |
+| Exceptions | None |
+| Downstream authority | None |
+
+Architecture Authority ratifies the mandatory separation of B1, B2 and B3. Each requires independent implementation authorization, an exact Authorized File Boundary, Evidence Gate, independent review and an express conformance declaration. Ratification declares neither implementation nor conformance.
+
+The sanitized local PostgreSQL record defined in ADR-020 is the definitive required audit record for this scope. Confirmed rollback is neither revocation nor durable denial; an uncertain result cannot establish success. No outbox, queue, worker, broker, external audit delivery or global audit-health authority is authorized.
+
+This act does not authorize implementing B1/B2/B3; registering, reserving or promoting contracts; creating migrations, tables, indexes, triggers, models, repositories, services, handlers, resolvers, Events, audit, tests or configuration; modifying sessions, roles, permissions or Memberships; creating temporary assignments; releasing runtime; deploying; or accessing production.
+
+Amendment 018 section 8.3 remains unsatisfied and open. Productive assignment must follow express closure of section 8.3 and a separate operational act. Section 8.5 and every subsequent gate remain closed. No privacy/retention work, secrets, Google resources, OAuth, Gmail, mailbox access, synchronization, real pilot or deployment is authorized. General existing policy obligations are not waived.
+
+The sole action authorized here is recording this ratification in ADR-020, changing its documentary status, completing this authority block, verifying the result and publishing a commit modifying only ADR-020. The reviewed version's hash identifies the architectural input, not the resulting ratification-record bytes. No assignment to Guillermo or any other person is granted.
 
 ## 22. Documentary delivery boundary
 
-The only file modified by this terminal correction is `docs/decisions/ADR-020_RATIFY_TEMPORARY_ROLE_AUTHORITY_ARCHITECTURE.md`. This exact documentary boundary is distinct from the candidate implementation inventory. No other existing file is edited, no code or database tests/migrations are run, and no staging, commit or push is performed.
+Only `docs/decisions/ADR-020_RATIFY_TEMPORARY_ROLE_AUTHORITY_ARCHITECTURE.md` may change for this ratification record. The proposal, ADR-019, Amendment 018, policy documents, code, tests, migrations and configuration remain unchanged. AUDIT_REPORT.md is excluded from reading, modification and the commit.
 
-Delivery checks cover strict UTF-8 without BOM and LF, Markdown table/fence/heading structure, intentional placeholders, each of the nineteen inherited design-only rows and three individual T dispositions, the three RESOLVED AT DESIGN LEVEL T dispositions and bounded clarification, candidate counts and existence, canonical SHA-256, whitespace checks for the tracked documentary diff, unchanged source hashes, empty index and final Git status. The resulting hash is reported externally to avoid a self-referential hash. Stop for independent review after those checks; validation does not ratify the draft.
+Verify the exact documentary diff, strict UTF-8 without BOM and LF, Markdown structure, preserved reviewed decision body, unchanged authority exclusions, final canonical SHA-256, single-file commit and physical/blob equality. Publish only this documentary commit without amend, rebase or force-push, then verify local/remote HEAD and final Git state. This delivery grants no downstream authority.
