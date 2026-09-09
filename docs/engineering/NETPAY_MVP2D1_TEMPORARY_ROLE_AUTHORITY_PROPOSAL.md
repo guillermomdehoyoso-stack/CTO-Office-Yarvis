@@ -1,6 +1,6 @@
 # NetPay MVP2.D1 Temporary Role Authority Proposal
 
-Status: **PROPOSED — DRAFT — NO CONTRACT REGISTRATION, IMPLEMENTATION OR ASSIGNMENT AUTHORITY**
+Status: **ACCEPTED PROPOSAL — ADR REQUIRED — NO CONTRACT REGISTRATION, IMPLEMENTATION OR ASSIGNMENT AUTHORITY**
 
 Date: 2026-09-08
 
@@ -658,22 +658,38 @@ Architecture Authority must still record acceptance or rejection of this formal 
 
 The design-level READY FOR PROPOSAL conclusion does not authorize implementation. Repository drift, a changed head/contract allocation or new implementation evidence requires revalidation before any subsequent phase.
 
-## 18. Future Architecture Authority Act
+## 18. Architecture Authority Act — Proposal Acceptance
 
 | Field | Value |
 | --- | --- |
 | Act ID | [not recorded] |
-| Architecture Authority | [not recorded] |
-| Decision | [not recorded] |
-| Decision date | [not recorded] |
-| Ratifying record | [not recorded] |
-| Accepted proposal SHA-256 | [not recorded] |
-| Contract allocation authority | [not recorded] |
-| Phase and exact File Boundary | [not recorded] |
-| Evidence Gate and independent reviewer | [not recorded] |
-| Rollback authorization | [not recorded] |
-| Implementation/commit/conformance authority | [not recorded] |
-| Operational assignment authority | [not recorded] |
+| Architecture Authority | Guillermo de Hoyos, acting as Architecture Authority of Yarvis |
+| Decision | Accept this proposal exclusively as the reviewed basis for a future superior architectural ADR for ADR-019 Package B — Expiry-aware Temporary Role Authority |
+| Decision date | 2026-09-08, local date of Architecture Authority; not adjusted to server UTC or commit time |
+| Accepted proposal commit | `cca7c441393787e313fabbe7366dd1b78cb9a776` |
+| Accepted proposal SHA-256 | `E7C0344883A9C57C6F9EB218CF9FAA11BB34F0174E9C18716E8014526E910E4E`, canonical UTF-8 without BOM, with CRLF/CR normalized to LF |
+| Terminal independent review verdict accepted by Architecture Authority | ACCEPT; no mandatory findings pending, as expressly declared in this acceptance act |
+| Authorized status | ACCEPTED PROPOSAL — ADR REQUIRED — NO CONTRACT REGISTRATION, IMPLEMENTATION OR ASSIGNMENT AUTHORITY |
+| Ratifying record | None; this acceptance is not an Accepted ADR and does not ratify Package B |
+| Contract allocation authority | None; the ten candidate contracts are neither registered nor reserved |
+| Phase and exact File Boundary | B1, B2 and B3 remain unauthorized; Candidate File Boundaries remain candidates subject to later separate authorization |
+| Evidence Gate and independent reviewer | Candidate Evidence Gates remain subject to later separate authorization; this act records no implementation conformance |
+| Rollback authorization | None |
+| Documentary commit authority | Record this act in this proposal, change its status, verify the documentary diff, and create and publish a commit containing exclusively this proposal |
+| Implementation/conformance authority | None |
+| Operational assignment authority | None |
+| Exceptions | None |
+| Downstream authority | None |
+
+Architecture Authority accepts the following as design decisions to be transferred to the future superior ADR: the separate canonical temporary-assignment entity; one physical Membership role; the PostgreSQL P/O/M/A revision vector and revision triggers; uniqueness until restored_at IS NOT NULL; separate revoke and reconcile/restore Commands; fail-closed temporal resolution; the five evaluation_mode protocols; the temporal linearization point; absolute durations of 336 and 720 hours; coordinated session invalidation and new authentication after authority loss or change; the anti-bypass policy; authority_reference as traceability without autonomous authority; alternative A for isolated B3 test admission; B1, B2 and B3 as separate work packages under one superior architecture; and Candidate File Boundaries and Evidence Gates as candidates requiring later authorization.
+
+B-01 through B-13 and R-01 through R-06 are accepted as resolved exclusively at design level. They are not implemented or conformant. The accepted source version is exactly the commit and canonical hash above; the hash of the document after recording this act is a separate documentary-delivery hash and does not replace the accepted source identity. The earlier review and drafting statements remain historical records; this act records Architecture Authority's express acceptance of the terminal ACCEPT verdict without inventing a separate review artifact or reviewer identity.
+
+This act authorizes only its recording, the stated status change, documentary verification, and creation/publication of a commit containing exclusively this proposal. It does not authorize drafting the superior ADR yet. Any ADR requires separate later authority.
+
+This acceptance does not constitute an Accepted ADR, ratify Package B, authorize B1/B2/B3, register or reserve candidate contracts, change operational statuses, or authorize changes to code, tests, models, migrations, sessions, roles or permissions. It creates no temporary assignment and assigns nothing to Guillermo or any other person. It authorizes neither canonical promotion nor default composition. It does not satisfy or close Amendment 018 §8.3; §8.5 and all later gates remain closed. It grants no authority for secrets, Google, OAuth, Gmail, mailbox access, deployment or a pilot.
+
+Any contractual registration, implementation, release, composition, operation or assignment requires separate later authority. Exceptions: None. Downstream authority: None.
 
 ## 19. Documentary delivery scope
 
