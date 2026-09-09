@@ -4,15 +4,17 @@ Status: **PROPOSED — DRAFT — NO CONTRACT REGISTRATION, IMPLEMENTATION, RELEA
 
 Draft date: 2026-09-09
 
+Ratification readiness: **PENDING INDEPENDENT REVIEW**. T-01, T-02 and T-03 are individually RESOLVED AT DESIGN LEVEL. This correction records no independent acceptance or ratification.
+
 Scope: Superior architecture for ADR-019 Package B — Expiry-aware Temporary Role Authority.
 
 ## 1. Context and proposed architectural Decision
 
 ### 1.1 Context and immutable source identity
 
-ADR-019 ratifies Contract and Role Allocation and requires separate architecture for Package B. Package A remains **IMPLEMENTED — CONFORMANT — EVIDENCE GATE PASSED**. Package B has accepted design input but no ratified superior ADR, implementation authority or implementation conformance. The current engineering gate permits this Proposed ADR draft only. The next allowed action after documentary validation is independent architectural review.
+ADR-019 ratifies Contract and Role Allocation and requires separate architecture for Package B. Package A remains **IMPLEMENTED — CONFORMANT — EVIDENCE GATE PASSED**. Package B has accepted design input but no ratified superior ADR, implementation authority or implementation conformance. The current engineering gate permits documentary correction and independent review only. After validation the next allowed action is renewed independent review; no ratification recommendation is inferred from documentary validation.
 
-The accepted source is [Temporary Role Authority Proposal](../engineering/NETPAY_MVP2D1_TEMPORARY_ROLE_AUTHORITY_PROPOSAL.md). This ADR transfers its complete corrected design; it does not repeat or amend its recorded acceptance act.
+The accepted source is [Temporary Role Authority Proposal](../engineering/NETPAY_MVP2D1_TEMPORARY_ROLE_AUTHORITY_PROPOSAL.md). This ADR retains that design and records terminal-review corrections T-01/T-02/T-03. The bounded Architecture Authority clarification for T-03 is recorded in section 9.4, separately from the unrecorded future ratification act. The proposal and its acceptance act remain unchanged.
 
 | Identity or preflight fact | Verified value |
 | --- | --- |
@@ -44,16 +46,18 @@ This document is Proposed. Normative "must" and "shall" statements describe the 
 | Governing source | Exact relationship and retained limit |
 | --- | --- |
 | [AR-001](../architecture/AR-001_ARCHITECTURE_RATIFICATION_FRAMEWORK.md) | Governs proposal, independent review, explicit architectural ratification, separately bounded implementation and conformance; none is inferred from drafting |
-| [ADR-019](ADR-019_RATIFY_NETPAY_MVP2D1_CONTRACT_AND_ROLE_ALLOCATION.md) | Parent allocation architecture; Package A conformance remains intact. This draft supplies proposed resolution of Package B design items without editing or superseding the parent authority limits |
+| [ADR-019](ADR-019_RATIFY_NETPAY_MVP2D1_CONTRACT_AND_ROLE_ALLOCATION.md) | Parent allocation architecture; Package A conformance remains intact. On later explicit ratification, §8 prospectively specifies the parent day-based wording as 336/720 absolute hours for Package B. Historical authority and all other parent limits remain unchanged |
 | [ADR-017](ADR-017_RATIFY_DISPATCH_HANDLER_FACTORY_COMPOSITION.md) | Dispatcher owns the single Command UoW; actual handler factory receives the active Session/facade; exactly one explicit handler facade commit follows the final gate. Platform conformance is not business authority |
-| [Amendment 018](../engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_018.md), §8.3 | Formal contract/role gate remains open until all corresponding requirements, mechanism conformance, separately authorized assignment and explicit closure are satisfied. This draft and any later architectural ratification alone do not satisfy it; §8.5 and later gates stay closed |
+| [Amendment 018](../engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_018.md), §8.3 | Contract and role-mechanism conformance precedes express evidence acceptance and explicit §8.3 closure; productive assignment requires a subsequent separate operational act. Effective assignment is not a closure prerequisite. Closure authorizes no assignment and opens neither §8.5 nor later gates |
 | [Accepted Contract and Role Allocation proposal](../engineering/NETPAY_MVP2D1_CONTRACT_AND_ROLE_ALLOCATION_PROPOSAL.md) | Upstream accepted design input as identified by ADR-019 and the accepted Package B proposal; no new implementation authority |
 | [AUTH-POLICY-001](../engineering/AUTH_POLICY_001_PRODUCTIVE_IDENTITY_AND_SESSION_SECURITY.md), §§4–5 | Material authority loss/change invalidates affected sessions and requires new authentication; base entitlement is distinct from session continuity |
 | [AUTH-CONTRACT-001](../engineering/AUTH_CONTRACT_001_PRODUCTIVE_IDENTITY_AND_SESSION_CONTRACTS.md) | Existing Identity/session contracts and Governance query responsibilities remain; future profile amendments must be explicit |
 | [ADR-014](ADR-014_PRINCIPAL_MEMBERSHIP_ACTIVE_ORGANIZATION_AUTHORITY.md) | Canonical Principal/Membership/active Organization chain and ownership remain authoritative |
 | Ordered repository bootstrap documents | PROJECT_CONTEXT, CURRENT_STATE and CURRENT_SPRINT were inspected; later ratified records govern where historical summaries lag |
 
-Source proposal acceptance on 2026-09-08 is historical authority for its design input, not an acceptance date or signature for this ADR. Its terminal ACCEPT does not constitute this ADR's independent review. This draft's review remains PENDING and its future authority act remains unrecorded.
+The bounded AUTH-POLICY-001 clarification issued by Architecture Authority on 2026-09-08 local is recorded in section 9.4 for T-03 only. It does not ratify this ADR or amend authority outside Package B.
+
+Source proposal acceptance on 2026-09-08 is historical authority for its design input, not an acceptance date or signature for this ADR. Its terminal ACCEPT does not constitute this ADR's independent review. The published ADR received ACCEPT WITH AMENDMENTS; independent review of these corrections is PENDING and the future authority act remains unrecorded.
 
 ### 1.4 Closed evaluation-mode terminology transfer
 
@@ -152,6 +156,8 @@ Three distinct policies must exist:
 
 `activate_membership` must validate its allowlist before both replay and mutation. `grant_bootstrap_membership` must use a separate bootstrap allowlist containing the base operator, not `permissions_for_role` as admission. Founder Bootstrap retains its existing base-only `_ROLES`, with enrollment/replay guard coverage. Local provisioning retains its local/test restriction, exact base role and no-overwrite guard. Generic write schemas/endpoints reject the temporary role; read schemas may represent it. Seed cannot create assignments or call the dedicated operation. Bootstrap/default composition cannot silently add an executable grant path. Unknown roles fail closed. Direct administrative SQL is outside Python guard guarantees and must be contained by verified database privileges.
 
+For Revoke, canonical revocation, affected-session invalidation, receipt, Domain Events and definitive local AuthenticationSecurityAudit share the sole owning transaction. Confirmed rollback is not durable denial; an uncertain result is not completion. No external audit delivery is required. Section 9.4 applies without reducing AUTH-POLICY-001 sections 10-12.
+
 No intermediate default composition may grant I. The four productive call sites and all indirect consumers must migrate coherently. No real assignment, seed or assignment backfill is part of B.
 
 ## 5. Proposed data model and database constraints
@@ -213,7 +219,7 @@ No CHECK consults other rows. Coherence with Membership's current role/revision 
 
 Only a successful atomic command writes a success receipt and its original result. Same key and same fingerprint replays that immutable result after current admission checks; a different fingerprint conflicts. A replay never reapplies role assignment, extends time, repeats review, restores again or duplicates evidence. Legacy replay semantics are not reinterpreted. Receipt lookup cannot bypass current actor/target authority. Uncertain commit acknowledgment is not an invitation to open a second UoW.
 
-The handler expresses exactly one commit through the received `CommandUnitOfWork` facade immediately after the final authorization gate. It never calls `Session.commit()` directly or creates another UoW. Resolver, services, repositories and the Identity participant perform no commit or rollback. Dispatcher and UnitOfWork retain transaction ownership, terminal-state validation and cleanup under ADR-017. Receipt, successful result, state, Events and audit are committed by this one facade invocation; the primary exception remains preserved on failure.
+The handler expresses exactly one commit through the received `CommandUnitOfWork` facade immediately after the final authorization gate. It never calls `Session.commit()` directly or creates another UoW. Resolver, services, repositories and the Identity participant perform no commit or rollback. Dispatcher and UnitOfWork retain transaction ownership, terminal-state validation and cleanup under ADR-017. Receipt, successful result, state (including canonical revocation and affected-session invalidation), Domain Events and definitive local AuthenticationSecurityAudit are committed by this one facade invocation; the primary exception remains preserved on failure.
 
 ### 5.4 ProductiveSession invalidation snapshots
 
@@ -286,9 +292,11 @@ Let **C** mean fresh, healthy SQL reads prove the active Principal, unique selec
 | 14 | C valid, unique coherent `active_reviewed`, timely review, start at/before t and t strictly before expiry | Exactly B plus exactly I |
 | 15 | Any other temporal inconsistency with C still proven | Exactly B |
 
-The matrix determines canonical entitlement, not permission to continue a revoked productive session. A session requiring invalidation is denied and requires new authentication even where the identity could subsequently obtain B. A driver/database failure is not the safely decoded illegible-data case in row 6.
+The matrix determines canonical entitlement, not permission to continue a revoked productive session. A session requiring invalidation is denied and requires new authentication even where the identity could subsequently obtain B. A driver/database failure is not the safely decoded illegible-data case in row 6. Section 9.4 distinguishes local persistence failure from a subsequent non-canonical audit outage; neither audit delivery nor a new health vector supplies authority.
 
 ## 8. Temporal policy and commit semantics
+
+Upon subsequent explicit architectural ratification, this ADR prospectively specifies ADR-019 §7.2's day-based temporal wording for Package B: review due is exactly 336 absolute elapsed hours from starts_at; maximum expiry is 720 absolute elapsed hours from starts_at. No calendar-day arithmetic, local zone, connection TimeZone or DST determines those durations. This precision creates no retroactive change, historical authority, extension or assignment. It is not effective ratification while this ADR remains Proposed. The UTC, non-DST, DST-start and DST-end evidence in §14 remains mandatory.
 
 Use fresh PostgreSQL `clock_timestamp()` samples. `now()`, `CURRENT_TIMESTAMP` and `transaction_timestamp()` return transaction-start time, which can be stale after waiting for locks; `statement_timestamp()` is also not the chosen evaluation clock. All relevant values must be finite timezone-aware UTC timestamps. See [PostgreSQL current date/time functions](https://www.postgresql.org/docs/16/functions-datetime.html#FUNCTIONS-DATETIME-CURRENT).
 
@@ -302,7 +310,7 @@ For closure observation, `closed_effective_at` records the applicable deadline a
 
 Invalid/nonfinite/unavailable clock samples deny all authority. An observed backward movement within one operation denies; the design does not claim to detect every system-clock rollback across operations. Stored terminal state never reopens because time moved backward. No local-clock fallback is allowed.
 
-A confirmed failed persistence/commit produces no successful durable partial state, receipt, result or evidence. Preserve the primary exception; cleanup cannot replace it. If commit acknowledgment is lost, the outcome is **UNCERTAIN_RESULT**, not proven rollback or proven success. Do not open a second UoW to discover or manufacture a result in the failed Command. A later independently admitted retry uses normal idempotency.
+With confirmed rollback, the operation leaves no durable revocation, session invalidation, successful receipt, Event or required audit record: canonical state remains as before the operation. Preserve the primary exception; cleanup cannot replace it and success must never be reported. Lost commit acknowledgment produces **UNCERTAIN_RESULT**, not proven rollback or success. Resolve it through readback, idempotency and receipt in a later independently admitted operation, never a second UoW in the original Command. Evaluations unable to prove canonical authority fail closed; that is not proof of committed revocation. An aborted attempt creates no durable cross-replica denial signal. Section 9.4 governs the distinction from subsequent audit outage.
 
 Expiry/review-missed denial does not depend on a scheduler. Later reconciliation records the fact and restores via CAS. Absence of an Event is never evidence that authority remains active. No scheduler or worker is authorized.
 
@@ -330,7 +338,7 @@ The closed proposed modes are `descriptive_query`, `session_create`, `session_au
 | command_authorization | Operate in Dispatcher UoW; lock and reread P/O/M/A in global order, including trusted actor/target dependencies. Revalidate after waits and after flush, with a fresh final temporal sample; retain locks through commit | Only this Command and its final protected authorization point | Yes, only through the full canonical temporal predicate; old envelopes cannot replace it | Persist state/result/receipt/evidence in this UoW through exactly one handler facade commit. Stored result is not permission authority for another operation |
 | deterministic_local | Retain existing deterministic Identity validation; request headers alone are not authority. Synthetic grants use the same protected reads, clock and lock protocol as the operation being tested; identify the covered operation explicitly | Only the isolated test/local request transaction; no production validity | Only with an explicit synthetic canonical assignment in the isolated test; no role/header-only grant and no implicit local Intake | Synthetic invalidation/evidence only in the isolated fixture transaction; no production persistence, permission backfill or altered productive semantics |
 
-Each mode that can grant Intake protects P/O/M/A through its authorization evaluation. A caller that will perform effects in another transaction must select command_authorization there rather than reuse a session/query envelope. The authentication wrapper retains protection until its owning transaction ends; time must still be reevaluated before protected effects. Required durable invalidation is performed by the appropriate owner/participant, never by committing inside the resolver. Descriptive output cannot be passed as a trusted executable envelope. No mode changes the existing productive authentication or Identity Binding requirements.
+Each mode that can grant Intake protects P/O/M/A through its authorization evaluation. A caller that will perform effects in another transaction must select command_authorization there rather than reuse a session/query envelope. The authentication wrapper retains protection until its owning transaction ends; time must still be reevaluated before protected effects. Required durable invalidation is performed by the appropriate owner/participant, never by committing inside the resolver. Descriptive output cannot be passed as a trusted executable envelope. No mode changes the existing productive authentication or Identity Binding requirements. All five modes apply section 9.4: no external audit-delivery prerequisite or additional health vector; unavailable canonical proof denies evaluation without inventing durable revocation. General AUTH-POLICY-001 sections 10-12 obligations remain intact.
 
 ### 9.2 Closed failures and responsibilities
 
@@ -375,6 +383,66 @@ Every writer attempting active-to-terminal must lock and reread the session, or 
 
 Principal/Organization-wide invalidation must not hold an Organization lock and then discover/acquire earlier-order Principal locks. Discover the complete candidate set first, acquire sorted locks, reread and abort on an incompatible expansion. Material revision/snapshot invalidation denies authority even if recording by a later observer is pending; observing one session is not evidence that every affected session was durably revoked.
 
+### 9.4 T-03 normative clarification and disposition
+
+This section records the clarification issued by Guillermo de Hoyos, Architecture Authority of Yarvis, exclusively for AUTH-POLICY-001 sections 9-10 as applied to ADR-020 Package B. It is a policy clarification, not acceptance or ratification of this ADR. T-03 is **RESOLVED AT DESIGN LEVEL**; implementation evidence and renewed independent review remain pending.
+
+| Clarification field | Recorded value |
+| --- | --- |
+| Architecture Authority | Guillermo de Hoyos |
+| Decision date | 2026-09-08, Architecture Authority local date; not adjusted to UTC or commit time |
+| Scope | AUTH-POLICY-001 sections 9-10, exclusively ADR-020 Package B |
+| Exceptions | None |
+| Downstream authority | None |
+
+#### 9.4.1 Definitive local audit and one transaction
+
+The sanitized PostgreSQL AuthenticationSecurityAudit row, committed in the same Session and sole ADR-017 UnitOfWork as canonical revocation, affected-session invalidation, receipt and Domain Events, is the definitive required audit record for this scope. No export, projection, consumer delivery or external materialization is required for a committed revocation to be locally audited and complete. DomainEvent is corresponding evidence, not a replacement for this explicitly designated AuthenticationSecurityAudit record and never a source of authority.
+
+All these writes commit atomically through the received CommandUnitOfWork facade. Durable revocation without the required local audit record, a successful required audit record without its revocation, and successful receipt/Events after confirmed rollback are prohibited partial states. An exception or uncertain outcome cannot establish completed revocation. Resolver, repositories and the Identity participant neither commit nor create another Session/UoW. No savepoint, autonomous transaction, nested dispatch or improvised post-failure persistence completes the original Command.
+
+Existing S/models/domain_event.py:record_event uses db.add(event) on the received Session. S/services/productive_auth.py:ProductiveSessionService.revoke stages session state, DomainEvent and AuthenticationSecurityAudit in that same Session without its own commit. These are existing atomic-persistence patterns, not an outbox or delivery protocol. The Package B handler/receipt integration and field-complete sanitized audit remain future evidence obligations. AUTH-POLICY-001 section 9 fields, privacy and retention requirements still apply; safe_details must not become an unvalidated substitute for a defined audit profile.
+
+#### 9.4.2 Outage, local failure and uncertain result
+
+For this clarification, audit outage means exclusively unavailability of a subsequent non-canonical export, consumer, projection or destination after the required local audit record has committed. Such an outage does not delay or reverse committed revocation, restore authority or sessions, or make external evidence authoritative. No subsequent delivery is mandatory. No outbox, durable queue, worker, broker or global audit-health authority is required or authorized.
+
+Failure to persist the required local record in the sole transaction is failure of the entire Revoke operation, not completed revocation and not the subsequent audit outage just defined. With confirmed rollback, revocation, affected-session invalidation, receipt, Events and successful audit do not persist; previous canonical state is preserved, the primary exception is reported and success is never reported. Preserving that previous state is neither revocation nor durable denial. Correct the cause and use a subsequent independently admitted operation.
+
+Lost commit acknowledgment is UNCERTAIN_RESULT. Readback, idempotency and receipt resolve it in a later governed operation, never a second UoW within the original Command. While canonical authority cannot be established, evaluations depending on it fail closed. This does not assert that revocation committed, nor turn a client-side uncertain result into global revocation state.
+
+#### 9.4.3 Immediacy, concurrency and five-mode application
+
+"Prioritize denial immediately" means that a valid revocation which successfully commits linearizes denial at the last protected evaluation defined in section 8. Subsequently ordered evaluations must observe revocation and deny Intake. Previously ordered evaluations are not retroactively unauthorized; affected sessions are invalidated in the revocation's same transaction. Locks and fresh rereads retain the section 10 order through commit. An aborted attempt supplies no durable revocation signal to other replicas.
+
+| evaluation_mode | Application of the clarification |
+| --- | --- |
+| descriptive_query | Describe the observed canonical state only; unavailable authority cannot be described as proved revocation or executable permission. No new audit write is required merely to query |
+| session_create | Protected canonical reread and creation gate determine authority; a preceding committed Revoke excludes Intake. Required creation evidence remains in the caller-owned transaction |
+| session_authenticate | Enforce fresh canonical state and invalidation snapshots; committed revocation denies affected sessions and requires new authentication. Failed Revoke alone does not prove durable invalidation |
+| command_authorization | Prepare revocation, sessions, receipt, Events and definitive local audit in the sole Dispatcher UoW; final protected gate then one facade commit. Rollback and uncertain outcomes follow section 9.4.2 |
+| deterministic_local | Exercise the same semantics with isolated synthetic canonical fixtures; never substitute a role/header or Session double for PostgreSQL atomicity/concurrency proof |
+
+#### 9.4.4 Cases A-G and evidence obligations
+
+These cases define future evidence, not tests already passed. Each Command uses one owning UoW; later independently admitted resolution is not a second UoW of the failed Handler.
+
+| Case | Durable state and authority | Observable result and sessions | Reconciliation and claimable evidence |
+| --- | --- | --- | --- |
+| A. Required local audit persistence failure | Confirmed rollback preserves prior assignment and session state; no partial durable revocation | Primary error, never success; staged session invalidation also rolls back | Correct cause and admit a later operation; no successful receipt/Event/audit or cross-replica denial may be claimed |
+| B. Subsequent export/consumer/destination outage | Revocation, sessions, receipt, Events and definitive local audit already committed; Intake stays revoked | Locally complete Revoke is independent of external availability; affected sessions stay revoked | No external delivery/reconciliation is required to complete Revoke; any separately governed export cannot restore access |
+| C. PostgreSQL or commit failure | Confirmed rollback preserves previous state; an ambiguous commit may have committed all writes or none | Error or UNCERTAIN_RESULT as established; unavailable canonical proof denies dependent evaluation without asserting revocation | Later governed readback/retry; no success evidence unless commit is established |
+| D. Lost commit acknowledgment | All-or-none durable outcome is unknown to the caller, including session invalidation | UNCERTAIN_RESULT, neither success nor rollback assertion | Later readback/idempotency/receipt; no internal second UoW or fabricated completion |
+| E. Deterministic local audit payload/constraint error | Required local insertion failure aborts all Revoke writes; prior authority may remain otherwise valid | Primary error; no success and no durable session invalidation from the failed attempt | Correct deterministic cause before a later operation; identical blind retry does not resolve it |
+| F. Revoke not admitted | No Revoke mutation or successful evidence; previous canonical authority is unchanged by the rejected attempt | Rejection; Dispatcher admission rejection creates zero UoWs; sessions not revoked by the attempt | No completion claim or global denial trigger; any later request must satisfy admission independently |
+| G. Revoke concurrent with session authentication | Successful transactions follow protected lock/reread order; Revoke invalidates affected sessions in its commit | Authentication ordered later observes revocation and denies Intake; earlier evaluation is not retroactively unauthorized | Prove both orders and rollback with independent PostgreSQL transactions; aborted Revoke creates no durable peer signal |
+
+#### 9.4.5 Preserved policy and authority limits
+
+AUTH-POLICY-001 sections 10-12 retain all general incident, retention and unhealthy-control obligations. This clarification does not classify every local error as global audit failure. Any future policy demanding global or cross-replica denial from an aborted attempt needs separately defined trigger, scope, authority source, recovery and architectural authorization.
+
+The clarification neither requires nor authorizes outbox, durable queue, worker, broker or global audit-health authority. It does not ratify ADR-020; authorize B1/B2/B3, contract registration, implementation, release, roles, permissions or assignments; close Amendment 018 section 8.3; or open section 8.5 or later gates. It grants no downstream authority. The Future Architecture Authority Act in section 21 remains entirely [not recorded].
+
 ## 10. Locks, idempotency and deterministic races
 
 The corrected design uses the following global order, to be enforced on participating writers and login paths:
@@ -416,6 +484,8 @@ Restoration requires expected revision CAS, a valid active Membership still hold
 | Cleanup vs logout | Cleanup deletes only freshly verified eligible terminal rows; logout either wins its transition or sees terminal/missing state without inventing a new event; no session reactivation |
 | Principal change vs session creation/authentication | Fresh Principal revision and lock ordering prevent new or continuing authority from stale identity state; affected scope is Principal-wide |
 | Organization change vs session creation/authentication | Protected Organization status/revision and reread prevent stale authority; discover affected Principals before ordered locks and fail closed on incompatible expansion |
+
+Additional T-03 cases A-G in section 9.4 require confirmed local rollback, uncertain commit and successful Revoke/authentication ordering. A subsequent non-canonical audit outage does not affect committed authority; an aborted attempt is not a durable peer signal.
 
 These extend, rather than replace, the original nine races. A transaction abort has no success evidence; retries are separate admitted operations, never an internal second UoW or savepoint.
 
@@ -480,6 +550,10 @@ Every phase requires a **separate authorization, exact File Boundary, Evidence G
 | B3 | Internal Commands/receipts, Identity participant, terminal-writer alignment, session invalidation and reconcile | Alternative A isolated test composition under §12.1 uses the real ID and handler/factory with a test-local IMPLEMENTED copy; exactly one handler facade commit after final gate; canonical contracts remain PLANNED; no default-composition enablement, productive transport or real assignment |
 | Integral B conformance | Review combined B1/B2/B3 behavior and regression | Independent final evidence, own authorization/boundary/rollback/review/commit/conformance; no operational act inferred |
 | Later productive operation | Separately defined and expressly authorized operational assignment/admission | Outside B implementation authority; no actor, access channel, deployment, data scope or pilot permission inferred |
+
+B2 and B3 apply the bounded clarification in section 9.4 using existing local audit persistence patterns. No additional health prerequisite, asynchronous delivery infrastructure or implementation package is introduced.
+
+The later gate sequence is contract and role-mechanism conformance, express evidence acceptance, explicit §8.3 closure, then a subsequent separate productive-assignment act. Effective assignment is not closure evidence; closure opens neither assignment authority nor §8.5+.
 
 Positive authority scenarios may be exercised later with isolated synthetic test fixtures under their authorized gates. A document, configuration flag, environment variable or incomplete registration must never activate Intake in default composition.
 
@@ -574,9 +648,9 @@ None of these files exists at the verified baseline. Names are proposed paths, n
 
 ### 13.4 Prospective documents, distinct from implementation paths
 
-This new Proposed ADR is the only artifact created by the current drafting task; the accepted proposal and all existing documents remain unchanged. Later independent review, a ratifying decision/authority act, exact phase boundaries and conformance evidence require separate authorization. AUTH-POLICY-001's temporal invalidation supplement, AUTH-CONTRACT-001's session/Event profiles and Governance QRY-001/QRY-003 explicit temporal profiles are prospective documentary changes. Their filenames, registration and acceptance are not invented here. The 18-path implementation inventory does not count those prospective documents.
+This Proposed ADR is the only artifact modified by the current terminal correction; the accepted proposal and all other existing documents remain unchanged. Later independent review, a ratifying decision/authority act, exact phase boundaries and conformance evidence require separate authorization. AUTH-POLICY-001's temporal invalidation supplement, AUTH-CONTRACT-001's session/Event profiles and Governance QRY-001/QRY-003 explicit temporal profiles are prospective documentary changes. Their filenames, registration and acceptance are not invented here. The 18-path implementation inventory does not count those prospective documents.
 
-In the transferred design, the writer alignment is contained in existing candidate services/productive_auth.py, services/governance_authority.py, services/identity_provisioning.py and auth/Governance route wrappers, plus the already proposed services/session_authority_invalidation.py. Cleanup, logout, authentication expiry and session-limit logic all reside in the existing productive_auth.py. Their expanded regression scope fits the already proposed session-concurrency and command tests. **No additional implementation path is added:** the inventory remains 26 existing and 18 proposed new files. Principal/Organization status services not found in the baseline are not invented; discovery of another writer requires an explicit boundary amendment before its implementation. The read-only registry/Dispatcher inspection in §12.1 does not add those framework files to the candidate edit boundary.
+In the transferred design, the writer alignment is contained in existing candidate services/productive_auth.py, services/governance_authority.py, services/identity_provisioning.py and auth/Governance route wrappers, plus the already proposed services/session_authority_invalidation.py. Cleanup, logout, authentication expiry and session-limit logic all reside in the existing productive_auth.py. Their expanded regression scope fits the already proposed session-concurrency and command tests. The candidate inventory remains 26 existing and 18 proposed new files. T-03 adds no implementation path; required local audit integration and evidence must fit the later exact boundary or require an explicit amendment. Principal/Organization status services not found in the baseline are not invented; discovery of another writer requires an explicit boundary amendment before its implementation. The read-only registry/Dispatcher inspection in §12.1 does not add those framework files to the candidate edit boundary.
 
 ### 13.5 Explicit exclusions
 
@@ -591,7 +665,9 @@ These gates define future evidence; none has been executed or passed for B. Use 
 | B1 | Recheck all candidate IDs against normative documents and runtime projection; explicit names, scopes, inputs/results/error precedence/idempotency/Event relationships; exclusively PLANNED; real Dispatcher rejection before UoW creation; QRY-001/QRY-003 and Identity profiles explicit; Package A's eight contracts unchanged; no handler or transport registration |
 | B2 | Additive empty schema/head-parent verification; DDL/invariant matrix §5.2.1 including explicit NOT NULL, deterministic same-row CHECK, referencable composite FK key and unique partial index; immutable fields/history and empty assignments; four real PostgreSQL triggers, revision 1, null-safe changes/no-ops, arbitrary-writer attempts, FK-driven changes, invalid OLD/overflow rejection; privileges/trigger enablement; all five resolver modes and permission guards; 336/720-hour timezone-independent tests; all four calls/indirect consumers coherent; canonical status remains PLANNED and no default I |
 | B3 | Alternative A under §12.1: canonical PLANNED rejection before UoW creation and isolated real-ID IMPLEMENTED-copy execution through actual handler/factory, Dispatcher and UoW; equality of every other field including lifecycle; separate sealed registries with one copy per ID and no canonical/default/configuration changes; exactly one handler facade commit, zero direct Session commits or service/repository/participant commits, second UoW or nested Dispatch; atomic state/result/receipt/Event/audit; replay/conflict; separate revoke/restore; all terminal writers aligned; original nine plus six additional races; real PostgreSQL final-gate, commit-failure/uncertain-result evidence; no productive transport, bypass or real assignment |
-| Integral B conformance | Independent review of all phase evidence against ADR-019/ADR-017/AUTH-POLICY; combined composition and failure behavior; full focused regression, type/lint/format checks appropriate to authorized changes; zero real assignments, Package A intact, §8.3 still awaiting separate operational act and later gates closed |
+| Integral B conformance | Independent review of all phase evidence against ADR-019/ADR-017/AUTH-POLICY; combined composition and failure behavior; full focused regression, type/lint/format checks appropriate to authorized changes; zero real assignments, Package A intact; contract and role-mechanism conformance precedes express evidence acceptance and explicit §8.3 closure; productive assignment requires a subsequent separate operational act; closure grants no assignment authority and opens no later gate |
+
+T-03 evidence is mandatory within the separately authorized B2/B3 gates. B2 verifies the definitive local AuthenticationSecurityAudit profile, required sanitized fields and all five modes without a health vector or delivery dependency. B3 proves cases A-G through real Dispatcher/factory/CommandUnitOfWork and isolated PostgreSQL: shared Session/transaction, atomic revocation/session/receipt/Event/audit commit, local audit failure with complete rollback and primary-exception preservation, no false success, lost-ack readback/idempotency in a later operation, and both Revoke/authentication orders. Prove successful Revoke requires no external delivery and aborted Revoke is not represented as durable peer denial. No outbox, queue, worker or global health mechanism is part of either gate. Session doubles alone are insufficient.
 
 Detailed required adversarial cases:
 
@@ -649,9 +725,23 @@ The source's initial review of commit `b12f64cd0c4e6c21854b2a86125e56a105ffcb62`
 
 All six R findings and all thirteen B findings are individually **RESOLVED AT DESIGN LEVEL** in the accepted source. None is implemented or conformant. Alternative A resolves R-02 without a pending B3 synthetic-admission decision; actual authorization, tests and conformance remain pending. These inherited design dispositions are not an independent ACCEPT of this ADR. Its own independent review is PENDING under §20.
 
+### 15.2 Terminal ADR findings and current dispositions
+
+The independent review of published ADR commit `ca37846d21ea0207aebc965002335077d96f93b2`, canonical SHA-256 `1E7A4AAA39F017B7766DEB5BE6C6ABBB1F5A15C61D27E104B6E412D108428CA1`, returned **ACCEPT WITH AMENDMENTS**: 0 CRITICAL, 2 HIGH, 1 MEDIUM, 0 LOW. These corrections record no replacement verdict.
+
+| Finding | Severity | Current disposition | Correction / remaining obligation |
+| --- | --- | --- | --- |
+| T-01 | HIGH | RESOLVED AT DESIGN LEVEL | §§1.3, 12, 14 and 19 place conformance, express evidence acceptance and explicit §8.3 closure before a subsequent separate productive-assignment act; no assignment prerequisite or downstream opening |
+| T-02 | MEDIUM | RESOLVED AT DESIGN LEVEL | §§1.3 and 8 specify prospective 336/720 absolute hours without local/calendar/DST arithmetic, historical change, extension or assignment; §14 retains the four timezone/DST cases |
+| T-03 | HIGH | RESOLVED AT DESIGN LEVEL | Section 9.4 records Guillermo de Hoyos' bounded clarification dated 2026-09-08 local: definitive local audit in one UoW; subsequent outage distinct from local failure; rollback/uncertain outcome and protected ordering; cases A-G remain future evidence |
+
+B-01 through B-13 and R-01 through R-06 retain their individual source-design dispositions and evidence obligations. T-01, T-02 and T-03 are individually RESOLVED AT DESIGN LEVEL, not implemented or conformant. B-03 and B-05 require atomic local audit and distinguish failed Revoke from completed denial; B-07 retains protected ordering; B-12 retains unavailable-authority denial without inferring global revocation. Renewed independent review of all three corrections is PENDING; no replacement ACCEPT is recorded.
+
 ## 16. Documentary and progressive rollback with history preservation
 
 For this documentary draft, rollback is limited to this ADR under separate explicit authorization: if still untracked, remove only this exact newly created draft; if tracked later, use a documentary revert preserving history, without rewriting commits or altering the accepted proposal or ADR-019. Do not use `git clean`, broad resets or delete any unrelated untracked file. No rollback is executed or authorized by this text. Withdrawal of the draft creates no implementation, contract or operational effect and does not retract the source proposal's separately recorded acceptance.
+
+Confirmed operation rollback preserves previous canonical state, including sessions, and commits no successful receipt/Event/audit. This differs from rollback of an application release: release or restore must never reactivate a committed revocation or erase its required local evidence. Subsequent external audit unavailability neither requires undoing Revoke nor restoring sessions. Resolve uncertain outcomes through separately governed readback/idempotency, never an extra UoW of the original Handler.
 
 Rollback is phase-specific and must be included in each later authorization. It must fail closed without interpreting schema removal or missing evidence as restored authority.
 
@@ -666,6 +756,8 @@ Do not remove base-only recognition while the temporary role string exists. Do n
 
 ## 17. Residual risks and decisions still requiring Architecture Authority
 
+The bounded T-03 interpretation is resolved at design level by section 9.4. Residual risks include local audit profile/constraint defects causing full Revoke failure, lost commit acknowledgment and stale session writers. These require the B2/B3 evidence, not an inferred global health authority. General AUTH-POLICY-001 sections 10-12 duties remain; any future global denial policy requires separate architecture.
+
 The design resolutions do not remove implementation risks: privileged roles can disable triggers or change data outside application guards; time and commit completion after the linearization point are not exact durability evidence; deadlocks/serialization aborts must remain closed; the 26-existing/18-new candidate boundary is broad; Identity/Governance participation must remain narrowly scoped; legacy wrappers retain commit ownership outside the new core and all terminal writers need alignment; and no productive authority transport/provider exists. Alternative A must be contained in test-local registries: confusing its IMPLEMENTED copy with canonical promotion, changing lifecycle or other metadata, importing the fixture into default bootstrap, or treating a Session double as PostgreSQL conformance would exceed its authority. Equality and isolation evidence are mandatory. Confusing facade commit intent with direct Session commit would violate ADR-017; the amended design requires exactly one handler facade call. Resolver mode protection, cross-row CAS and timezone-independent hour arithmetic must be demonstrated, not inferred from fresh queries or timestamp types. Identity Binding remains outside the revision vector. Lost acknowledgment remains an uncertain outcome, not an atomicity proof.
 
 Architecture Authority must still record acceptance or rejection of this superior Proposed ADR after its own independent review, any explicit schema/profile finalization (including bounded opaque identifier representations), actual contract allocation and documentary supplements, exact per-phase file boundaries and evidence methods, independent reviewers, phase implementation authorizations and conformance. Those are pending acts, not partially inferred permissions. The later operational admission mechanism, actual actor, assignment act and any production/pilot access require separate decisions outside B; this Proposed ADR provides none.
@@ -674,7 +766,7 @@ The source proposal's accepted design and this Proposed ADR do not authorize imp
 
 ## 18. Consequences
 
-The architecture makes expiry and revocation effective at protected authorization evaluation without waiting for physical role restoration or audit materialization. It preserves the four canonical base permissions while requiring new authentication after session authority loss/change. Separate canonical history and receipts permit auditable replay without using audit as authority; the single physical role prevents an additional editable effective-role source.
+The architecture makes expiry and revocation effective at protected authorization evaluation without waiting for physical role restoration or any external audit materialization; required local audit commits atomically with Revoke. It preserves the four canonical base permissions while requiring new authentication after session authority loss/change. Separate canonical history and receipts permit auditable replay without using audit as authority; the single physical role prevents an additional editable effective-role source.
 
 The cost is coordinated integration across authority resolution, assignment guards, sessions, legacy transaction owners, database revisions and writer locks. Real PostgreSQL evidence is indispensable. Reauthentication is deliberate, and a failed reconcile may leave a terminal unrestored assignment blocking a new grant while Intake remains denied. Empty structural revision initialization invalidates unsupported historical session snapshots; it cannot reconstruct past authority.
 
@@ -684,25 +776,26 @@ The bounded design does not solve Identity Binding versioning, privileged databa
 
 This Proposed ADR authorizes no B1, B2 or B3 work, contract registration or reservation, operational metadata change, migration, trigger, model, repository, service, handler, test or configuration change. It grants no role, permission, productive session, temporal assignment or authority to Guillermo de Hoyos or anyone else. It authorizes no canonical promotion, default handler composition, HTTP/CLI/frontend transport, operational authority provider, deployment, synchronization or pilot.
 
-No production access, secrets, Google resources, OAuth, Gmail, mailbox access or mailbox data is authorized. `AUDIT_REPORT.md` must not be opened, edited, staged or removed. The proposal, ADR-019, Amendment 018, AUTH-POLICY-001 and all existing files remain unchanged by drafting this document.
+No production access, secrets, Google resources, OAuth, Gmail, mailbox access or mailbox data is authorized. `AUDIT_REPORT.md` must not be opened, edited, staged or removed. The proposal, ADR-019, Amendment 018, AUTH-POLICY-001 and all other existing files remain unchanged by this correction.
 
-There is no downstream implementation, release, composition, operation or assignment authority. Amendment 018 §8.3 remains open until all applicable requirements and separate explicit closure are satisfied; §8.5 and all subsequent gates remain closed. Even future ratification of this architecture cannot bypass these limits or the separate per-package acts in §12. Operational assignment cannot be inferred from completed code, canonical metadata, a test fixture, a reference hash or conformance alone.
+There is no downstream implementation, release, composition, operation or assignment authority. Amendment 018 §8.3 remains open. The mandatory sequence is contract and role-mechanism conformance → express acceptance of evidence → explicit §8.3 closure → subsequent separate operational act for productive assignment. Effective assignment is not required to close §8.3. Closure authorizes no assignment and opens neither §8.5 nor any subsequent gate. Even future ratification of this architecture cannot bypass these limits or the separate per-package acts in §12. Operational assignment cannot be inferred from completed code, canonical metadata, a test fixture, a reference hash or conformance alone.
 
 The sequence after this draft is independent architectural review, any expressly authorized documentary corrections, and a separate Architecture Authority act deciding architectural ratification. Each implementation work package then requires its own exact authorization and evidence/conformance sequence. This draft performs none of those future acts. No staging, commit or push is authorized for this drafting delivery.
 
-## 20. Independent Review — PENDING
+## 20. Independent Review Disposition - corrections PENDING
 
 | Review field | Current value |
 | --- | --- |
-| Review status | PENDING |
+| Published-version review | ACCEPT WITH AMENDMENTS; T-01 HIGH, T-02 MEDIUM, T-03 HIGH |
+| Review status of this correction | PENDING independent review; Proposed, not ratified |
 | Reviewer | [not recorded] |
 | Reviewed ADR commit and canonical SHA-256 | [not recorded] |
 | Review date | [not recorded] |
 | Verdict | [not recorded] |
-| New mandatory findings and dispositions | [not recorded] |
+| Mandatory findings and dispositions | T-01, T-02 and T-03 individually RESOLVED AT DESIGN LEVEL; no implementation conformance or new independent acceptance |
 | Architecture acceptance / implementation conformance | Not granted by this draft |
 
-Review must independently verify faithful transfer from the accepted proposal, all individual B/R dispositions, constraint/trigger feasibility, temporal/transaction claims, writer races, the five modes, anti-bypass, alternative A, all ten candidate IDs, the 26 existing and 18 new candidate paths, future gates and authority limits. Documentary validation is not this independent review. The accepted source's terminal ACCEPT must not be reused as this ADR's verdict.
+Review must independently verify faithful transfer from the accepted proposal, all individual B/R dispositions, constraint/trigger feasibility, temporal/transaction claims, writer races, the five modes, anti-bypass, alternative A, all ten candidate IDs, the 26 existing and 18 new candidate paths, the bounded clarification and cases A-G in section 9.4, future gates and authority limits. Documentary validation is not this independent review. The accepted source's terminal ACCEPT must not be reused as this ADR's verdict.
 
 ## 21. Future Architecture Authority Act
 
@@ -733,6 +826,6 @@ Every value in this block is deliberately unrecorded. Neither the source proposa
 
 ## 22. Documentary delivery boundary
 
-The only file created is `docs/decisions/ADR-020_RATIFY_TEMPORARY_ROLE_AUTHORITY_ARCHITECTURE.md`. This exact documentary boundary is distinct from the candidate implementation inventory. No existing file is edited, no code or database tests/migrations are run, and no staging, commit or push is performed.
+The only file modified by this terminal correction is `docs/decisions/ADR-020_RATIFY_TEMPORARY_ROLE_AUTHORITY_ARCHITECTURE.md`. This exact documentary boundary is distinct from the candidate implementation inventory. No other existing file is edited, no code or database tests/migrations are run, and no staging, commit or push is performed.
 
-Delivery checks cover strict UTF-8 without BOM and LF, Markdown table/fence/heading structure, intentional placeholders, each of the nineteen design-only finding rows, candidate path counts and existence, canonical SHA-256, whitespace checks including the untracked draft, unchanged source hashes, empty index and final Git status. The resulting hash is reported externally to avoid a self-referential hash. Stop for independent review after those checks; validation does not ratify the draft.
+Delivery checks cover strict UTF-8 without BOM and LF, Markdown table/fence/heading structure, intentional placeholders, each of the nineteen inherited design-only rows and three individual T dispositions, the three RESOLVED AT DESIGN LEVEL T dispositions and bounded clarification, candidate counts and existence, canonical SHA-256, whitespace checks for the tracked documentary diff, unchanged source hashes, empty index and final Git status. The resulting hash is reported externally to avoid a self-referential hash. Stop for independent review after those checks; validation does not ratify the draft.
