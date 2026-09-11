@@ -1,6 +1,6 @@
 # Netpay D2-Lite — Store Portfolio Proposal
 
-Status: **PROPOSED — DRAFT — NO CONTRACT REGISTRATION OR IMPLEMENTATION AUTHORITY**
+Status: **ACCEPTED PROPOSAL — ARCHITECTURE AND DESIGN BASIS ONLY — NO CONTRACT REGISTRATION OR IMPLEMENTATION AUTHORITY**
 
 Draft date: 2026-09-11. Proposed business owner and architectural steward: Netpay Merchant Operations / Architecture Authority.
 
@@ -277,30 +277,45 @@ Excluded: No Uso composition, comparative history, full Merchant 360, QRY-014/QR
 
 Documentary validation is not independent review, acceptance, conformance or ratification.
 
-## 15. Future Architecture Authority Act
+## 15. Architecture Authority Act
 
 | Field | Value |
 | --- | --- |
 | Act ID | [not recorded] |
-| Architecture Authority | [not recorded] |
-| Decision | [not recorded] |
-| Decision date | [not recorded] |
-| Reviewed proposal version | [not recorded] |
-| Reviewed canonical SHA-256 | [not recorded] |
-| Independent review reference | [not recorded] |
-| Independent review verdict | [not recorded] |
-| Accepted scope | [not recorded] |
-| Mandatory findings remaining | [not recorded] |
-| Contract allocation authority | [not recorded] |
-| Implementation work packages | [not recorded] |
-| Exact Authorized File Boundary | [not recorded] |
-| Evidence Gate | [not recorded] |
-| Rollback authority | [not recorded] |
-| Release / operation authority | [not recorded] |
-| Exceptions | [not recorded] |
-| Downstream authority | [not recorded] |
+| Architecture Authority | Guillermo de Hoyos, Architecture Authority and Netpay Business Owner |
+| Decision | ACCEPTED |
+| Decision date | 2026-09-11, local date of Architecture Authority; not adjusted to server time or UTC |
+| Reviewed proposal version | Commit `0f4dde551a05dd0161da4ba24891659899fcd8f8` |
+| Reviewed canonical SHA-256 | `94B3EF312B0D2A9E862B5FA752EB13AC4B0185C0C5C95AC40B12300AB269FA74` |
+| Independent review reference | Terminal independent verdict expressly accepted by Architecture Authority in this act; no separate report identifier supplied |
+| Independent review verdict | ACCEPT |
+| Accepted scope | D2-Lite solely as the first read-only D2 increment and as an architecture and design basis: portfolio for the most recent available period, using the latest accepted profitability upload for that period |
+| Mandatory findings remaining | None |
+| Contract allocation authority | None; ListStorePortfolio / IC-NETPAY-QRY-018 remains exclusively a design candidate, not registered, reserved or promoted |
+| Implementation work packages | None authorized |
+| Exact Authorized File Boundary | This proposal only, solely to record and publish this acceptance; no implementation boundary authorized |
+| Evidence Gate | No implementation gate opened or passed; a separate authorization must establish it |
+| Rollback authority | None granted for implementation or operation |
+| Release / operation authority | None |
+| Exceptions | None |
+| Downstream authority | None |
 
-Every value is deliberately unrecorded. Business confirmations and authority to prepare this proposal do not populate a future acceptance, ratification or implementation act.
+Guillermo de Hoyos, acting as Architecture Authority and Business Owner of the Netpay operation, accepts the identified proposal and terminal independent verdict ACCEPT, with no mandatory findings remaining. This is acceptance of a proposal as an architecture and design basis only, not architectural ratification or implementation authority. No Act ID, reviewer identity or independent review date is invented. The preparation-time statements, pending review record in §14 and delivery instructions elsewhere remain historical; this dated act supersedes only their current acceptance, next-action and documentary-publication readings. The reviewed technical body is unchanged.
+
+The accepted business decisions are:
+
+- Each accepted monthly profitability report is a complete snapshot of the Store IDs included in the reported portfolio for that period.
+- `volume` represents processed sales in `MXN`.
+- Absence of a Store ID from a later snapshot does not establish termination, closure or zero volume outside the reported universe.
+- Totals must disclose coverage and distinguish a total from a subtotal; null is not zero.
+- The originally reported Store ID reference must not be retrospectively replaced by a corrected Master reference.
+- The first increment excludes No Uso, external lifecycle, comparative history and mutations.
+
+`ListStorePortfolio` and `IC-NETPAY-QRY-018` are accepted solely as the design's candidate contractual identity. This acceptance does not register, reserve or promote that contract. QRY-014 and QRY-015 retain their Amendment 016 documentary scope and are not reused by D2-Lite.
+
+This act authorizes no code, tests, contracts, permissions, roles, migrations, configuration, data, production access or deployment. It does not declare D1 conformant, close complete D2, or authorize Merchant 360, Boba Tree, Mixue, No Uso, Core, Salesforce, Gmail, assets, serials, reconciliation or Package B. Existing architectural prerequisites and later gates remain unchanged.
+
+Before implementation, a separate authorization must assign the exact contract, finalize the Authorized File Boundary and establish the Evidence Gate. This act authorizes exclusively recording this acceptance in this proposal and publishing a commit that modifies only this document. Accepted exceptions: None. Downstream authority: None.
 
 ## 16. Documentary delivery checks
 
