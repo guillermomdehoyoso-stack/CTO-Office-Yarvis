@@ -1,6 +1,6 @@
 # Existing Company — Second Branch Onboarding Proposal
 
-Status: **PROPOSED — DRAFT — NO CONTRACT REGISTRATION OR IMPLEMENTATION AUTHORITY**
+Status: **ACCEPTED PROPOSAL — ARCHITECTURE AND DESIGN BASIS ONLY — NO CONTRACT REGISTRATION OR IMPLEMENTATION AUTHORITY**
 
 Draft date: 2026-09-10. Proposed business owner: Netpay Merchant Operations.
 
@@ -276,30 +276,47 @@ Excluded: Merchant 360/D2, consolidated sales, Core/Salesforce APIs, Gmail intak
 
 Documentary validation is not independent review or acceptance.
 
-## 15. Future Architecture Authority Act
+## 15. Architecture Authority Act
 
 | Field | Value |
 | --- | --- |
 | Act ID | [not recorded] |
-| Architecture Authority | [not recorded] |
-| Decision | [not recorded] |
-| Decision date | [not recorded] |
-| Reviewed proposal version | [not recorded] |
-| Reviewed canonical SHA-256 | [not recorded] |
-| Independent review reference | [not recorded] |
-| Independent review verdict | [not recorded] |
-| Accepted scope | [not recorded] |
-| Mandatory findings remaining | [not recorded] |
-| Contract allocation authority | [not recorded] |
-| Implementation work packages | [not recorded] |
-| Exact Authorized File Boundary | [not recorded] |
-| Evidence Gate | [not recorded] |
-| Rollback authority | [not recorded] |
-| Release / operation authority | [not recorded] |
-| Exceptions | [not recorded] |
-| Downstream authority | [not recorded] |
+| Architecture Authority | Guillermo de Hoyos, Architecture Authority of Yarvis |
+| Decision | ACCEPTED PROPOSAL — architecture and design basis only |
+| Decision date | 2026-09-11, local date of Architecture Authority; not adjusted to server time or UTC |
+| Reviewed proposal version | Commit `e8a7b980375eaec6fe1466f3ac33d4de167b8cd7` |
+| Reviewed canonical SHA-256 | `9F488CE5D5B02E2600CD5BCDDD9511B4E90CB1BA4041E7D46838A25030E121D9` |
+| Independent review reference | Terminal independent verdict expressly accepted by Architecture Authority in this act; no separate report identifier supplied |
+| Independent review verdict | ACCEPT |
+| Accepted scope | Existing Company → Second Branch → Branch Onboarding Case → Versioned Checklist, exclusively as an architecture and design basis |
+| Mandatory findings remaining | None; no CRITICAL, HIGH or MEDIUM findings and no mandatory amendments pending |
+| Contract allocation authority | None; no contract identifiers assigned, registered or promoted |
+| Implementation work packages | None authorized |
+| Exact Authorized File Boundary | This proposal only, solely to record and publish this acceptance; no implementation boundary authorized |
+| Evidence Gate | No implementation gate opened or passed; a later applicable instrument must define it |
+| Rollback authority | None granted for implementation or operation; a later applicable instrument must define rollback |
+| Release / operation authority | None |
+| Exceptions | None |
+| Downstream authority | None |
 
-Every value is deliberately unrecorded. Proposal preparation does not populate an acceptance or implementation act.
+This records the acceptance issued by Guillermo de Hoyos, acting as Architecture Authority of Yarvis. It accepts the terminal independent verdict ACCEPT and the reviewed proposal solely as an architecture and design basis. It is not architectural ratification or implementation authority. No Act ID is invented. The preparation-time status, pending review table in section 14 and delivery instructions elsewhere remain historical records; this dated act supersedes only their current acceptance, next-action and documentary-publication readings. It does not identify an unsupplied reviewer or review date, and does not alter the reviewed technical body.
+
+Legal identity must be resolved through canonical tenant-scoped references, using Company UUID and normalized RFC when available. Commercial name is not sufficient identity. Ambiguous or cross-Organization selection must fail closed. This acceptance does not create a name-based exception to the reviewed slice's missing-RFC guard.
+
+The following are accepted as design decisions only:
+
+- Explicit reuse of existing Client and Company, with no silent creation of another Company.
+- Coherent, atomic creation of Branch, Case and checklist snapshot.
+- Idempotency through `request_intent_id` and a functional fingerprint, with governed resolution of uncertain outcomes.
+- A versioned checklist with an immutable snapshot; a missing, empty or invalid template must prevent opening or closing the case.
+- Explicit documentary cardinality and human, audited document assessment.
+- Later incorporation of the Store ID assigned by Netpay.
+- Separation of requested product, confirmed product, assigned Store ID and external activation.
+- Strict Organization scoping, sanitized document references and no real documents in Git.
+
+This acceptance assigns no contractual identifiers, registers or promotes no contracts, and authorizes no implementation, migrations, code, tests, configuration, data, production access or deployment. It does not authorize Merchant 360/D2, D3, Core/Salesforce integration, Gmail intake, asset models, serial numbers, batch Store ID–serial reconciliation, pricing or Package B B1/B2/B3. Amendment 018 §8.3 remains open; §8.5 and later gates remain closed.
+
+Before any implementation, the architectural or authorization instrument required by AR-001 must exist, with exact contracts, an Authorized File Boundary, an Evidence Gate, rollback and independent review. This act authorizes only recording this acceptance in this proposal and publishing a commit that changes this document alone. Accepted exceptions: None. Downstream authority: None.
 
 ## 16. Documentary delivery checks
 
