@@ -1,6 +1,6 @@
 # Netpay Operational Data D1 — Synthetic Evidence
 
-Status: ASSEMBLED — PENDING INDEPENDENT REVIEW AND ARCHITECTURE AUTHORITY ACCEPTANCE
+Status: ACCEPTED EVIDENCE — D1 CONFORMANCE NOT ESTABLISHED — D2-LITE NOT AUTHORIZED
 
 ## 1. Authority, scope and disposition
 
@@ -269,19 +269,30 @@ The following is recommended future work only, not authorization to edit code, t
 
 ACCEPT WITH AMENDMENTS accepts the bounded evidence record subject to the stated documentary amendments; it does not itself establish D1 conformance, accept dependency sufficiency, authorize corrections or D2-Lite, register QRY-018, grant release/production authority or close any gate. Incorporation now stops for review of the amendments; the future Architecture Authority act below remains unrecorded.
 
-## 10. Future Architecture Authority Act
+## 10. Architecture Authority Act
 
 | Field | Value |
 | --- | --- |
-| Authority | [not recorded] |
-| Decision | [not recorded] |
-| Decision date | [not recorded] |
-| Reviewed commit | [not recorded] |
-| Reviewed canonical SHA-256 | [not recorded] |
-| Independent review verdict | [not recorded] |
-| Mandatory findings remaining | [not recorded] |
-| Accepted evidence scope | [not recorded] |
-| D1 conformance disposition | [not recorded] |
-| D2-Lite dependency disposition | [not recorded] |
-| Accepted exceptions | [not recorded] |
-| Downstream authority | [not recorded] |
+| Authority | Guillermo de Hoyos, Architecture Authority |
+| Decision | ACCEPTED EVIDENCE |
+| Decision date | 2026-09-12, hora local de Architecture Authority |
+| Reviewed commit | `cd6c63c7975b7fdee7f379631fb1c977e7aeaf88` |
+| Reviewed canonical SHA-256 | `1E6DCDE87A663799A0FE6D4B658AE9EC0EDC4F9E2AB10555C02DF00BF9C0F5FA` |
+| Independent substantive review | ACCEPT WITH AMENDMENTS |
+| Independent amendment-incorporation verification | ACCEPT |
+| Architecture Authority amendment disposition | INCORPORATED SATISFACTORILY |
+| Mandatory findings remaining | F1–F7 |
+| Accepted evidence scope | Faithful and limited record of the available historical D1 execution evidence; not evidence reproduced by the independent reviewer |
+| D1 Evidence Gate | NOT PASSED |
+| D1 conformance | NOT ESTABLISHED |
+| D2-Lite dependency sufficiency | NOT ESTABLISHED |
+| D2-Lite implementation authority | NONE |
+| QRY-018 | CANDIDATE — NOT REGISTERED |
+| Accepted exceptions | None |
+| Downstream authority | None |
+
+Guillermo de Hoyos, acting as Architecture Authority, accepts the corrected evidence record with the scope and local decision date above and determines that the required amendments were INCORPORATED SATISFACTORILY in the identified reviewed version. Architecture Authority expressly confirms a subsequent independent verification that read the complete amended document, compared the actual diff against its parent, confirmed the canonical SHA-256, individually verified F1–F7, checked attribution of the eight static diagnostics and the D1/D2-Lite/QRY-018 dispositions, and issued terminal ACCEPT solely for faithful incorporation of the required amendments. The original substantive ACCEPT WITH AMENDMENTS verdict, the subsequent independent amendment-incorporation ACCEPT and this Architecture Authority decision are separate acts. The second ACCEPT does not replace, reopen or modify the first verdict and does not establish D1 conformance. No reviewer identity or verification date not supplied by the Authority is invented.
+
+This dated act supersedes only earlier pending-review, pending-acceptance and unrecorded-act statements as current-status descriptions; they remain historical evidence. Findings F1–F7, their severities, execution results and recommended remediation are unchanged. Acceptance of this record does not turn the failed Evidence Gate into PASS, treat historical results as independently reproduced, waive Pyright or TypeScript errors, or accept exceptions concerning concurrency, provenance, matching, periods, replay, authority or E2E.
+
+Static errors and gaps F1–F7 require subsequent, separate remediation authorization. This act authorizes no changes to code, tests, migrations, configuration, contracts or infrastructure; it grants no D1 or D2-Lite implementation authority, does not register QRY-018 and does not establish D1 conformance or D2-Lite dependency sufficiency. Accepted exceptions: None. Downstream authority: None.
