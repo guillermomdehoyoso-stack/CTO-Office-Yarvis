@@ -177,6 +177,7 @@ def test_xlsx_and_formula_rejection():
     setup_data()
     workbook = Workbook()
     sheet = workbook.active
+    assert sheet is not None
     sheet.append(["Store ID", "Client ID", "Mes", "Rentabilidad"])
     sheet.append(["SYN-STORE-001", "SYN-CLIENT", "2026-08", 12])
     stream = BytesIO()
@@ -185,6 +186,7 @@ def test_xlsx_and_formula_rejection():
     assert response.status_code == 201
     formula = Workbook()
     sheet = formula.active
+    assert sheet is not None
     sheet.append(["Store ID", "Client ID", "Mes", "Rentabilidad"])
     sheet.append(["SYN-STORE-001", "SYN-CLIENT", "2026-08", "=1+1"])
     stream = BytesIO()
@@ -263,6 +265,7 @@ def test_operational_data_migration_round_trip():
             return MigrationContext.configure(session.connection()).get_current_revision()
 
     initial_head = current_revision()
+    assert initial_head is not None
     assert initial_head == script_head
     try:
         command.downgrade(config, "20260819_40")

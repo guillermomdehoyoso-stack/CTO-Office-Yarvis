@@ -1,11 +1,11 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, it, vi } from 'vitest';
 import { NetpayApiClient } from '../../api/netpay';
 import { NetpayDataWorkspace } from './NetpayDataWorkspace';
 
 const batch = { id: 'batch-1', dataset_type: 'monthly_store_profitability', reporting_period: '2026-08', sanitized_filename: 'synthetic.csv', selected_sheet: 'CSV', hash_identifier: 'abc123', preview_token: 'a'.repeat(64), duplicate_upload: false, status: 'needs_review', row_counts: { received: 1, authorized: 1, valid: 1, invalid: 0, matched: 1, unmatched: 0, ambiguous: 0, conflicts: 0, duplicates: 0, projected_inserts: 1, projected_updates: 0, unchanged: 0 }, source_discarded: true, created_at: '2026-08-19T00:00:00Z', updated_at: '2026-08-19T00:00:00Z', rows: [{ id: 'row-1', source_row_number: 2, validation_status: 'valid', match_status: 'matched', store_reference_id: 'store-1', error_codes: [], projected_action: 'insert', preview: { store_id: '***0001', reporting_period: '2026-08' } }] };
-function configured() { const client = new NetpayApiClient({ baseUrl: 'http://api.test', subject: 'operator:test', organizationSelector: 'org-test', organizationLabel: 'Organización sintética', authToken: 'token', capabilities: new Set(['netpay.inbox.read', 'netpay.inbox.manage']) }); vi.spyOn(client, 'listOperationalDatasets').mockResolvedValue({ items: [], total: 0 }); vi.spyOn(client, 'uploadOperationalDataset').mockResolvedValue(batch); vi.spyOn(client, 'acceptOperationalDataset').mockResolvedValue({ ...batch, status: 'accepted' }); vi.spyOn(client, 'getOperationalDatasetResults').mockResolvedValue([{ reporting_period: '2026-08', product_uen: 'TPV', volume: 1, profitability: 2 }]); return client; }
+function configured() { const client = new NetpayApiClient({ baseUrl: 'http://api.test', organizationLabel: 'Organización sintética', capabilities: new Set(['netpay.inbox.read', 'netpay.inbox.manage']) }); vi.spyOn(client, 'listOperationalDatasets').mockResolvedValue({ items: [], total: 0 }); vi.spyOn(client, 'uploadOperationalDataset').mockResolvedValue(batch); vi.spyOn(client, 'acceptOperationalDataset').mockResolvedValue({ ...batch, status: 'accepted' }); vi.spyOn(client, 'getOperationalDatasetResults').mockResolvedValue([{ reporting_period: '2026-08', product_uen: 'TPV', volume: 1, profitability: 2 }]); return client; }
 
 it('uploads a synthetic dataset, displays sanitized preview, accepts it and refreshes history', async () => {
   const client = configured(); render(<NetpayDataWorkspace client={client} />); await waitFor(() => expect(client.listOperationalDatasets).toHaveBeenCalled());
@@ -15,4 +15,55 @@ it('uploads a synthetic dataset, displays sanitized preview, accepts it and refr
 
 it('requires the ephemeral RFC value only for no-usage uploads', async () => {
   const client = configured(); render(<NetpayDataWorkspace client={client} />); await waitFor(() => expect(client.listOperationalDatasets).toHaveBeenCalled()); await userEvent.selectOptions(screen.getByLabelText(/Tipo de dataset/i), 'no_usage_campaign'); expect(screen.getByLabelText(/RFC de distribuidor/i)).toBeTruthy(); expect((screen.getByRole('button', { name: /Subir y validar/i }) as HTMLButtonElement).disabled).toBe(true);
+});
+
+it('renders the unavailable organization label without obsolete runtime fields', async () => {
+  const client = configured(); client.runtime.organizationLabel = '';
+  render(<NetpayDataWorkspace client={client} />);
+  expect(screen.getByText('Organización: No disponible')).toBeTruthy();
+  await waitFor(() => expect(client.listOperationalDatasets).toHaveBeenCalled());
+});
+
+it('reloads an unchanged accepted batch from history with its own source results', async () => {
+  const client = configured();
+  const accepted = { ...batch, status: 'accepted', row_counts: { ...batch.row_counts, projected_inserts: 0, unchanged: 1 } };
+  vi.mocked(client.listOperationalDatasets).mockResolvedValue({ items: [accepted], total: 1 });
+  vi.spyOn(client, 'getOperationalDataset').mockResolvedValue(accepted);
+  vi.mocked(client.getOperationalDatasetResults).mockResolvedValue([{ reporting_period: '2026-08', volume: 42, profitability: 12, result: 'unchanged', source_batch_id: 'original-batch' }]);
+  render(<NetpayDataWorkspace client={client} />);
+  await waitFor(() => expect(client.listOperationalDatasets).toHaveBeenCalled());
+  await userEvent.click(screen.getByRole('button', { name: 'Historial de importaciones' }));
+  await userEvent.click(within(await screen.findByRole('table')).getByRole('button', { name: 'Rentabilidad' }));
+  await waitFor(() => expect(client.getOperationalDatasetResults).toHaveBeenCalledWith('batch-1'));
+  expect(await screen.findByText('42')).toBeTruthy();
+});
+
+it('reads the recovered accepted batch results on an idempotent upload', async () => {
+  const client = configured();
+  vi.mocked(client.uploadOperationalDataset).mockResolvedValue({ ...batch, status: 'accepted', duplicate_upload: true });
+  render(<NetpayDataWorkspace client={client} />);
+  await userEvent.upload(screen.getByLabelText(/Archivo XLSX/i), new File(['synthetic'], 'synthetic.csv', { type: 'text/csv' }));
+  await userEvent.click(screen.getByRole('button', { name: /Subir y validar/i }));
+  await waitFor(() => expect(client.getOperationalDatasetResults).toHaveBeenCalledWith('batch-1'));
+  expect(await screen.findByText(/Se recuperó el batch idempotente/i)).toBeTruthy();
+  expect(await screen.findByText('TPV')).toBeTruthy();
+});
+
+it('clears another batch results when recovered readback fails', async () => {
+  const client = configured();
+  vi.mocked(client.uploadOperationalDataset)
+    .mockResolvedValueOnce({ ...batch, status: 'accepted', duplicate_upload: true })
+    .mockResolvedValueOnce({ ...batch, id: 'batch-2', status: 'accepted', duplicate_upload: true });
+  vi.mocked(client.getOperationalDatasetResults)
+    .mockResolvedValueOnce([{ reporting_period: '2026-08', product_uen: 'TPV', volume: 1, profitability: 2 }])
+    .mockRejectedValueOnce(new Error('Synthetic readback failure'));
+  render(<NetpayDataWorkspace client={client} />);
+  await userEvent.upload(screen.getByLabelText(/Archivo XLSX/i), new File(['synthetic'], 'synthetic.csv', { type: 'text/csv' }));
+  await userEvent.click(screen.getByRole('button', { name: /Subir y validar/i }));
+  expect(await screen.findByText('TPV')).toBeTruthy();
+  await waitFor(() => expect((screen.getByRole('button', { name: /Subir y validar/i }) as HTMLButtonElement).disabled).toBe(false));
+  await userEvent.click(screen.getByRole('button', { name: /Subir y validar/i }));
+  expect(await screen.findByRole('alert')).toBeTruthy();
+  expect(screen.queryByText('TPV')).toBeNull();
+  expect(screen.queryByText('Registro sin cambio.')).toBeNull();
 });

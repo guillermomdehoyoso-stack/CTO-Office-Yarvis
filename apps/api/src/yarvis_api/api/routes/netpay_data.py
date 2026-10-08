@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import math
 import re
 import unicodedata
 import zipfile
@@ -15,7 +16,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Response, UploadFile
 from openpyxl import load_workbook
-from sqlalchemy import select
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -102,7 +103,8 @@ def _number(value: object) -> float | None:
     if value in (None, ""):
         return None
     try:
-        return float(str(value).replace(",", "").replace("$", "").strip())
+        number = float(str(value).replace(",", "").replace("$", "").strip())
+        return number if math.isfinite(number) else None
     except (TypeError, ValueError):
         return None
 
@@ -215,20 +217,119 @@ def _store_state(db: Session, organization_id: UUID, normalized_ids: set[str]) -
     )
 
 
-def _latest_fingerprint(
+def _latest_fact(
     db: Session, dataset_type: str, organization_id: UUID, store_reference_id: UUID, period: str
-) -> str | None:
-    model = StoreProfitabilityFact if dataset_type == "monthly_store_profitability" else NoUsageCampaignEntry
-    period_column = model.reporting_period if dataset_type == "monthly_store_profitability" else model.campaign_period
+) -> StoreProfitabilityFact | NoUsageCampaignEntry | None:
+    if dataset_type == "monthly_store_profitability":
+        model, period_column = StoreProfitabilityFact, StoreProfitabilityFact.reporting_period
+    else:
+        model, period_column = NoUsageCampaignEntry, NoUsageCampaignEntry.campaign_period
     fact = db.scalar(
         select(model)
+        .join(OperationalDataBatch, OperationalDataBatch.id == model.batch_id)
         .where(
+            OperationalDataBatch.status == "accepted",
+            OperationalDataBatch.organization_id == organization_id,
+            OperationalDataBatch.dataset_type == dataset_type,
+            OperationalDataBatch.reporting_period == period,
             model.organization_id == organization_id,
             model.store_reference_id == store_reference_id,
             period_column == period,
         )
         .order_by(model.created_at.desc(), model.id.desc())
     )
+    if fact:
+        _verify_fact_source(db, fact)
+    return fact
+
+
+def _verify_fact_source(db, fact):
+    source = db.scalar(
+        select(OperationalDataRow).where(
+            OperationalDataRow.batch_id == fact.batch_id,
+            OperationalDataRow.store_reference_id == fact.store_reference_id,
+            OperationalDataRow.row_fingerprint == fact.row_fingerprint,
+        )
+    )
+    if source is None:
+        raise HTTPException(409, "accepted_provenance_unverified")
+    material = {key: value for key, value in source.controlled_payload.items() if key != "accepted_fact_id"}
+    if (
+        _digest(material) != fact.row_fingerprint
+        or source.validation_status != "valid"
+        or source.match_status != "matched"
+    ):
+        raise HTTPException(409, "accepted_provenance_unverified")
+    fields = (
+        (
+            "client_external_reference",
+            "reporting_period",
+            "product_uen",
+            "volume",
+            "transaction_count",
+            "income",
+            "cost",
+            "commissions",
+            "profitability",
+        )
+        if isinstance(fact, StoreProfitabilityFact)
+        else ("months_without_usage", "merchant_status", "alert_code", "outcome_code", "follow_up_code")
+    )
+    if any(getattr(fact, key) != material.get(key) for key in fields):
+        raise HTTPException(409, "accepted_provenance_unverified")
+    if isinstance(fact, NoUsageCampaignEntry) and fact.campaign_period != material.get("reporting_period"):
+        raise HTTPException(409, "accepted_provenance_unverified")
+
+
+def _accepted_results(db, batch, model):
+    rows = db.scalars(
+        select(OperationalDataRow)
+        .where(OperationalDataRow.batch_id == batch.id)
+        .order_by(OperationalDataRow.source_row_number)
+    ).all()
+    results = []
+    for row in rows:
+        pointer = row.controlled_payload.get("accepted_fact_id")
+        try:
+            fact_id = UUID(pointer) if pointer else None
+        except (ValueError, TypeError, AttributeError):
+            raise HTTPException(409, "accepted_provenance_unverified") from None
+        period_column = (
+            StoreProfitabilityFact.reporting_period
+            if model is StoreProfitabilityFact
+            else NoUsageCampaignEntry.campaign_period
+        )
+        statement = (
+            select(model)
+            .join(OperationalDataBatch, OperationalDataBatch.id == model.batch_id)
+            .where(
+                model.organization_id == batch.organization_id,
+                model.store_reference_id == row.store_reference_id,
+                model.row_fingerprint == row.row_fingerprint,
+                OperationalDataBatch.organization_id == batch.organization_id,
+                OperationalDataBatch.dataset_type == batch.dataset_type,
+                OperationalDataBatch.status == "accepted",
+                OperationalDataBatch.reporting_period == batch.reporting_period,
+                period_column == batch.reporting_period,
+            )
+        )
+        # Legacy inserted Facts remain readable; legacy unchanged rows with no
+        # captured source are deliberately not reconstructed from a latest value.
+        fact = db.scalar(
+            statement.where(model.id == fact_id) if fact_id else statement.where(model.batch_id == batch.id)
+        )
+        if fact is None:
+            raise HTTPException(409, "accepted_provenance_unverified")
+        _verify_fact_source(db, fact)
+        material = {key: value for key, value in row.controlled_payload.items() if key != "accepted_fact_id"}
+        if _digest(material) != fact.row_fingerprint or material.get("reporting_period") != batch.reporting_period:
+            raise HTTPException(409, "accepted_provenance_unverified")
+        results.append((fact, row.projected_action))
+    return results
+
+
+def _latest_fingerprint(db, dataset_type, organization_id, store_reference_id, period):
+    fact = _latest_fact(db, dataset_type, organization_id, store_reference_id, period)
     return fact.row_fingerprint if fact else None
 
 
@@ -285,18 +386,27 @@ def _event(db, envelope, batch, event_type):
     )
 
 
-def _target(db, envelope, batch_id):
-    batch = db.scalar(
-        select(OperationalDataBatch).where(
-            OperationalDataBatch.id == batch_id, OperationalDataBatch.organization_id == envelope.organization_id
-        )
+def _target(db, envelope, batch_id, *, lock=False):
+    statement = select(OperationalDataBatch).where(
+        OperationalDataBatch.id == batch_id, OperationalDataBatch.organization_id == envelope.organization_id
     )
+    if lock:
+        statement = statement.with_for_update().execution_options(populate_existing=True)
+    batch = db.scalar(statement)
     if not batch:
         raise HTTPException(404, "not_found")
     return batch
 
 
+def _lock(db, resource):
+    lock_key = int.from_bytes(hashlib.sha256(_digest(resource).encode()).digest()[:8], signed=True)
+    db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key})
+
+
 def _receipt(db, envelope, key, command, payload, mutation):
+    # Receipts serialize only the contractual idempotency key. Decisions lock
+    # their batch; acceptance additionally serializes each affected fact series.
+    _lock(db, ["d1-receipt", str(envelope.organization_id), command, key])
     fingerprint = _digest(payload)
     receipt = db.scalar(
         select(OperationalDataCommandReceipt).where(
@@ -306,11 +416,45 @@ def _receipt(db, envelope, key, command, payload, mutation):
         )
     )
     if receipt:
-        if receipt.request_fingerprint != fingerprint:
+        legacy_payload = {
+            name: value for name, value in payload.items() if name not in {"selection_hash", "reason_code"}
+        }
+        if receipt.request_fingerprint not in {fingerprint, _digest(legacy_payload)}:
             raise HTTPException(409, "idempotency_conflict")
+        if command == "IC-NETPAY-CMD-026":
+            batch, _ = mutation()
+            return 200, _batch_read(db, batch, duplicate=True).model_dump(mode="json")
+        if receipt.result_status_code >= 400:
+            raise HTTPException(receipt.result_status_code, receipt.result_response_body["detail"])
         return receipt.result_status_code, receipt.result_response_body
-    batch, code = mutation()
+    audit = {
+        "authority": "netpay.inbox.manage",
+        "authentication_source": envelope.authentication_source,
+        "correlation_id": envelope.correlation_id,
+        "request": payload,
+    }
+    try:
+        with db.begin_nested():
+            batch, code = mutation()
+    except HTTPException as error:
+        if error.status_code == 409 and "batch_id" in payload:
+            db.add(
+                OperationalDataCommandReceipt(
+                    organization_id=envelope.organization_id,
+                    command_type=command,
+                    idempotency_key=key,
+                    request_fingerprint=fingerprint,
+                    actor_principal_id=envelope.principal_id,
+                    result_batch_id=UUID(payload["batch_id"]),
+                    result_status_code=409,
+                    result_response_body={"detail": error.detail, "_audit": audit},
+                )
+            )
+            db.commit()
+        raise
     body = _batch_read(db, batch).model_dump(mode="json")
+    if command == "IC-NETPAY-CMD-026" and code == 200:
+        body["duplicate_upload"] = True
     db.add(
         OperationalDataCommandReceipt(
             organization_id=envelope.organization_id,
@@ -320,7 +464,7 @@ def _receipt(db, envelope, key, command, payload, mutation):
             actor_principal_id=envelope.principal_id,
             result_batch_id=batch.id,
             result_status_code=code,
-            result_response_body=body,
+            result_response_body={**body, "_audit": audit},
         )
     )
     return code, body
@@ -343,17 +487,8 @@ async def upload_dataset(
         raise HTTPException(422, "rfc_filter_required")
     filename, content = _filename(file.filename or ""), await file.read()
     source_hash = hashlib.sha256(content).hexdigest()
-    existing = db.scalar(
-        select(OperationalDataBatch).where(
-            OperationalDataBatch.organization_id == current.organization_id,
-            OperationalDataBatch.dataset_type == dataset_type,
-            OperationalDataBatch.source_hash == source_hash,
-        )
-    )
-    if existing:
-        response.status_code = 200
-        return _batch_read(db, existing, duplicate=True)
     raw, selected_sheet = _parse(filename, content, dataset_type)
+    source_numbers = {id(row): number for number, row in enumerate(raw, start=2)}
     authorized = raw
     if dataset_type == "no_usage_campaign":
         expected = _normal(rfc_filter)
@@ -364,6 +499,49 @@ async def upload_dataset(
         ]
 
     def mutation():
+        _lock(db, ["d1-source", str(current.organization_id), dataset_type, source_hash])
+        existing = db.scalar(
+            select(OperationalDataBatch).where(
+                OperationalDataBatch.organization_id == current.organization_id,
+                OperationalDataBatch.dataset_type == dataset_type,
+                OperationalDataBatch.source_hash == source_hash,
+            )
+        )
+        if existing:
+            staged = db.scalars(select(OperationalDataRow).where(OperationalDataRow.batch_id == existing.id)).all()
+            if dataset_type == "no_usage_campaign":
+                original_receipt = db.scalar(
+                    select(OperationalDataCommandReceipt)
+                    .where(
+                        OperationalDataCommandReceipt.result_batch_id == existing.id,
+                        OperationalDataCommandReceipt.command_type == "IC-NETPAY-CMD-026",
+                    )
+                    .order_by(OperationalDataCommandReceipt.created_at, OperationalDataCommandReceipt.id)
+                )
+                if not original_receipt or not original_receipt.result_response_body.get("_audit", {}).get(
+                    "request", {}
+                ).get("selection_hash"):
+                    raise HTTPException(409, "authorized_selection_unverified")
+            if dataset_type == "no_usage_campaign" and sorted(row.source_row_number for row in staged) != sorted(
+                source_numbers[id(row)] for row in authorized
+            ):
+                raise HTTPException(409, "authorized_selection_conflict")
+            selection = [
+                (
+                    _store_id(_find(row, "store id", "store_id"))[0],
+                    _period(_find(row, "mes", "periodo", "reporting period", "campaign period")),
+                )
+                for row in authorized
+            ]
+            if sorted(selection, key=str) != sorted(
+                [
+                    (row.controlled_payload.get("store_id"), row.controlled_payload.get("reporting_period"))
+                    for row in staged
+                ],
+                key=str,
+            ):
+                raise HTTPException(409, "authorized_selection_conflict")
+            return existing, 200
         batch = OperationalDataBatch(
             organization_id=current.organization_id,
             dataset_type=dataset_type,
@@ -380,7 +558,8 @@ async def upload_dataset(
         db.add(batch)
         db.flush()
         candidates, natural_keys, normalized_ids = [], {}, set()
-        for number, source in enumerate(authorized, start=2):
+        for source in authorized:
+            number = source_numbers[id(source)]
             store, store_error = _store_id(_find(source, "store id", "store_id"))
             period = _period(_find(source, "mes", "periodo", "reporting period", "campaign period"))
             errors = [item for item in (store_error, None if period else "missing_reporting_period") if item]
@@ -449,6 +628,7 @@ async def upload_dataset(
                     select(NetpayStoreReference).where(
                         NetpayStoreReference.organization_id == current.organization_id,
                         NetpayStoreReference.normalized_store_id == _normal(store),
+                        NetpayStoreReference.store_id == store,
                         NetpayStoreReference.active.is_(True),
                     )
                 ).all()
@@ -505,7 +685,20 @@ async def upload_dataset(
             current,
             idempotency_key,
             "IC-NETPAY-CMD-026",
-            {"dataset_type": dataset_type, "source_hash": source_hash},
+            {
+                "dataset_type": dataset_type,
+                "source_hash": source_hash,
+                "selection_hash": _digest(
+                    [
+                        (
+                            source_numbers[id(row)],
+                            _store_id(_find(row, "store id", "store_id"))[0],
+                            _period(_find(row, "mes", "periodo", "reporting period", "campaign period")),
+                        )
+                        for row in authorized
+                    ]
+                ),
+            },
             mutation,
         )
         db.commit()
@@ -550,10 +743,12 @@ def accept_dataset(
     current = _operator(envelope)
 
     def mutation():
-        batch = _target(db, current, batch_id)
+        batch = _target(db, current, batch_id, lock=True)
+        if payload.preview_token != batch.preview_token:
+            raise HTTPException(409, "preview_expired_or_mismatched")
         if batch.status == "accepted":
             return batch, 200
-        if batch.status != "needs_review" or payload.preview_token != batch.preview_token:
+        if batch.status != "needs_review":
             raise HTTPException(409, "preview_expired_or_mismatched")
         rows = db.scalars(
             select(OperationalDataRow)
@@ -564,51 +759,104 @@ def accept_dataset(
         normalized = {
             _normal(row.controlled_payload.get("store_id")) for row in rows if row.controlled_payload.get("store_id")
         }
-        if _store_state(db, current.organization_id, normalized) != batch.store_state_hash:
-            raise HTTPException(409, "preview_expired_or_mismatched")
         if not rows or any(
             row.validation_status != "valid" or row.match_status != "matched" or row.store_reference_id is None
             for row in rows
         ):
             raise HTTPException(409, "dataset_requires_review")
+        if not batch.reporting_period or any(
+            row.controlled_payload.get("reporting_period") != batch.reporting_period for row in rows
+        ):
+            raise HTTPException(409, "dataset_requires_single_period")
+        references = db.scalars(
+            select(NetpayStoreReference)
+            .where(NetpayStoreReference.id.in_([row.store_reference_id for row in rows]))
+            .order_by(NetpayStoreReference.id)
+            .with_for_update(read=True)
+            .execution_options(populate_existing=True)
+        ).all()
+        if _store_state(db, current.organization_id, normalized) != batch.store_state_hash:
+            raise HTTPException(409, "preview_expired_or_mismatched")
+        by_id = {reference.id: reference for reference in references}
         for row in rows:
-            if row.projected_action == "unchanged":
-                continue
+            assert row.store_reference_id is not None
+            reference = by_id.get(row.store_reference_id)
+            if (
+                not reference
+                or not reference.active
+                or reference.organization_id != current.organization_id
+                or reference.store_id != row.controlled_payload["store_id"]
+            ):
+                raise HTTPException(409, "store_match_requires_review")
+        counts = dict(batch.row_counts)
+        counts.update(projected_inserts=0, projected_updates=0, unchanged=0)
+        for reference_id in sorted(by_id, key=str):
+            _lock(
+                db,
+                [
+                    "d1-fact",
+                    str(current.organization_id),
+                    batch.dataset_type,
+                    str(reference_id),
+                    batch.reporting_period,
+                ],
+            )
+        for row in rows:
             item = row.controlled_payload
+            assert row.store_reference_id is not None
+            previous = _latest_fact(
+                db, batch.dataset_type, current.organization_id, row.store_reference_id, item["reporting_period"]
+            )
+            row.projected_action = (
+                "unchanged"
+                if previous and previous.row_fingerprint == row.row_fingerprint
+                else "update"
+                if previous
+                else "insert"
+            )
+            counts[
+                {"insert": "projected_inserts", "update": "projected_updates", "unchanged": "unchanged"}[
+                    row.projected_action
+                ]
+            ] += 1
+            if row.projected_action == "unchanged" and previous:
+                row.controlled_payload = {**item, "accepted_fact_id": str(previous.id)}
+                continue
             common = {
                 "organization_id": current.organization_id,
                 "batch_id": batch.id,
                 "store_reference_id": row.store_reference_id,
                 "row_fingerprint": row.row_fingerprint,
+                "created_at": func.clock_timestamp(),
             }
             if batch.dataset_type == "monthly_store_profitability":
-                db.add(
-                    StoreProfitabilityFact(
-                        **common,
-                        client_external_reference=item["client_external_reference"],
-                        reporting_period=item["reporting_period"],
-                        product_uen=item["product_uen"],
-                        volume=item["volume"],
-                        transaction_count=item["transaction_count"],
-                        income=item["income"],
-                        cost=item["cost"],
-                        commissions=item["commissions"],
-                        profitability=item["profitability"],
-                        no_use_indicator=None,
-                    )
+                fact = StoreProfitabilityFact(
+                    **common,
+                    client_external_reference=item["client_external_reference"],
+                    reporting_period=item["reporting_period"],
+                    product_uen=item["product_uen"],
+                    volume=item["volume"],
+                    transaction_count=item["transaction_count"],
+                    income=item["income"],
+                    cost=item["cost"],
+                    commissions=item["commissions"],
+                    profitability=item["profitability"],
+                    no_use_indicator=None,
                 )
             else:
-                db.add(
-                    NoUsageCampaignEntry(
-                        **common,
-                        campaign_period=item["reporting_period"],
-                        months_without_usage=item["months_without_usage"],
-                        merchant_status=item["merchant_status"],
-                        alert_code=item["alert_code"],
-                        outcome_code=item["outcome_code"],
-                        follow_up_code=item["follow_up_code"],
-                    )
+                fact = NoUsageCampaignEntry(
+                    **common,
+                    campaign_period=item["reporting_period"],
+                    months_without_usage=item["months_without_usage"],
+                    merchant_status=item["merchant_status"],
+                    alert_code=item["alert_code"],
+                    outcome_code=item["outcome_code"],
+                    follow_up_code=item["follow_up_code"],
                 )
+            db.add(fact)
+            db.flush()
+            row.controlled_payload = {**item, "accepted_fact_id": str(fact.id)}
+        batch.row_counts = counts
         batch.status = "accepted"
         _event(db, current, batch, "netpay.operational_dataset.accepted")
         return batch, 200
@@ -641,9 +889,11 @@ def reject_dataset(
     current = _operator(envelope)
 
     def mutation():
-        batch = _target(db, current, batch_id)
+        batch = _target(db, current, batch_id, lock=True)
         if batch.status == "accepted":
             raise HTTPException(409, "accepted_dataset_cannot_be_rejected")
+        if batch.status == "rejected":
+            return batch, 200
         batch.status = "rejected"
         _event(db, current, batch, "netpay.operational_dataset.rejected")
         return batch, 200
@@ -667,26 +917,50 @@ def resolve_match(
     current = _operator(envelope)
 
     def mutation():
-        batch = _target(db, current, batch_id)
+        batch = _target(db, current, batch_id, lock=True)
         row = db.scalar(
             select(OperationalDataRow).where(OperationalDataRow.id == row_id, OperationalDataRow.batch_id == batch.id)
         )
         reference = db.scalar(
-            select(NetpayStoreReference).where(
+            select(NetpayStoreReference)
+            .where(
                 NetpayStoreReference.id == payload.store_reference_id,
                 NetpayStoreReference.organization_id == current.organization_id,
                 NetpayStoreReference.active.is_(True),
             )
+            .with_for_update(read=True)
+            .execution_options(populate_existing=True)
         )
         if not row or not reference or batch.status != "needs_review":
             raise HTTPException(404, "not_found")
+        if row.store_reference_id is not None and row.store_reference_id != reference.id:
+            raise HTTPException(409, "confirmed_match_cannot_be_replaced")
+        if reference.store_id != row.controlled_payload.get("store_id"):
+            raise HTTPException(409, "store_identifier_mismatch")
+        if row.resolved_by_principal_id is not None:
+            return batch, 200
         row.store_reference_id, row.match_status, row.resolved_by_principal_id = (
             reference.id,
             "matched",
             current.principal_id,
         )
         row.validation_status = "valid" if not row.error_codes else "invalid"
-        row.projected_action = "insert" if row.validation_status == "valid" else "invalid"
+        previous = _latest_fingerprint(
+            db,
+            batch.dataset_type,
+            current.organization_id,
+            reference.id,
+            row.controlled_payload.get("reporting_period"),
+        )
+        row.projected_action = (
+            "invalid"
+            if row.validation_status != "valid"
+            else "unchanged"
+            if previous == row.row_fingerprint
+            else "update"
+            if previous
+            else "insert"
+        )
         rows = db.scalars(select(OperationalDataRow).where(OperationalDataRow.batch_id == batch.id)).all()
         batch.store_state_hash = _store_state(
             db,
@@ -710,6 +984,12 @@ def resolve_match(
                 "matched": sum(item.match_status == "matched" for item in rows),
                 "unmatched": sum(item.match_status == "unmatched" for item in rows),
                 "ambiguous": sum(item.match_status == "ambiguous" for item in rows),
+                "valid": sum(item.validation_status == "valid" for item in rows),
+                "invalid": sum(item.validation_status == "invalid" for item in rows),
+                "conflicts": sum(item.projected_action == "conflict" for item in rows),
+                "projected_inserts": sum(item.projected_action == "insert" for item in rows),
+                "projected_updates": sum(item.projected_action == "update" for item in rows),
+                "unchanged": sum(item.projected_action == "unchanged" for item in rows),
             }
         )
         batch.row_counts = counts
@@ -721,7 +1001,12 @@ def resolve_match(
         current,
         idempotency_key,
         "IC-NETPAY-CMD-030",
-        {"batch_id": str(batch_id), "row_id": str(row_id), "store_reference_id": str(payload.store_reference_id)},
+        {
+            "batch_id": str(batch_id),
+            "row_id": str(row_id),
+            "store_reference_id": str(payload.store_reference_id),
+            "reason_code": payload.reason_code,
+        },
         mutation,
     )
     db.commit()
@@ -738,12 +1023,7 @@ def dataset_results(
     if batch.status != "accepted":
         return []
     if batch.dataset_type == "monthly_store_profitability":
-        rows = db.scalars(
-            select(StoreProfitabilityFact).where(
-                StoreProfitabilityFact.organization_id == current.organization_id,
-                StoreProfitabilityFact.batch_id == batch.id,
-            )
-        ).all()
+        rows = _accepted_results(db, batch, StoreProfitabilityFact)
         return [
             {
                 "store_reference_id": str(row.store_reference_id),
@@ -752,15 +1032,13 @@ def dataset_results(
                 "volume": row.volume,
                 "transaction_count": row.transaction_count,
                 "profitability": row.profitability,
-                "result": "available",
+                "result": "unchanged" if action == "unchanged" else "available",
+                "source_batch_id": str(row.batch_id),
+                "source_fact_id": str(row.id),
             }
-            for row in rows
+            for row, action in rows
         ]
-    rows = db.scalars(
-        select(NoUsageCampaignEntry).where(
-            NoUsageCampaignEntry.organization_id == current.organization_id, NoUsageCampaignEntry.batch_id == batch.id
-        )
-    ).all()
+    rows = _accepted_results(db, batch, NoUsageCampaignEntry)
     return [
         {
             "store_reference_id": str(row.store_reference_id),
@@ -768,7 +1046,9 @@ def dataset_results(
             "months_without_usage": row.months_without_usage,
             "merchant_status": row.merchant_status,
             "alert_code": row.alert_code,
-            "result": "available",
+            "result": "unchanged" if action == "unchanged" else "available",
+            "source_batch_id": str(row.batch_id),
+            "source_fact_id": str(row.id),
         }
-        for row in rows
+        for row, action in rows
     ]

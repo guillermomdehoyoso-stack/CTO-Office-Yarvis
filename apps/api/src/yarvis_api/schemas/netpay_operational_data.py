@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -41,6 +42,7 @@ class OperationalDataBatchPage(BaseModel):
 
 class OperationalRowResolution(BaseModel):
     store_reference_id: UUID
+    reason_code: Literal["confirm_exact_store_id"] = "confirm_exact_store_id"
 
 
 class OperationalDataAcceptance(BaseModel):

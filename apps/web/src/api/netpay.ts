@@ -104,10 +104,14 @@ export type NetpayRuntime = {
 
 function runtimeFromEnvironment(): NetpayRuntime {
   const env = import.meta.env;
+  const capabilities = String(env.VITE_YARVIS_CAPABILITIES || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
   return {
     baseUrl: env.VITE_API_BASE_URL || (env.PROD ? '' : 'http://localhost:8000'),
     organizationLabel: env.VITE_YARVIS_ORGANIZATION_LABEL || '',
-    capabilities: new Set<string>(),
+    capabilities: new Set(capabilities),
   };
 }
 
@@ -134,6 +138,8 @@ export class NetpayApiClient {
         ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
         ...(init.method && init.method !== 'GET' ? { 'X-CSRF-Token': csrfCookie() } : {}),
         ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+        ...(import.meta.env.VITE_YARVIS_SUBJECT ? { 'X-Yarvis-Subject': import.meta.env.VITE_YARVIS_SUBJECT } : {}),
+        ...(import.meta.env.VITE_YARVIS_AUTH_TOKEN ? { 'X-Yarvis-Auth-Token': import.meta.env.VITE_YARVIS_AUTH_TOKEN } : {}),
         ...(init.headers || {}),
       },
     });
