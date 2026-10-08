@@ -1,0 +1,34 @@
+# Overlay only with the repository docker-compose.yml and --env-file NUL.
+# Synthetic resources; no production env files, data mounts, or host DB port.
+services:
+  postgres:
+    environment:
+      POSTGRES_DB: yarvis_test
+      POSTGRES_USER: yarvis
+      POSTGRES_PASSWORD: yarvis
+  api:
+    image: python:3.12-slim
+    build: !reset null
+    command: sleep infinity
+    ports: !reset []
+    volumes: !override
+      - ./apps/api:/source/api:ro
+      - ./scripts:/source/scripts:ro
+      - ./AGENTS.md:/source/AGENTS.md:ro
+      - ./docs/development:/source/docs/development:ro
+      - ./docs/engineering:/source/docs/engineering:ro
+    environment: !override
+      PYTHONPATH: /app/src
+      YARVIS_ENVIRONMENT: test
+      DATABASE_URL: postgresql://yarvis:yarvis@postgres:5432/yarvis_test
+      YARVIS_DATABASE_URL: postgresql://yarvis:yarvis@postgres:5432/yarvis_test
+      YARVIS_FOUNDER_BOOTSTRAP_DATABASE_URL: postgresql://yarvis:yarvis@postgres:5432/yarvis_test
+      YARVIS_MIGRATOR_DATABASE_URL: postgresql://yarvis:yarvis@postgres:5432/yarvis_test
+      database_url: postgresql://yarvis:yarvis@postgres:5432/yarvis_test
+      YARVIS_WORKSPACE_REPOSITORY_ROOT: /source
+      YARVIS_DOCUMENT_STORAGE_ROOT: /tmp/yarvis_test_data
+  web:
+    command: sleep infinity
+    ports: !reset []
+    volumes: !override
+      - ./apps/web:/source/web:ro

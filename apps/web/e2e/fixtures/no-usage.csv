@@ -1,0 +1,3 @@
+RFC,Store ID,Periodo,Meses sin uso,Estado del comercio,Alerta
+RFC-SYN-ALLOW,SYN-STORE-001,2026-08,4,Activo,NO_USAGE_4M
+RFC-SYN-EXCLUDED,SYN-STORE-EXCLUDED,2026-08,6,Activo,NO_USAGE_6M

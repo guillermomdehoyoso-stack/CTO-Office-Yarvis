@@ -1,0 +1,46 @@
+# Browser-only overlay for the synthetic D1 evidence run.
+# Use with docker-compose.yml and scripts/d1-conformance.compose.yml.
+services:
+  api:
+    command: sh -c "pip install -q -r /source/api/requirements.txt && python -m uvicorn yarvis_api.main:app --host 0.0.0.0 --port 8000"
+    working_dir: /source/api
+    ports: !override
+      - "127.0.0.1:8000:8000"
+    environment:
+      PYTHONPATH: /source/api/src
+      YARVIS_CORS_ORIGINS: http://web:5173
+      YARVIS_CSRF_ALLOWED_ORIGINS: http://web:5173
+  web:
+    command: sh -c "npm ci --ignore-scripts --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 5173"
+    working_dir: /source/web
+    ports: !override
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - d1-web-node-modules:/source/web/node_modules
+    environment:
+      VITE_API_BASE_URL: http://api:8000
+      VITE_YARVIS_CAPABILITIES: netpay.inbox.read,netpay.inbox.manage
+      VITE_YARVIS_ORGANIZATION_LABEL: Synthetic Data Org
+      VITE_YARVIS_SUBJECT: data:operator
+      VITE_YARVIS_AUTH_TOKEN: deterministic-inbound-intake
+      VITE_CACHE_DIR: /tmp/yarvis-vite-cache
+  playwright:
+    # The official v1.64.0 image is not published; the real browser fallback
+    # runs the Playwright CLI on Windows with its installed Microsoft Edge.
+    image: node:20-bookworm
+    working_dir: /source/web
+    command: sleep infinity
+    volumes: !override
+      - ./apps/web:/source/web:ro
+    environment:
+      D1_BROWSER_BASE_URL: http://web:5173
+      PLAYWRIGHT_OUTPUT_DIR: /tmp/d1-playwright-results
+      PLAYWRIGHT_HTML_REPORT: /tmp/d1-playwright-report
+    depends_on:
+      api:
+        condition: service_started
+      web:
+        condition: service_started
+
+volumes:
+  d1-web-node-modules:

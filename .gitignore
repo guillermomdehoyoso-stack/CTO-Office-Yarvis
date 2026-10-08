@@ -21,6 +21,12 @@ apps/web/dist/
 coverage/
 .vite/
 
+# Playwright ephemeral artifacts
+test-results/
+playwright-report/
+apps/web/e2e/report/*
+!apps/web/e2e/report/.gitkeep
+
 *.log
 pytest*.out
 vitest*.out

@@ -1,6 +1,6 @@
 # Netpay Operational Data D1 — Synthetic Evidence
 
-Status: ACCEPTED EVIDENCE — D1 CONFORMANCE NOT ESTABLISHED — D2-LITE NOT AUTHORIZED
+Status: ACCEPTED EVIDENCE — D1 CONFORMANCE ESTABLISHED — GATE PASSED
 
 ## 1. Authority, scope and disposition
 
@@ -296,3 +296,208 @@ Guillermo de Hoyos, acting as Architecture Authority, accepts the corrected evid
 This dated act supersedes only earlier pending-review, pending-acceptance and unrecorded-act statements as current-status descriptions; they remain historical evidence. Findings F1–F7, their severities, execution results and recommended remediation are unchanged. Acceptance of this record does not turn the failed Evidence Gate into PASS, treat historical results as independently reproduced, waive Pyright or TypeScript errors, or accept exceptions concerning concurrency, provenance, matching, periods, replay, authority or E2E.
 
 Static errors and gaps F1–F7 require subsequent, separate remediation authorization. This act authorizes no changes to code, tests, migrations, configuration, contracts or infrastructure; it grants no D1 or D2-Lite implementation authority, does not register QRY-018 and does not establish D1 conformance or D2-Lite dependency sufficiency. Accepted exceptions: None. Downstream authority: None.
+
+## 11. D1 remediation candidate — 2026-10-02
+
+This prospective section records the separately user-authorized D1 remediation
+and synthetic validation begun on 2026-10-01 and resumed on 2026-10-02. Sections
+1–10 remain the historical accepted evidence and Authority act; this section
+does not invent a new independent review or Authority acceptance. D2-Lite,
+QRY-018, Store 360, authentication/OIDC changes and deployment remain excluded.
+No commit, push, merge, rebase or publication was performed.
+
+### 11.1 Baseline and critical review of inherited changes
+
+The branch remains `feat/operational-intake-spine`, based on
+`6163196eee46410fde827b6aa38edf56b755da11`, parent
+`cd6c63c7975b7fdee7f379631fb1c977e7aeaf88`. Local and remote HEAD were verified
+equal at the start of remediation. The later resumptions preserved the working
+tree; `AUDIT_REPORT.md` was neither opened nor incorporated. The development
+bootstrap's older Foundation/Gmail state is historical context; Amendment 016,
+the D1 authorization and this bounded user remediation instruction govern this
+work. No proposed D2 artifact grants implementation authority.
+
+The provisional organization-wide lock was unnecessarily broad. It is replaced
+by a receipt-key advisory lock, a batch row lock for decisions, a source-hash
+lock for upload deduplication and sorted Store/period/dataset advisory locks for
+acceptance. Shared Store Reference locks protect against concurrent Master
+mutation without serializing independent periods. Batch state is rechecked
+after acquiring its row lock. The first real concurrency harness incorrectly
+used thread names, then per-request TestClient lifespans disposed the shared
+runtime. Both harness defects were corrected without weakening assertions:
+the test now holds an actual batch lock, identifies its PostgreSQL backend PID,
+and observes an independent blocked PID through `pg_blocking_pids`.
+
+Error handling originally rolled back the transaction before writing its
+receipt. A savepoint now rolls back only failed mutation work; the receipt-key
+lock remains held until the error receipt commits. A dedicated SQL event test
+checks the held advisory lock at the error receipt INSERT. No debug output,
+production data, cross-context feature or architecture amendment is introduced.
+
+### 11.2 Root causes and bounded corrections
+
+| Finding | Root cause | Correction and reproducible evidence |
+| --- | --- | --- |
+| F3 | Status read before row locking; uniqueness did not serialize unchanged acceptance. | Locked batch transition and receipt key; real accept/accept races for both datasets, equal/distinct keys and inserted/unchanged rows. Assert one effective event, compatible receipts, durable replay and no duplicate Facts. |
+| F4 | Rejection could overwrite a concurrent accepted state or repeat its event. | Terminal state recheck under batch lock; repeated rejection is idempotent. Both race orders preserve the winner; the loser returns and persists 409. Test asserts the receipt lock is held at INSERT. |
+| F5 | Upload-time unchanged classification was stale; rejected sources were eligible; readback omitted unchanged membership; upload hash recovery bypassed replay/filter checks. | Recompute against eligible accepted Facts while locking the affected fact series; persist the exact accepted Fact UUID in existing row JSONB; validate tenant, dataset, period, fingerprint, source row and metrics at readback. Revalidate authorized input selection before source-hash recovery, including two RFCs with the same Store ID. Preserve input row ordinals before RFC filtering. |
+| F6 | A same-tenant UUID alone allowed mismatched identity, replacement and match/accept races. | Exact reported Store ID, active same-tenant reference, no replacement of confirmed association, batch locking and preview refresh. Receipt preserves actor, authority, authentication source, correlation, row/batch reference, controlled reason and timestamp. Tests assert no commercial actions are created. |
+| F7 | Mixed periods remained confirmable; authority/restart/provenance evidence was missing. | Reject mixed or absent batch periods; reject non-finite required metrics; preserve accepted provenance; use persisted Principal/Membership checks. HTTP E2E for both datasets restarts the API process and proves readback, RFC exclusion and idempotent reupload. |
+
+`unchanged` is a row classification, not a new terminal lifecycle status. The
+same source hash recovers one batch; a different source hash remains a distinct
+versioned source under Amendment 016, even if some or all material rows are
+unchanged. Such rows point to eligible immutable Facts instead of duplicating
+them. A later value change does not alter that pointer. Legacy inserted Facts
+remain readable; legacy unchanged rows without proven source references fail
+closed rather than receiving invented historical attribution. Legacy No Uso
+upload replay without recorded selection evidence also fails closed. There is
+no historical backfill or production-data certification.
+
+The frontend candidate fixes the recorded obsolete `organizationSelector`
+access. It also refreshes results for an accepted duplicate upload and clears
+previous results before readback; empty/error results are not labeled unchanged.
+Its test runtime no longer supplies removed authentication fields. No
+authentication implementation was changed.
+
+### 11.3 Environment and commands
+
+The isolated project is `netpay-d1-remediation-20261001`. Its exact reproducible
+override is `scripts/d1-conformance.compose.yml`, applied to the official
+`docker-compose.yml` with `--env-file NUL`. Effective configuration and container
+inspection confirmed only the project network and PostgreSQL volume; there is
+no host database port or production data mount. API and web source mounts are
+read-only. Initial dependency installation occurred in ephemeral containers;
+resumed validation executes directly from the source bind mount without copying
+code into the container.
+
+```powershell
+docker compose --env-file NUL -p netpay-d1-remediation-20261001 -f docker-compose.yml -f scripts/d1-conformance.compose.yml config --format json
+docker compose --env-file NUL -p netpay-d1-remediation-20261001 -f docker-compose.yml -f scripts/d1-conformance.compose.yml up -d postgres api web
+Get-Content -Raw -Encoding UTF8 scripts/d1_preflight.py | docker exec -i -w /source/api -e PYTHONPATH=/source/api/src netpay-d1-remediation-20261001-api-1 python -
+```
+
+Observed preflight: PostgreSQL `16.14 (Debian 16.14-1.pgdg13+1)`;
+`SETTINGS_FIXTURE_MIGRATION_DESTINATIONS_AGREE=true`,
+`ADMIN_AND_APP_SERVER_MATCH=true`, `ISOLATION_PREFLIGHT_PASSED=true`.
+The preflight checks all database aliases, effective Settings, Alembic resolution,
+fixture URLs and the actual isolated server address. It can run after fixture
+teardown because server verification connects to that server's administrative
+database without requiring `yarvis_test` to exist. It performs no database write.
+
+Every focused run below uses the exact common prefix:
+
+```powershell
+docker exec -w /source/api -e PYTHONPATH=/source/api/src -e PYTHONDONTWRITEBYTECODE=1 netpay-d1-remediation-20261001-api-1 python -m pytest -q -x -p no:cacheprovider tests/test_netpay_d1_conformance.py
+```
+
+| Suffix | Observed result | Pytest seconds |
+| --- | --- | ---: |
+| `-k real_concurrent_accept` | 8 passed, 23 deselected | 35.96 |
+| `-k 'match or mutations_require_effective_authority'` | 14 passed, 36 deselected | 57.04 |
+| `-k 'real_accept_reject or real_reject_reject or error_receipt'` | 7 passed, 44 deselected | 27.51 |
+| `-k 'unchanged or mixed_snapshot or provenance_corruption or rejected_source or independent_batches or filter_replay or cross_batch_acceptance'` | 17 passed, 34 deselected | 41.55 |
+| `-k 'match or manual_resolution'` | 9 passed, 43 deselected | 28.06 |
+| `-k 'period or preview_upload or http_e2e or filter_replay'` | 9 passed, 43 deselected | 62.13 |
+
+Counts in focused runs overlap and must not be added. Deselection is the named
+focus, not skip/xfail. Each reported run had one existing AnyIO BlockingPortal
+deprecation warning. Earlier harness failures and static failures remain failed
+attempts, not PASS. Tool execution was twice interrupted by automatic approval
+review reporting usage exhaustion; the rejected commands did not execute, and
+the same normal Docker invocation was resumed only in a subsequent user turn.
+No alternative execution path bypassed that rejection.
+
+### 11.4 Final validation and gate disposition
+
+The requested final validation completed successfully:
+
+| Validation | Observed result |
+| --- | --- |
+| Full `test_netpay_d1_conformance.py` | **52 passed**, 1 deprecation warning, 305.73 s |
+| Functional D1 plus Netpay/authority regression (`test_netpay_operational_data.py`, `test_netpay_master.py`, `test_netpay_inbox.py`, `test_authority_resolution.py`, `test_local_netpay_authority.py`, `test_synthetic_netpay_intake.py`) | **68 passed**, 1 deprecation warning, 159.09 s |
+| Frontend Vitest (`npm test -- --run`) | **58 passed across 16 files**, 137.57 s |
+| Frontend targeted TypeScript check | **0 errors** |
+| Frontend Vite build to temporary runner output | **109 modules transformed; build passed** |
+| Ruff on modified D1 Python files | **All checks passed** |
+| Pyright on modified D1 Python files | **0 errors, 0 warnings, 0 informations** |
+| `git diff --check` | **Passed**; only Git's LF-to-CRLF working-copy warnings |
+| Isolation preflight | PostgreSQL 16.14; Settings/fixture/migration destinations agree; server identity matches; **passed** |
+
+The final HTTP E2E cases stopped and restarted the API process for both dataset
+types, then proved durable batch readback, Fact readback, RFC exclusion and
+idempotent re-upload. At that historical execution point the repository had no
+browser automation harness and no browser session was used; that is recorded as
+a validation boundary rather than invented evidence. Amendment 016 lists browser
+E2E under its future all-gates acceptance criteria. The current harness attempt
+and its real-browser result are recorded in §11.5. The formal evidence gate is
+closed there.
+
+No database model, Alembic revision, table, column or constraint is changed.
+`accepted_fact_id` and receipt audit metadata use existing JSONB columns.
+The optional controlled matching reason is an API schema field, not a database
+schema change. No model, migration, table, column or constraint changed, so no
+new upgrade/downgrade/upgrade cycle is required for this candidate. The existing
+historical migration round-trip test remains unchanged; disposable fixture
+databases were upgraded to the current Alembic head for every API test process.
+
+### 11.5 Browser E2E closure from the current tree
+
+The harness uses Playwright CLI **1.64.0** with installed Microsoft Edge
+channel **msedge 153.0.4234.32**. The official images
+`mcr.microsoft.com/playwright:v1.64.0-noble` and `-jammy` were unavailable, so
+the authorized Windows Edge fallback was used. The D1 overlay keeps a separate
+Playwright runner service and maps browser host rules `web -> 127.0.0.1` and
+`api -> 127.0.0.1`; the browser URLs remain `http://web:5173` and
+`http://api:8000`.
+
+Preflight passed from the runner/browser: web responded 200, API responded 200,
+the seed printed the synthetic organization and `SYN-STORE-001`, and a real
+Edge page loaded Datos Netpay and reached `/health` with 200.
+
+The exact repeatable commands were:
+
+```text
+docker compose -p netpay-d1-remediation-20261001 -f docker-compose.yml -f scripts/d1-conformance.compose.yml -f scripts/d1-browser.compose.yml up -d --force-recreate api web playwright
+docker compose -p netpay-d1-remediation-20261001 -f docker-compose.yml -f scripts/d1-conformance.compose.yml -f scripts/d1-browser.compose.yml exec -T api python /source/scripts/d1_browser_seed.py
+$env:D1_BROWSER_CHANNEL='msedge'; $env:D1_BROWSER_BASE_URL='http://web:5173'; $env:PLAYWRIGHT_OUTPUT_DIR='C:\Users\minos\AppData\Local\Temp\yarvis-d1-e2e-run1-results'; $env:PLAYWRIGHT_HTML_REPORT='C:\Users\minos\AppData\Local\Temp\yarvis-d1-e2e-run1-report'; npx playwright test --config playwright.config.ts
+docker compose -p netpay-d1-remediation-20261001 -f docker-compose.yml -f scripts/d1-conformance.compose.yml -f scripts/d1-browser.compose.yml exec -T api python /source/scripts/d1_browser_assert.py
+```
+
+Run 2 repeated the seed command and used `run2-results` and `run2-report` in
+the same Windows temporary directory:
+
+```text
+$env:D1_BROWSER_CHANNEL='msedge'; $env:D1_BROWSER_BASE_URL='http://web:5173'; $env:PLAYWRIGHT_OUTPUT_DIR='C:\Users\minos\AppData\Local\Temp\yarvis-d1-e2e-run2-results'; $env:PLAYWRIGHT_HTML_REPORT='C:\Users\minos\AppData\Local\Temp\yarvis-d1-e2e-run2-report'; npx playwright test --config playwright.config.ts
+```
+
+| Run | Tests | Duration | Result |
+| --- | ---: | ---: | --- |
+| Run 1 | 2 | 11.8 s | **2 passed** |
+| Run 2 | 2 | 11.5 s | **2 passed** |
+
+Both scenarios covered upload, sanitized preview, explicit confirmation,
+accepted state, normalized results, full reload/readback, and idempotent second
+upload. The No Uso fixture contained two synthetic RFC rows; its preview showed
+`Leídas 2` and `Autorizadas 1`, the UI showed only the authorized row (`***-001`),
+and it never exposed `SYN-STORE-EXCLUDED`. After
+each run, PostgreSQL reported two accepted batches, exactly one monthly Fact,
+exactly one No Uso Fact, and one persisted row per dataset; the second upload
+did not add a Fact.
+
+HTML reports and traces were written only to
+`C:\Users\minos\AppData\Local\Temp\yarvis-d1-e2e-run1-report`,
+`...run1-results`, `...run2-report`, and `...run2-results`. They are ephemeral,
+synthetic and excluded from Git; no screenshots, videos, traces, reports,
+`node_modules` or credentials were added to the repository.
+
+The required frontend follow-up also passed: focused Vitest **6 passed**, the
+targeted TypeScript check reported **0 errors**, the container Vite build
+transformed **109 modules**, and `git diff --check` passed with only known
+LF-to-CRLF working-copy warnings.
+
+Final status:
+
+`ACCEPTED EVIDENCE — D1 CONFORMANCE ESTABLISHED — GATE PASSED`
+
+`D2-LITE AUTHORIZATION REMAINS A SEPARATE DECISION`
