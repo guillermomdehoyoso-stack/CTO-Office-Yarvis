@@ -1,30 +1,29 @@
 # Current Engineering State
 
-## Prospective reconciliation overlay — 2026-08-17
+## Gmail Intake governance overlay — 2026-10-08
 
-This dated overlay records the current governed position without rewriting the
-historical statements below. It supersedes only their current-state,
-current-gate, current-work-package, and next-action readings. IG-006, F-011
-Stage G/H/I, Netpay Radar evidence, and ratified Amendments remain immutable
-sources and are not altered by this overlay.
+This dated overlay records the ratified Amendment 019 and IG-007 position
+without rewriting historical statements below. It supersedes only their
+current-state, current-gate, current-work-package, and next-action readings.
+Historical evidence remains immutable.
 
 | Field | Reconciled current value |
 | --- | --- |
 | F-011 status | **Implemented / closed:** F-011 Stage I records F-011 COMPLETE — VALIDATED. IG-006 is retained as the historical authorization that opened the bounded work. |
 | Implemented Netpay reality | The manual Netpay Radar remains implemented historical evidence. The tenant-scoped Netpay Master/Inbox vertical is implemented in later repository commits under the ratified Inbox boundary of `IMPLEMENTATION_ROADMAP_AMENDMENT_012.md`. |
-| Gmail MVP-2D1 | **Design Ratified:** `IMPLEMENTATION_ROADMAP_AMENDMENT_014.md` ratifies MVP-2D1 Manual Review Variant design limits only. Gmail contracts are not canonically assigned; CMD-017 is unregistered, non-dispatchable, and `gate_closed`. |
-| Gmail runtime | **Not implemented / not authorized:** no Gmail connector, OAuth, credential store, mailbox access, real synchronization, migration, or code is opened by this record. |
-| Current engineering gate | No Gmail implementation gate is active. Any future work must follow Amendment 014 §7: canonical identity proof, separate contract allocation, separate implementation gate, security/privacy prerequisites, and a separate OAuth/real-pilot gate. |
-| Current work package | This prospective documentation reconciliation is complete. No successor implementation package is opened by it. |
-| Next mandatory action | Preserve the reconciled record and await a separately authorized governance step; do not allocate Gmail contracts, resolve Principal/Membership, implement code, or access Gmail. |
+| Gmail MVP-2D1 | Amendment 019 and IG-007 are **RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2**; D1 is next active, D2 is conditional on the D1 Evidence Gate, and D3 is not authorized. |
+| Gmail runtime | **Not implemented:** this ratification performed no code, OAuth, credential, mailbox, synchronization, migration or Gmail access. |
+| Current engineering gate | IG-007 opens only future bounded synthetic/local D1 and conditional D2 work. Productive OAuth, real Gmail access, scheduler/polling, Pub/Sub and D3 require separate gates. |
+| Current work package | Gmail Intake D1 synthetic/local implementation is next; D2 follows only after D1 evidence. D2-Lite remains a separate decision. |
+| Next mandatory action | Preserve the ratified mandate and implement only the exact future allowlist after its preconditions; do not implement D3 or access Gmail. |
 
-**Precedence for this overlay:** `IMPLEMENTATION_ROADMAP_AMENDMENT_012.md`
-governs the ratified Inbox boundary and Gmail exclusion;
-`IMPLEMENTATION_ROADMAP_AMENDMENT_014.md` governs the Gmail design boundary;
-F-011 Stage I is final closure evidence; implementation/Git evidence confirms
-what exists but never grants authority.
+**Precedence for this overlay:** ratified `IMPLEMENTATION_ROADMAP_AMENDMENT_019.md`
+and `IG-007_NETPAY_GMAIL_INTAKE_IMPLEMENTATION_AUTHORIZATION.md` govern the
+future Gmail D1/D2 authority and D3 exclusion; Amendments 012, 014, 015 and
+018 remain the underlying Inbox, design and Commercial Intake boundaries.
+Implementation/Git evidence confirms what exists but never grants authority.
 
-**Last updated:** 2026-08-06 — F-013 Test and Conformance Foundation closure
+**Last updated:** 2026-10-08 — Amendment 019 and IG-007 ratification
 
 | Field | Current value |
 | --- | --- |

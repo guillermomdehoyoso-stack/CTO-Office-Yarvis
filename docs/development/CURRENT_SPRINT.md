@@ -1,20 +1,18 @@
 # Current Sprint
 
-## Prospective reconciliation overlay — 2026-08-17
+## Gmail Intake governance overlay — 2026-10-08
 
-This overlay is the current sprint/status record. It preserves the historical
-F-013 and in-progress-F-011 material below as evidence at the time it was
-written; it does not edit IG-006, F-011 closures, Radar evidence, or ratified
-Amendments.
+This overlay is the current sprint/status record. It preserves historical
+material below and records the ratified Amendment 019 and IG-007 position.
 
 | Field | Reconciled current value |
 | --- | --- |
 | Foundation / F-011 | **Implemented / closed:** F-011 Stage I accepted F-011 COMPLETE — VALIDATED. The earlier IG-006 scope remains historical authorization evidence. |
 | Netpay Inbox and Radar | **Implemented:** the manual Radar is historical implemented evidence; the tenant-scoped Master/Inbox vertical is implemented under the ratified `IMPLEMENTATION_ROADMAP_AMENDMENT_012.md` Inbox boundary. |
-| Gmail MVP-2D1 | **Design Ratified:** Amendment 014 ratifies only MVP-2D1 Manual Review Variant design. Gmail contracts are not assigned, CMD-017 is `gate_closed`, and no Gmail capability is live. |
-| Current authorization | No Gmail implementation, OAuth, credential, migration, or connector authorization is active. This overlay creates no contract, Principal, Membership, role, or gate. |
-| Current work package | Documentary governance reconciliation only; completed by this overlay. No successor feature or implementation package is opened. |
-| Next allowed action | Wait for a separately authorized prospective governance action. Any future Gmail path must follow Amendment 014 §7 in order, starting with canonical identity proof and separate contract allocation after this reconciliation. |
+| Gmail MVP-2D1 | Amendment 019 and IG-007 are **RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2**; D3 is not authorized. |
+| Current authorization | Future synthetic/local D1 is the next package; D2 is conditional on D1 evidence. This execution performed no implementation, OAuth, credential, migration or Gmail access. D2-Lite remains separate. |
+| Current work package | Netpay Gmail Intake D1 synthetic/local implementation under the exact Amendment 019 allowlist; no D3 work. |
+| Next allowed action | Verify preconditions and implement bounded D1 only; proceed to D2 only after its independent Evidence Gate. Keep scheduler/polling, Pub/Sub, webhooks, Gmail mutation and productive OAuth closed. |
 
 ## Identity
 
