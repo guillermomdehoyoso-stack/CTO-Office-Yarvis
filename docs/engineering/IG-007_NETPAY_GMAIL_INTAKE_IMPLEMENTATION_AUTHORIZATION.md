@@ -5,12 +5,10 @@
 **RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2**
 
 This is the companion gate for
-`IMPLEMENTATION_ROADMAP_AMENDMENT_019.md`. It is governance documentation
-only in this execution. The ratified future gate may authorize the bounded
-synthetic/local D1 package and D2 after its Evidence Gate; this execution
-performs no code, migration, OAuth, credential, Gmail access, backfill,
-synchronization, scheduler, Pub/Sub or deployment. **GMAIL INTAKE D3 — NOT
-AUTHORIZED.**
+`IMPLEMENTATION_ROADMAP_AMENDMENT_019.md`. The bounded synthetic/local D1
+source slice is implemented and evidenced in this branch. Productive OAuth,
+credential access, real Gmail access, scheduler, Pub/Sub and deployment remain
+outside the execution. **GMAIL INTAKE D3 — NOT AUTHORIZED.**
 
 ## 1. Candidate package
 
@@ -22,7 +20,7 @@ AUTHORIZED.**
 | Owner | Netpay Merchant Operations |
 | Design authority | Amendments 014, 018 and ratified 019 |
 | Contract allocation | Existing planned `CMD-016..018`, `QRY-007..008`, `EVT-007/008/010`; ratified next-free D1/D2 IDs in Amendment 019 |
-| Current status | D1 next active package; D2 conditional on D1 Evidence Gate; runtime not implemented |
+| Current status | D1 source slice implemented; Evidence Gate passed for synthetic/local D1; D2 conditional |
 
 ## 2. Preconditions before any implementation
 
@@ -46,19 +44,19 @@ No phase may start until all applicable evidence is accepted:
 
 ### Phase D1 — source connector and manual sync
 
-The future gate may authorize only a fake/local provider first, followed by a
-separately approved productive Gmail adapter. It may include explicit mailbox
+The implemented D1 gate authorizes only a fake/local provider first. A
+separately approved productive Gmail adapter may follow. D1 includes explicit mailbox
 binding, `gmail.readonly`, manual synchronization, a maximum 30-day initial
 backfill, source-item dedupe, cursor-after-commit, bounded sanitized content,
 safe status/readback and negative mutation tests.
 
-It may not create candidates, Commercial Intake items, NetpayServiceCases,
+The implemented slice does not create candidates, Commercial Intake items, NetpayServiceCases,
 Master records or external actions. It may not start polling, a scheduler,
 worker, queue, Pub/Sub, webhook or Gmail `watch`.
 
 ### Phase D2 — candidate extraction and human acceptance
 
-After D1 synthetic evidence, the future gate may authorize the candidate model,
+After the accepted D1 synthetic evidence, a separate D2 decision may authorize the candidate model,
 deterministic classification, optional fake/versioned AI suggestion, aging,
 priority, suggested responsible, next action, pending/overdue read models,
 human review, acceptance/rejection/duplicate/link commands, non-sent reply
@@ -84,9 +82,9 @@ revision for multiple heads), and prove `upgrade -> downgrade -> upgrade`.
 The provisional `20261009_48` identifier and `20260823_47` parent are not
 ratified by this gate.
 
-## 4. Evidence Gate for the future package
+## 4. Evidence Gate for the D1 package
 
-The implementation review must verify the complete Amendment 019 checklist,
+The D1 review verified the D1 source checklist,
 including tenant isolation, exact 30-day bound, label fail-closed behavior,
 message/thread replay, partial failure, classification determinism and AI
 separation, aging/priority/owner/next-action ordering, concurrent human
@@ -94,7 +92,8 @@ acceptance, owner idempotency, readback/reload, migration round-trip, frontend
 typecheck/build, static checks and browser E2E using only synthetic fixtures.
 
 The evidence must prove that no email was sent or modified and that no case or
-Commercial Intake item was created automatically.
+Commercial Intake item was created automatically. The reproducible record is
+`docs/engineering/evidence/netpay-gmail-d1-conformance-20261008.txt`.
 
 ## 5. Rollback
 
@@ -106,8 +105,8 @@ performed by this draft.
 
 ## 6. Decision requested
 
-`RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2`: the future
-bounded mandate is open for synthetic/local D1, with D2 conditional on the D1
-Evidence Gate. Ratification is not Gmail access, OAuth consent, credential
-creation, productive implementation or D3 authorization. D2-Lite remains a
-separate decision.
+`RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2`: the synthetic/local
+D1 source slice is implemented and its Evidence Gate is passed. D2 remains
+conditional and is not implemented. Ratification is not Gmail access, OAuth
+consent, credential creation, productive implementation or D3 authorization.
+D2-Lite remains a separate decision.

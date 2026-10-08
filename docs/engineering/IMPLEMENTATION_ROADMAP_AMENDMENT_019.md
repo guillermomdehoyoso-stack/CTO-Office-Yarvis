@@ -7,16 +7,17 @@
 
 **RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2**
 
-This document is the ratified future implementation mandate for Gmail Intake
-D1/D2. This execution only closes and registers governance documentation; it
-performs no productive code, OAuth, credential, migration, synchronization or
-Gmail access. The companion
+This document is the ratified implementation mandate for Gmail Intake D1/D2.
+The current branch now contains the bounded synthetic/local D1 source slice and
+its evidence. It performs no productive code path, OAuth, credential access,
+real-mailbox synchronization or Gmail access. The companion
 `IG-007_NETPAY_GMAIL_INTAKE_IMPLEMENTATION_AUTHORIZATION.md` is ratified with
 the same boundary.
 
-The mandate remains intentionally separate from implementation. The current
-branch has no Gmail implementation changes and remains at the D1 Operational
-Data closure base.
+The D1 implementation remains intentionally separate from D2 and productive
+integration. It is limited to a fake/local provider, explicit manual sync,
+bounded source persistence and readback. No D2 candidate or owner path is
+implemented.
 
 **GMAIL INTAKE D3 — NOT AUTHORIZED.** Scheduler runtime, polling, workers,
 Pub/Sub, webhooks, Gmail watch, autonomous follow-up and send/mutation remain
@@ -35,13 +36,13 @@ outside this authority.
 | Governing Commercial Intake | `IMPLEMENTATION_ROADMAP_AMENDMENT_015.md` |
 | Ratified implementation gate | `IG-007` (this package and its companion) |
 
-IG-007 is ratified as bounded future authority for a synthetic/local D1 package
-and a D2 package conditional on the D1 Evidence Gate. Runtime implementation,
-productive OAuth, credentials and Gmail access remain unperformed in this
-execution and require later operational gates. Amendment 012 still excludes
+IG-007 is ratified as bounded authority for the synthetic/local D1 package and
+for a D2 package conditional on the D1 Evidence Gate. D1 source implementation
+is complete in this branch; productive OAuth, credentials and Gmail access
+remain unperformed and require later operational gates. Amendment 012 still excludes
 Gmail synchronization; existing Commercial Intake authority remains the owner
-boundary. D1 is the next active work package; D2 is conditional; D3 is not
-authorized.
+boundary. D1 Evidence Gate is the current review gate; D2 is conditional; D3
+is not authorized.
 
 The authority sequence is mandatory:
 
@@ -74,10 +75,10 @@ The following existing boundaries were inspected at the reviewed base:
 | Legacy `/netpay/import-email` and `netpay_service_cases` | Do not call, migrate, link, backfill or treat as the new connector contract. Their tenancy and ownership are incompatible with this package. |
 | `Settings.scheduler_*`, worker flags and current bootstrap | No runtime scheduler exists. These flags do not authorize or implement D3; the package leaves them unchanged. |
 
-## 3. Future scope: Gmail Intake D1 — source connector and manual sync
+## 3. Gmail Intake D1 — source connector and manual sync
 
-The following is the exact scope that a later ratified implementation gate may
-open. It is not open in this execution.
+The following is the exact scope opened by IG-007 and implemented in the
+synthetic/local D1 slice. Productive OAuth remains separately gated.
 
 ### 3.1 Source binding and OAuth boundary
 
@@ -408,6 +409,23 @@ for all of the following:
 The mandatory browser fixture is synthetic and derived from “alta de e-commerce
 Stores para nuevas sucursales”. It must include at least one message with a
 known request, one unknown/missing-data message, and one repeated thread message.
+
+### 9.1 D1 implementation evidence recorded in this branch
+
+The bounded D1 source slice is implemented with the fake provider and the
+merge migration `20261008_48` from the four verified heads. Reproducible
+evidence is recorded in
+`docs/engineering/evidence/netpay-gmail-d1-conformance-20261008.txt`.
+The evidence covers explicit connection/validation, a 30-day manual sync,
+sanitized persistence, tenant-scoped readback, repeated-message idempotency,
+fingerprint conflict quarantine, cursor-after-commit behavior, label
+fail-closed behavior, event traceability, and proof that no candidate,
+Commercial Intake item or NetpayServiceCase is created by D1.
+
+D2 fields remain intentionally absent from this implementation: classification,
+client/company/branch resolution, candidate state, pending/overdue work,
+responsible Principal, next action, follow-up date and human history belong to
+the separately gated D2 candidate/acceptance slice.
 
 ## 10. Exact future allowlist
 

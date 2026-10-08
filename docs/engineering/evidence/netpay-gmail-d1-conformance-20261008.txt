@@ -1,0 +1,55 @@
+NETPAY GMAIL INTAKE D1 CONFORMANCE EVIDENCE
+Date: 2026-10-08
+Branch: feat/netpay-gmail-intake-sentinel
+Base: 95b7aaabcbedd8ebca724ad39d5af524213f46b9
+
+AUTHORITY
+- Amendment 019 and IG-007: ratified D1 synthetic/local source connector and manual sync.
+- D2 candidate/acceptance remains conditional on this Evidence Gate.
+- D3, productive OAuth, Gmail mutation, scheduler, polling, Pub/Sub and D2-Lite are not authorized.
+
+ALEMBIC
+- Verified heads before implementation: 20260712_04, 20260802_25, 20260802_26, 20260823_47.
+- Implemented merge revision: 20261008_48, down_revision tuple contains exactly those four heads.
+- Round-trip command: docker compose run --rm api sh -c "pip install -r requirements-dev.txt && alembic upgrade head && alembic downgrade base && alembic upgrade head"
+- Result: PASS.
+
+REPRODUCIBLE D1 TEST
+- Command: docker compose run --rm api sh -c "pip install -r requirements-dev.txt && python -m pytest tests/test_netpay_gmail_intake.py -q"
+- Result: 3 passed.
+- Synthetic fixture: two messages in one thread for “alta de e-commerce Stores para nuevas sucursales”, one message older than 30 days, synthetic sender/recipient, label LABEL_STORES.
+
+PROVENANCE AND IDEMPOTENCY
+- Connection binds provider account and label to the authenticated Organization.
+- Validation fails closed when LABEL_STORES is absent.
+- Manual sync captures exactly two in-window source items and excludes the 31-day-old item.
+- Replaying the same Idempotency-Key returns the original sync snapshot.
+- A second sync captures zero new items and records two deduplications.
+- A changed fingerprint for the same Gmail message is quarantined, does not overwrite the original, marks the run partially_failed and does not advance the cursor.
+- Cursor advances only on a successful accepted batch.
+- Readback is tenant-scoped and survives a new database session.
+- Domain events record connection, sync start/completion, source capture and deduplication with correlation/causation references.
+- No candidate, CommercialIntakeItem or NetpayServiceCase is created by D1.
+- No email send, message modification, label mutation, archive, delete, watch, scheduler or Pub/Sub operation exists in the D1 path.
+
+STATIC AND REGRESSION
+- Ruff on the D1 source, schemas, route, provider and tests: PASS.
+- Pyright on the D1 source and tests: PASS.
+- Relevant regression (Gmail D1, Netpay Inbox, Netpay Master, canonical contracts and bootstrap): 29 passed.
+- Full API collection is blocked by pre-existing test_digitalocean_deploy_package.py repository-root requirement in the container; that test is outside this package and was not modified.
+
+FORMAL RESULT
+- D1 Evidence Gate: PASS for the implemented synthetic/local source slice.
+- D2: remains a separate conditional gate; no D2 implementation is included.
+
+REAL GMAIL AVAILABILITY CHECK
+- No real Gmail read was executed or claimed.
+- The repository has no Gmail/Google/OAuth client dependency, no productive
+  provider adapter, no Gmail/Google/OAuth environment variables in the runner,
+  and no authorized credential reference available for a real mailbox.
+- IG-007 keeps productive OAuth, Google project/consent, credential access and
+  the real-pilot gate closed. The D1 fake provider therefore remains the only
+  executable provider in this tree.
+- The example message “Detalle de Envío - Caso 00199130” is not treated as
+  observed evidence. A real-message demonstration requires the separately
+  approved productive connector and an authorized mailbox configuration.

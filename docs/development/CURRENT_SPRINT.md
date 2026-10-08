@@ -10,9 +10,9 @@ material below and records the ratified Amendment 019 and IG-007 position.
 | Foundation / F-011 | **Implemented / closed:** F-011 Stage I accepted F-011 COMPLETE — VALIDATED. The earlier IG-006 scope remains historical authorization evidence. |
 | Netpay Inbox and Radar | **Implemented:** the manual Radar is historical implemented evidence; the tenant-scoped Master/Inbox vertical is implemented under the ratified `IMPLEMENTATION_ROADMAP_AMENDMENT_012.md` Inbox boundary. |
 | Gmail MVP-2D1 | Amendment 019 and IG-007 are **RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2**; D3 is not authorized. |
-| Current authorization | Future synthetic/local D1 is the next package; D2 is conditional on D1 evidence. This execution performed no implementation, OAuth, credential, migration or Gmail access. D2-Lite remains separate. |
-| Current work package | Netpay Gmail Intake D1 synthetic/local implementation under the exact Amendment 019 allowlist; no D3 work. |
-| Next allowed action | Verify preconditions and implement bounded D1 only; proceed to D2 only after its independent Evidence Gate. Keep scheduler/polling, Pub/Sub, webhooks, Gmail mutation and productive OAuth closed. |
+| Current authorization | Synthetic/local D1 source connector and manual sync are implemented; D1 Evidence Gate passed. D2 remains conditional. No productive OAuth, credential, migration to a productive provider or Gmail access occurred. D2-Lite remains separate. |
+| Current work package | D1 evidence closure for Netpay Gmail Intake; no D2 candidate/owner path and no D3 work. |
+| Next allowed action | Review D1 evidence and make a separate D2 decision. Keep scheduler/polling, Pub/Sub, webhooks, Gmail mutation and productive OAuth closed. |
 
 ## Identity
 

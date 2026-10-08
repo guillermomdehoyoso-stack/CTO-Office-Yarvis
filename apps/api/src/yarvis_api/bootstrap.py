@@ -190,6 +190,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry, settings: Set
         mission_work,
         netpay,
         netpay_data,
+        netpay_gmail_intake,
         netpay_inbox,
         netpay_master,
         observations,
@@ -249,6 +250,7 @@ def register_routes(app: FastAPI, module_registry: ModuleRegistry, settings: Set
     app.include_router(document_registry.router)
     app.include_router(netpay.router)
     app.include_router(netpay_inbox.router)
+    app.include_router(netpay_gmail_intake.router)
     app.include_router(netpay_data.router)
     app.include_router(netpay_master.router)
     app.include_router(radar.router)

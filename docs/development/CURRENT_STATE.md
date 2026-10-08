@@ -11,11 +11,11 @@ Historical evidence remains immutable.
 | --- | --- |
 | F-011 status | **Implemented / closed:** F-011 Stage I records F-011 COMPLETE — VALIDATED. IG-006 is retained as the historical authorization that opened the bounded work. |
 | Implemented Netpay reality | The manual Netpay Radar remains implemented historical evidence. The tenant-scoped Netpay Master/Inbox vertical is implemented in later repository commits under the ratified Inbox boundary of `IMPLEMENTATION_ROADMAP_AMENDMENT_012.md`. |
-| Gmail MVP-2D1 | Amendment 019 and IG-007 are **RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2**; D1 is next active, D2 is conditional on the D1 Evidence Gate, and D3 is not authorized. |
-| Gmail runtime | **Not implemented:** this ratification performed no code, OAuth, credential, mailbox, synchronization, migration or Gmail access. |
-| Current engineering gate | IG-007 opens only future bounded synthetic/local D1 and conditional D2 work. Productive OAuth, real Gmail access, scheduler/polling, Pub/Sub and D3 require separate gates. |
-| Current work package | Gmail Intake D1 synthetic/local implementation is next; D2 follows only after D1 evidence. D2-Lite remains a separate decision. |
-| Next mandatory action | Preserve the ratified mandate and implement only the exact future allowlist after its preconditions; do not implement D3 or access Gmail. |
+| Gmail MVP-2D1 | Amendment 019 and IG-007 are **RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2**; synthetic/local D1 is implemented with Evidence Gate passed, D2 is conditional, and D3 is not authorized. |
+| Gmail runtime | **D1 synthetic/local source slice implemented and evidenced:** no productive OAuth, credential, mailbox or real Gmail access. |
+| Current engineering gate | D1 Evidence Gate is passed for the bounded source connector/manual sync. D2 remains conditional; productive OAuth, real Gmail access, scheduler/polling, Pub/Sub and D3 require separate gates. |
+| Current work package | D1 evidence closure is complete; D2 candidate/human acceptance is the next separately gated package. D2-Lite remains a separate decision. |
+| Next mandatory action | Review the D1 evidence and decide whether to authorize D2; do not implement D3 or access Gmail productively. |
 
 **Precedence for this overlay:** ratified `IMPLEMENTATION_ROADMAP_AMENDMENT_019.md`
 and `IG-007_NETPAY_GMAIL_INTAKE_IMPLEMENTATION_AUTHORIZATION.md` govern the

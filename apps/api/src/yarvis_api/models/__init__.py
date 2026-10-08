@@ -25,6 +25,12 @@ from yarvis_api.models.mission_inbox import MissionInboxItem, ProjectionCheckpoi
 from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
+from yarvis_api.models.netpay_gmail_intake import (
+    NetpayGmailCommandReceipt,
+    NetpayGmailConnection,
+    NetpayGmailSourceItem,
+    NetpayGmailSyncRun,
+)
 from yarvis_api.models.netpay_inbox import (
     CommercialIntakeCommandReceipt,
     CommercialIntakeItem,
@@ -172,4 +178,8 @@ __all__ = [
     "RequirementFulfillment",
     "SourceRecord",
     "AttentionItem",
+    "NetpayGmailConnection",
+    "NetpayGmailSyncRun",
+    "NetpayGmailSourceItem",
+    "NetpayGmailCommandReceipt",
 ]
