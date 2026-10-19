@@ -80,6 +80,16 @@ AMENDMENT_022_TRACEABILITY = (
     "IMPLEMENTATION_ROADMAP_AMENDMENT_022.md",
     "IG-010_NETPAY_ALTA_AND_SECOND_PILOT_BATCH_AUTHORIZATION.md",
 )
+AMENDMENT_024_CONTRACT_IDS = (
+    "IC-NETPAY-QRY-023",
+    "IC-NETPAY-QRY-024",
+)
+AMENDMENT_024_TRACEABILITY = (
+    "IMPLEMENTATION_ROADMAP_AMENDMENT_024.md",
+    "IG-011_NETPAY_COMMERCE_ATTENTION_PORTFOLIO_P0_P1_AUTHORIZATION.md",
+    "NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DESIGN.md",
+    "NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DATA_PRIVACY_MATRIX.md",
+)
 
 CANONICAL_RUNTIME_BASELINE_V1 = (
     (
@@ -714,6 +724,20 @@ CANONICAL_RUNTIME_BASELINE_V1 += (
         "candidate qualification and promotion",
         *_RATIFIED_PLANNED,
     ),
+    (
+        "IC-NETPAY-QRY-023",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "commerce attention portfolio",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-024",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "commerce attention portfolio",
+        *_RATIFIED_PLANNED,
+    ),
 )
 CANONICAL_CONTRACT_IDS = tuple(contract[0] for contract in CANONICAL_RUNTIME_BASELINE_V1)
 
@@ -747,8 +771,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
     assert {
         contract.interaction_contract_id for contract in contracts if contract.interaction_contract_id in AUTH_PROD_IDS
     } == AUTH_PROD_IDS
-    assert len(contracts) == 156
-    assert len({contract.interaction_contract_id for contract in contracts}) == 156
+    assert len(contracts) == 158
+    assert len({contract.interaction_contract_id for contract in contracts}) == 158
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -778,6 +802,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
         if contract.interaction_contract_id in AMENDMENT_021_CONTRACT_IDS
         else contract.traceability_references == AMENDMENT_022_TRACEABILITY
         if contract.interaction_contract_id in AMENDMENT_022_CONTRACT_IDS
+        else contract.traceability_references == AMENDMENT_024_TRACEABILITY
+        if contract.interaction_contract_id in AMENDMENT_024_CONTRACT_IDS
         else contract.traceability_references == ()
         for contract in contracts
     )
@@ -788,7 +814,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
         ContractType.COMMAND: 72,
-        ContractType.QUERY: 39,
+        ContractType.QUERY: 41,
         ContractType.EVENT: 43,
         ContractType.NOTIFICATION: 2,
     }
@@ -805,7 +831,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
         "knowledge": 3,
         "execution": 6,
         "mission_control": 5,
-        "netpay_merchant_operations": 93,
+        "netpay_merchant_operations": 95,
         "operational_execution": 7,
         "document_registry": 10,
     }
@@ -946,19 +972,39 @@ def test_amendment021_contracts_have_exact_ratified_metadata() -> None:
 def test_amendment022_contracts_have_complete_traceability() -> None:
     by_id = {contract.interaction_contract_id: contract for contract in canonical_contracts()}
 
-    assert len(canonical_contracts()) == 156
-    assert len(by_id) == 156
+    assert len(canonical_contracts()) == 158
+    assert len(by_id) == 158
     assert {
         kind: sum(contract.contract_type == kind for contract in by_id.values())
         for kind in ContractType
     } == {
         ContractType.COMMAND: 72,
-        ContractType.QUERY: 39,
+        ContractType.QUERY: 41,
         ContractType.EVENT: 43,
         ContractType.NOTIFICATION: 2,
     }
     for contract_id in AMENDMENT_022_CONTRACT_IDS:
         assert by_id[contract_id].traceability_references == AMENDMENT_022_TRACEABILITY
+
+
+def test_amendment024_portfolio_queries_have_exact_ratified_metadata() -> None:
+    by_id = {contract.interaction_contract_id: contract for contract in canonical_contracts()}
+    expected_names = {
+        "IC-NETPAY-QRY-023": "ListCommerceAttentionPortfolio",
+        "IC-NETPAY-QRY-024": "GetCommerceAttentionDetail",
+    }
+
+    for contract_id in AMENDMENT_024_CONTRACT_IDS:
+        contract = by_id[contract_id]
+        assert contract.name == expected_names[contract_id]
+        assert contract.contract_type == ContractType.QUERY
+        assert contract.owner_module_id == "netpay_merchant_operations"
+        assert contract.owning_capability == "commerce attention portfolio"
+        assert contract.lifecycle == ContractLifecycle.RATIFIED
+        assert contract.operational_status == ContractOperationalStatus.PLANNED
+        assert contract.criticality == ContractCriticality.CORE
+        assert contract.primary_consumer_or_use_case == "Cartera operativa reportada P0/P1"
+        assert contract.traceability_references == AMENDMENT_024_TRACEABILITY
 
 
 def test_amendment019_contracts_have_exact_ratified_metadata() -> None:

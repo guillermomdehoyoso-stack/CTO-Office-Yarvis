@@ -1,5 +1,30 @@
 # Current Engineering State
 
+## Commerce Attention Portfolio P0/P1 authorized — 2026-10-19
+
+[Amendment 024](../engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_024.md), the
+[lean Portfolio design](../engineering/NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DESIGN.md),
+its [data/privacy matrix](../engineering/NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DATA_PRIVACY_MATRIX.md)
+and [IG-011](../engineering/IG-011_NETPAY_COMMERCE_ATTENTION_PORTFOLIO_P0_P1_AUTHORIZATION.md)
+are **RATIFIED**. IG-011 opens implementation authority only for P0/P1 of
+**Cartera operativa reportada**. Implementation has not started.
+
+`IC-NETPAY-QRY-023` `ListCommerceAttentionPortfolio` and
+`IC-NETPAY-QRY-024` `GetCommerceAttentionDetail` are registered as
+RATIFIED/PLANNED. The authorized future implementation introduces separate
+`netpay.portfolio.read`, `netpay.portfolio.sensitive.read` and
+`netpay.portfolio.reconciliation.read` permissions because existing Master and
+Inbox scopes are not exact least-disclosure substitutes. The permission catalog
+has not yet been changed.
+
+Netpay Master is the authoritative P0/P1 universe; unlinked Candidate,
+CommercialIntakeItem and Dossier records remain in a separately authorized
+reconciliation queue. Store ID is not MID, contact is labelled Contacto
+registrado, and neutral badges indicate availability rather than health.
+
+P2/D1 use, P3 colors, P4 expanded contacts/follow-up, P5 advanced experience
+and preferences, terminals, D3, D2-Lite, export, communications and every
+mutation remain closed.
 ## Risk-proportionate assurance ratified — 2026-10-19
 
 [ADR-021](../decisions/ADR-021_RISK_PROPORTIONATE_ASSURANCE_FOR_YARVIS_MODULES.md)
@@ -17,11 +42,11 @@ existing owner. Existing contracts remain unchanged; future contracts shall
 represent real boundaries rather than individual table interactions.
 
 The published D2/H1/H2-Q/H2-I/H2-D/navigation block remains closed at
-`8461818026d7a8de7c2571a8db6ea69294e35583`. The next Netpay package is design
-of the Commerce Attention Portfolio under B/C/D classification. It remains
-unimplemented and unauthorized for implementation; D3, D2-Lite, P2, Gmail,
-OAuth, pilot access and communications remain closed. No IG is active for this
-design-only step.
+`8461818026d7a8de7c2571a8db6ea69294e35583`. This section records the
+design-sequencing decision made by Amendment 023; the ratified successor above,
+Amendment 024 and IG-011, now authorizes only P0/P1 implementation under B/C/D.
+D3, D2-Lite, P2/D1, Gmail, OAuth, pilot access and communications remain
+closed.
 
 ## Consolidated Netpay closure — 2026-10-19
 

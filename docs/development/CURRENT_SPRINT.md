@@ -1,22 +1,40 @@
 # Current Sprint
 
+## Commerce Attention Portfolio P0/P1 authorization — 2026-10-19
+
+| Field | Current value |
+| --- | --- |
+| Work package | P0/P1 implementation of Cartera operativa reportada; not started. |
+| Ratified authority | Amendment 024 and IG-011, limited to P0/P1. |
+| Architecture | Read-only projection; Master universe; separately protected Registros por conciliar; no new entity, materialized view or migration. |
+| Registered contracts | QRY-023 ListCommerceAttentionPortfolio and QRY-024 GetCommerceAttentionDetail, RATIFIED/PLANNED. |
+| Permissions | Future `netpay.portfolio.read`, `.sensitive.read` and `.reconciliation.read`; authorized but not implemented. Existing Master/Inbox scopes are not reused as substitutes. |
+| Current gate | IG-011 open for P0/P1 implementation and isolated evidence. |
+| Next allowed action | Implement only the IG-011 allowlist, then satisfy its evidence gate. Repository state must be reverified first. |
+| Closed scope | P2/D1, P3 colors, P4 expanded contacts/follow-up, P5 advanced experience/preferences, terminals, export, communications, D3, D2-Lite, Gmail/OAuth and pilot access. |
+
+Current ratified documents are
+[Amendment 024](../engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_024.md),
+[lean design](../engineering/NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DESIGN.md),
+[data/privacy matrix](../engineering/NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DATA_PRIVACY_MATRIX.md)
+and [IG-011](../engineering/IG-011_NETPAY_COMMERCE_ATTENTION_PORTFOLIO_P0_P1_AUTHORIZATION.md).
 ## Risk-proportionate governance — 2026-10-19
 
 | Field | Current value |
 | --- | --- |
 | Ratified decision | [ADR-021](../decisions/ADR-021_RISK_PROPORTIONATE_ASSURANCE_FOR_YARVIS_MODULES.md): profiles A regulated evidence, B security-sensitive work, C business operations and D experience/analysis. |
 | Roadmap record | [Amendment 023](../engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_023.md): documentary governance only. |
-| Current engineering gate | No implementation gate is opened; IG-010 remains the latest closed Netpay gate. |
+| Successor gate | IG-011 is now the current implementation gate for Portfolio P0/P1; IG-010 remains the latest closed prior Netpay gate. |
 | Closed implementation | D2, H1, H2-Q, H2-I, H2-D and navigation remain closed at `8461818026d7a8de7c2571a8db6ea69294e35583`. |
-| Next work package | Design the Netpay Commerce Attention Portfolio using B/C for contacts and PII, C for catalog/profitability/attention rules, and D for filters, columns, colors and navigation. |
-| Authority limit | Design only. No implementation, contract change, migration, operational data, Gmail/OAuth/pilot access or communications. |
+| Successor work package | Amendment 024 and IG-011 authorize Portfolio P0/P1 only; implementation has not started. |
+| Continuing limit | P2–P5, D1, migrations, operational data expansion, Gmail/OAuth/pilot access and communications remain closed. |
 
 The portfolio retains the previously recorded merchant, contact,
 profitability, terminal, branch, attention-color, filtering, navigation,
 provenance, freshness, quality, isolation and PII requirements. Its design must
-resolve canonical catalog authority, identity reconciliation, Operational
-Data/D2-Lite or successor authority, deterministic attention rules and actual
-contract boundaries before implementation authorization is considered.
+resolve later Operational Data/D2-Lite authority and deterministic attention
+rules before P2/P3 implementation can be considered. P0/P1 catalog authority,
+identity reconciliation and query boundaries are resolved by Amendment 024.
 
 ## Consolidated Netpay closure — 2026-10-19
 
@@ -27,8 +45,8 @@ contract boundaries before implementation authorization is considered.
 | Latest gate | IG-010; H2-D technical conformance is closed. |
 | Operational effect | None. Validation used synthetic data only and created no operational dossier. |
 | Closed scope | D3, D2-Lite, P2, attachment content/OCR, Drive, automation, pilot expansion and outbound communications. |
-| Future requirement | Netpay Commerce Attention Portfolio remains unapproved and unimplemented. |
-| Next architectural decision | Decide whether to authorize moderate, risk-proportional Netpay simplification as a separate successor package. |
+| Successor package | Portfolio P0/P1 is now authorized by Amendment 024/IG-011 but remains unimplemented. |
+| Current next action | Implement only the IG-011 allowlist and satisfy its evidence gate. |
 
 Current evidence is recorded in
 [`netpay-d2-h2-consolidated-closure-20261019.txt`](../engineering/evidence/netpay-d2-h2-consolidated-closure-20261019.txt).

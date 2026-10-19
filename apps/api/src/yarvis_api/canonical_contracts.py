@@ -1521,6 +1521,42 @@ CANONICAL_CONTRACTS += tuple(
 )
 
 
+CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(
+        interaction_contract_id=contract_id,
+        version="1.0.0",
+        contract_type=ContractType.QUERY,
+        owner_module_id="netpay_merchant_operations",
+        owning_context="Netpay Merchant Operations",
+        owning_capability="commerce attention portfolio",
+        name=name,
+        semantic_purpose=purpose,
+        lifecycle=ContractLifecycle.RATIFIED,
+        operational_status=ContractOperationalStatus.PLANNED,
+        criticality=ContractCriticality.CORE,
+        primary_consumer_or_use_case="Cartera operativa reportada P0/P1",
+        traceability_references=(
+            "IMPLEMENTATION_ROADMAP_AMENDMENT_024.md",
+            "IG-011_NETPAY_COMMERCE_ATTENTION_PORTFOLIO_P0_P1_AUTHORIZATION.md",
+            "NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DESIGN.md",
+            "NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DATA_PRIVACY_MATRIX.md",
+        ),
+    )
+    for contract_id, name, purpose in (
+        (
+            "IC-NETPAY-QRY-023",
+            "ListCommerceAttentionPortfolio",
+            "List the tenant-scoped minimized reported operational portfolio",
+        ),
+        (
+            "IC-NETPAY-QRY-024",
+            "GetCommerceAttentionDetail",
+            "Retrieve one tenant-scoped reported operational portfolio detail",
+        ),
+    )
+)
+
+
 def canonical_contracts() -> tuple[ContractDefinition, ...]:
     """Return the immutable, explicit canonical Tier 1 contract baseline."""
 
