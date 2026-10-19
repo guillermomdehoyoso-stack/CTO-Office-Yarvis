@@ -1,5 +1,23 @@
 # Current Sprint
 
+## Risk-proportionate governance — 2026-10-19
+
+| Field | Current value |
+| --- | --- |
+| Ratified decision | [ADR-021](../decisions/ADR-021_RISK_PROPORTIONATE_ASSURANCE_FOR_YARVIS_MODULES.md): profiles A regulated evidence, B security-sensitive work, C business operations and D experience/analysis. |
+| Roadmap record | [Amendment 023](../engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_023.md): documentary governance only. |
+| Current engineering gate | No implementation gate is opened; IG-010 remains the latest closed Netpay gate. |
+| Closed implementation | D2, H1, H2-Q, H2-I, H2-D and navigation remain closed at `8461818026d7a8de7c2571a8db6ea69294e35583`. |
+| Next work package | Design the Netpay Commerce Attention Portfolio using B/C for contacts and PII, C for catalog/profitability/attention rules, and D for filters, columns, colors and navigation. |
+| Authority limit | Design only. No implementation, contract change, migration, operational data, Gmail/OAuth/pilot access or communications. |
+
+The portfolio retains the previously recorded merchant, contact,
+profitability, terminal, branch, attention-color, filtering, navigation,
+provenance, freshness, quality, isolation and PII requirements. Its design must
+resolve canonical catalog authority, identity reconciliation, Operational
+Data/D2-Lite or successor authority, deterministic attention rules and actual
+contract boundaries before implementation authorization is considered.
+
 ## Consolidated Netpay closure — 2026-10-19
 
 | Field | Current value |

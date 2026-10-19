@@ -1,5 +1,28 @@
 # Current Engineering State
 
+## Risk-proportionate assurance ratified — 2026-10-19
+
+[ADR-021](../decisions/ADR-021_RISK_PROPORTIONATE_ASSURANCE_FOR_YARVIS_MODULES.md)
+and [Amendment 023](../engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_023.md)
+ratify proportional assurance profiles for future Yarvis work: A regulated
+evidence, B security-sensitive work, C business operations and D experience
+and analysis. Packages may combine profiles, and the strongest applicable
+control remains binding for each affected surface.
+
+The policy defines when an Amendment, IG or ADR is required and permits a
+reversible light change to proceed with explicit criteria, review and affected
+tests when it introduces no entity, migration, permission, sensitive-data
+category, external integration, material transition or effect outside the
+existing owner. Existing contracts remain unchanged; future contracts shall
+represent real boundaries rather than individual table interactions.
+
+The published D2/H1/H2-Q/H2-I/H2-D/navigation block remains closed at
+`8461818026d7a8de7c2571a8db6ea69294e35583`. The next Netpay package is design
+of the Commerce Attention Portfolio under B/C/D classification. It remains
+unimplemented and unauthorized for implementation; D3, D2-Lite, P2, Gmail,
+OAuth, pilot access and communications remain closed. No IG is active for this
+design-only step.
+
 ## Consolidated Netpay closure — 2026-10-19
 
 The accumulated D2, H1, H2-Q, H2-I, H2-D and navigation implementation is
