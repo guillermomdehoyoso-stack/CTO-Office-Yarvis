@@ -12,6 +12,10 @@ export default defineConfig({
   use: {
     baseURL: process.env.D1_BROWSER_BASE_URL || 'http://127.0.0.1:5173',
     trace: 'retain-on-failure',
+    extraHTTPHeaders: process.env.D1_BROWSER_SYNTHETIC === '1' ? {
+      'X-Yarvis-Subject': process.env.D1_BROWSER_SUBJECT || 'data:operator',
+      'X-Yarvis-Auth-Token': 'deterministic-inbound-intake',
+    } : undefined,
     ...(channel
       ? {
           channel,

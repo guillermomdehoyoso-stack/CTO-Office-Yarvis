@@ -67,6 +67,36 @@ describe('Netpay Inbox workspace', () => {
     const firstKey = vi.mocked(client.createCase).mock.calls[0][1]; const secondKey = vi.mocked(client.createCase).mock.calls[1][1]; expect(firstKey).toBe(secondKey); expect(client.setStoreReference).not.toHaveBeenCalled();
   });
 
+  it('routes an inbox-only pilot operator to commercial intake without exposing Master creation', async () => {
+    const client = configuredClient();
+    client.runtime.capabilities = new Set(['netpay.inbox.read', 'netpay.inbox.manage']);
+    render(<MemoryRouter><NetpayInboxWorkspace client={client} /></MemoryRouter>);
+    await screen.findByText(/Casos vacíos/i);
+    expect(screen.getByRole('button', { name: 'Registrar ingreso comercial' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Nuevo caso Netpay' })).toBeNull();
+    expect(screen.getByText(/Crear un caso exige un registro Master existente/)).toBeTruthy();
+  });
+
+  it('keeps the commercial-intake draft after a safe creation error and never calls Master', async () => {
+    const client = configuredClient();
+    client.runtime.capabilities = new Set(['netpay.inbox.read', 'netpay.inbox.manage']);
+    vi.spyOn(client, 'createCommercialIntake').mockRejectedValue(new NetpayApiError(409, 'conflict', 'retry'));
+    vi.spyOn(client, 'listMaster');
+    vi.spyOn(client, 'createClient');
+    render(<MemoryRouter><NetpayInboxWorkspace client={client} /></MemoryRouter>);
+    await screen.findByText(/Casos vacíos/i);
+    await userEvent.click(screen.getByRole('button', { name: 'Registrar ingreso comercial' }));
+    expect(screen.getByText(/No crea comercio, sucursal ni caso/)).toBeTruthy();
+    await userEvent.type(screen.getByLabelText('Empresa provisional'), 'Empresa de prueba');
+    await userEvent.type(screen.getByLabelText('Resumen'), 'Alta sintética para cinco sucursales.');
+    await userEvent.click(screen.getByRole('button', { name: 'Crear ingreso comercial' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect((screen.getByLabelText('Empresa provisional') as HTMLInputElement).value).toBe('Empresa de prueba');
+    expect((screen.getByLabelText('Resumen') as HTMLTextAreaElement).value).toBe('Alta sintética para cinco sucursales.');
+    expect(client.listMaster).not.toHaveBeenCalled();
+    expect(client.createClient).not.toHaveBeenCalled();
+  });
+
   it('renders case detail and invokes all five ratified B2 commands with idempotency', async () => {
     const client = configuredClient(); vi.spyOn(client, 'getCase').mockResolvedValue(inboxCase); vi.spyOn(client, 'getMasterDetail').mockResolvedValue(master);
     const methods = ['updateChecklist', 'assignCase', 'setNextAction', 'transitionCase', 'addActivity'] as const; methods.forEach((method) => vi.spyOn(client, method).mockResolvedValue(inboxCase));

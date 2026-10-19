@@ -79,6 +79,19 @@ class Settings(BaseSettings):
     worker_lease_seconds: int = 30
     scheduler_enabled: bool = False
     scheduler_poll_interval_seconds: int = 30
+    gmail_intake_enabled: bool = False
+    gmail_provider: Literal["fake", "google"] = "fake"
+    gmail_google_project_id: str | None = None
+    gmail_oauth_redirect_uri: str = "http://127.0.0.1:8000/netpay/gmail/oauth/callback"
+    gmail_oauth_scopes: str = "https://www.googleapis.com/auth/gmail.readonly"
+    gmail_oauth_client_id_file: Path | None = None
+    gmail_oauth_client_secret_file: Path | None = None
+    gmail_token_key_file: Path | None = None
+    gmail_token_store_root: Path | None = None
+    gmail_mailbox_binding: str | None = None
+    gmail_label_name: str = "Yarvis/Netpay-Intake"
+    gmail_backfill_days: int = 30
+    gmail_post_connect_redirect_uri: str = "http://127.0.0.1:5173/netpay-inbox?gmail=connected"
     workspace_access_token_secret: SecretStr | None = Field(
         default=None,
         validation_alias=AliasChoices("workspace_access_token", "YARVIS_WORKSPACE_ACCESS_TOKEN"),
@@ -189,6 +202,31 @@ class Settings(BaseSettings):
             raise ValueError("session durations must match AUTH-POLICY-001")
         if self.session_max_active != 3:
             raise ValueError("maximum active sessions must match AUTH-POLICY-001")
+        if self.gmail_backfill_days != 30:
+            raise ValueError("Gmail pilot backfill must remain exactly 30 days")
+        if self.gmail_intake_enabled:
+            if self.gmail_provider != "google":
+                raise ValueError("enabled Gmail pilot requires the Google provider")
+            if self.environment != "local":
+                raise ValueError("the restricted Gmail pilot is local-only")
+            if self.scheduler_enabled or self.worker_enabled:
+                raise ValueError("Gmail pilot prohibits scheduler and worker runtime")
+            if self.gmail_oauth_scopes != "https://www.googleapis.com/auth/gmail.readonly":
+                raise ValueError("Gmail pilot requires the exact read-only scope")
+            if self.gmail_oauth_redirect_uri != "http://127.0.0.1:8000/netpay/gmail/oauth/callback":
+                raise ValueError("Gmail pilot redirect URI must match the ratified loopback callback")
+            required_gmail = (
+                self.gmail_google_project_id,
+                self.gmail_oauth_client_id_file,
+                self.gmail_oauth_client_secret_file,
+                self.gmail_token_key_file,
+                self.gmail_token_store_root,
+                self.gmail_mailbox_binding,
+            )
+            if any(value is None for value in required_gmail):
+                raise ValueError("Gmail pilot configuration is incomplete")
+            if not self.gmail_label_name.strip():
+                raise ValueError("Gmail pilot label name must be nonblank")
         return self
 
     @property

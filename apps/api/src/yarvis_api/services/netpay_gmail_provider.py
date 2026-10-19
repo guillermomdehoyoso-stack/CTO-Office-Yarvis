@@ -26,6 +26,7 @@ class GmailSourceMessage:
     body: str = ""
     label_ids: frozenset[str] = field(default_factory=frozenset)
     attachments: tuple[dict[str, str | int], ...] = ()
+    provider_cursor: str | None = None
 
     def normalized_received_at(self) -> datetime:
         value = self.received_at
@@ -34,8 +35,42 @@ class GmailSourceMessage:
         return value.astimezone(timezone.utc)
 
 
+@dataclass(frozen=True, slots=True)
+class GmailMessageMetadata:
+    message_id: str
+    received_at: datetime
+
+
 class GmailSourceProvider(Protocol):
-    def list_messages(self, *, provider_account_id: str, label_id: str, query: str) -> list[GmailSourceMessage]: ...
+    provider_kind: str
+
+    def validate_binding(
+        self, *, provider_account_id: str, label_id: str, credential_secret_ref: str | None = None
+    ) -> None: ...
+
+    def discover_message_metadata(
+        self,
+        *,
+        provider_account_id: str,
+        label_id: str,
+        query: str,
+        credential_secret_ref: str | None,
+        window_start: datetime,
+        window_end: datetime,
+        limit: int,
+    ) -> list[GmailMessageMetadata]: ...
+
+    def list_messages(
+        self,
+        *,
+        provider_account_id: str,
+        label_id: str,
+        query: str,
+        credential_secret_ref: str | None = None,
+        cursor: str | None = None,
+        window_start: datetime | None = None,
+        window_end: datetime | None = None,
+    ) -> list[GmailSourceMessage]: ...
 
 
 class FakeGmailProvider:
@@ -44,6 +79,8 @@ class FakeGmailProvider:
     It exposes only a read operation. Fixtures are seeded by the test harness,
     never by a Gmail network client or a production credential.
     """
+
+    provider_kind = "fake"
 
     def __init__(self) -> None:
         self._fixtures: dict[str, tuple[GmailSourceMessage, ...]] = {}
@@ -57,8 +94,49 @@ class FakeGmailProvider:
     def clear(self) -> None:
         self._fixtures.clear()
 
-    def list_messages(self, *, provider_account_id: str, label_id: str, query: str) -> list[GmailSourceMessage]:
-        del query  # The fixture adapter has no search language; the label boundary remains mandatory.
+    def validate_binding(
+        self, *, provider_account_id: str, label_id: str, credential_secret_ref: str | None = None
+    ) -> None:
+        del credential_secret_ref
+        messages = self._fixtures.get(provider_account_id)
+        if messages is None:
+            raise GmailProviderError("provider_account_not_seeded")
+        if not label_id.strip():
+            raise GmailProviderError("label_id_missing")
+        if not any(label_id in message.label_ids for message in messages):
+            raise GmailProviderError("label_not_found")
+
+    def discover_message_metadata(
+        self,
+        *,
+        provider_account_id: str,
+        label_id: str,
+        query: str,
+        credential_secret_ref: str | None,
+        window_start: datetime,
+        window_end: datetime,
+        limit: int,
+    ) -> list[GmailMessageMetadata]:
+        del query, credential_secret_ref
+        self.validate_binding(provider_account_id=provider_account_id, label_id=label_id)
+        return [
+            GmailMessageMetadata(message.message_id, message.normalized_received_at())
+            for message in self._fixtures[provider_account_id]
+            if label_id in message.label_ids and window_start <= message.normalized_received_at() <= window_end
+        ][:limit]
+
+    def list_messages(
+        self,
+        *,
+        provider_account_id: str,
+        label_id: str,
+        query: str,
+        credential_secret_ref: str | None = None,
+        cursor: str | None = None,
+        window_start: datetime | None = None,
+        window_end: datetime | None = None,
+    ) -> list[GmailSourceMessage]:
+        del query, credential_secret_ref, cursor, window_start, window_end
         messages = self._fixtures.get(provider_account_id)
         if messages is None:
             raise GmailProviderError("provider_account_not_seeded")

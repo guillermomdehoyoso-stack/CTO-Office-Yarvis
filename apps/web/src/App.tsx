@@ -1,4 +1,4 @@
-import { Link, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { getRecoveryQueue, getStoreSummary } from './api/storeIntelligence';
@@ -10,6 +10,7 @@ import { MissionWorkQueue } from './components/mission-work/MissionWorkQueue';
 import { OperationalWorkspace } from './components/mission-work/OperationalWorkspace';
 import { OperationalRadar } from './components/radar/OperationalRadar';
 import { CommercialIntakeDetail, NetpayCaseDetail, NetpayInboxWorkspace } from './components/netpay/NetpayInboxWorkspace';
+import { NetpayGmailIntakeWorkspace } from './components/netpay/NetpayGmailIntakeWorkspace';
 import { NetpayDataWorkspace } from './components/netpay/NetpayDataWorkspace';
 import { beginProductiveLogin, loadProductiveSession, productiveLogout } from './api/netpay';
 
@@ -52,23 +53,23 @@ async function uploadXlsx(file: File) {
 }
 
 function Layout({ productive = false }: { productive?: boolean }) {
+  const location = useLocation();
+  const active = ({ isActive }: { isActive: boolean }) => isActive ? 'global-nav-active' : undefined;
+  const moreActive = ['/mission-control','/cases','/conversation','/organizations','/people','/radar-netpay','/recovery-queue','/workspace','/mission-work'].some((path) => location.pathname === path || location.pathname.startsWith(path + '/'));
   return (
     <main>
-      <nav>
-        <Link to="/">Mission Control</Link>
-        <Link to="/cases">Cases</Link>
-        <Link to="/conversation">Conversación</Link>
-        <Link to="/organizations">Organización</Link>
-        <Link to="/people">Personas</Link>
-        <Link to="/netpay-inbox">Netpay Inbox</Link>
-        <Link to="/netpay-data">Datos Netpay</Link>
-        <Link to="/recovery-queue">Cola de recuperación</Link>
-        <Link to="/workspace">Development Workspace</Link>
-        <Link to="/mission-work">Mission Work</Link>
+      <nav className="global-nav" aria-label="Navegación principal">
+        <NavLink className={active} to="/netpay-inbox">Operación Netpay</NavLink>
+        <NavLink className={active} to="/netpay-inbox/gmail">Solicitudes Gmail</NavLink>
+        <NavLink className={active} to="/netpay-data">Datos Netpay</NavLink>
+        <details className="global-nav-more"><summary className={moreActive?'global-nav-active':undefined}>Más</summary><div>
+          <NavLink className={active} to="/mission-control">Mission Control</NavLink><NavLink className={active} to="/cases">Cases</NavLink><NavLink className={active} to="/conversation">Conversación</NavLink><NavLink className={active} to="/organizations">Organización</NavLink><NavLink className={active} to="/people">Personas</NavLink><NavLink className={active} to="/radar-netpay">Radar Netpay</NavLink><NavLink className={active} to="/recovery-queue">Cola de recuperación</NavLink><NavLink className={active} to="/workspace">Development Workspace</NavLink><NavLink className={active} to="/mission-work">Mission Work</NavLink>
+        </div></details>
         {productive ? <button onClick={async () => { await productiveLogout(); window.location.reload(); }}>Cerrar sesión</button> : null}
       </nav>
       <Routes>
-        <Route path="/" element={<MissionControlPage />} />
+        <Route path="/" element={<Navigate to="/netpay-inbox" replace />} />
+        <Route path="/mission-control" element={<MissionControlPage />} />
         <Route path="/cases" element={<CasesPage />} />
         <Route path="/cases/:id" element={<CaseDetailPage />} />
         <Route path="/conversation" element={<ConversationPage />} />
@@ -77,6 +78,7 @@ function Layout({ productive = false }: { productive?: boolean }) {
         <Route path="/netpay-intake" element={<Navigate to="/netpay-data" replace />} />
         <Route path="/radar-netpay" element={<OperationalRadar />} />
         <Route path="/netpay-inbox" element={<NetpayInboxWorkspace />} />
+        <Route path="/netpay-inbox/gmail" element={<NetpayGmailIntakeWorkspace />} />
         <Route path="/netpay-inbox/contacts/:contactId" element={<CommercialIntakeDetail />} />
         <Route path="/netpay-inbox/:caseId" element={<NetpayCaseDetail />} />
         <Route path="/netpay-data" element={<NetpayDataWorkspace />} />
@@ -331,7 +333,6 @@ function NetPayIntakePage() {
       <div className="cards">
         {Object.entries(preview.operational_summary || {}).filter(([, value]) => typeof value === 'number').map(([key, value]) => <div className="card" key={key}><small>{key.replaceAll('_', ' ')}</small><b>{String(value)}</b></div>)}
       </div>
-      <MissionControlStoreIntelligenceCard data={storeQuery.data} error={Boolean(storeQuery.error)} />
       <h3>Column mappings</h3>
       {preview.proposed_canonical_mappings.map((mapping: any) => <p className="mapping" key={mapping.source_header}><code>{mapping.source_header}</code> to {mapping.canonical_field || 'unresolved'}</p>)}
       <p>Unavailable: {(preview.operational_summary?.unavailable_fields || []).join(', ') || 'none'}.</p>

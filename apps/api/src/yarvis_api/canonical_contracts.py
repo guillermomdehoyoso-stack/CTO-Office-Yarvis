@@ -1018,25 +1018,161 @@ CANONICAL_CONTRACTS += tuple(
         ),
     )
     for contract_id, contract_type, name, purpose in (
-        ("IC-NETPAY-CMD-031", ContractType.COMMAND, "CreateNetpayIntakeCandidateFromSource", "Create a tenant-owned candidate from a captured Gmail source item"),
-        ("IC-NETPAY-CMD-032", ContractType.COMMAND, "AcceptNetpayIntakeCandidate", "Accept a candidate through explicit human review and create or link its owner result"),
-        ("IC-NETPAY-CMD-033", ContractType.COMMAND, "RejectNetpayIntakeCandidate", "Reject a candidate through explicit human review"),
-        ("IC-NETPAY-CMD-034", ContractType.COMMAND, "MarkNetpayIntakeCandidateDuplicate", "Mark a candidate duplicate through explicit human review"),
-        ("IC-NETPAY-CMD-035", ContractType.COMMAND, "LinkNetpayIntakeCandidate", "Link a candidate to an existing same-tenant intake or service case"),
-        ("IC-NETPAY-CMD-036", ContractType.COMMAND, "GenerateNetpayCandidateReplyDraft", "Generate a non-sent reply draft for a reviewed candidate"),
-        ("IC-NETPAY-QRY-014", ContractType.QUERY, "GetNetpayGmailConnectionStatus", "Return safe tenant-scoped Gmail connection status"),
-        ("IC-NETPAY-QRY-015", ContractType.QUERY, "GetNetpayGmailSyncStatus", "Return safe tenant-scoped manual sync status"),
-        ("IC-NETPAY-QRY-016", ContractType.QUERY, "ListNetpayGmailSourceItems", "List bounded tenant-scoped Gmail source item summaries"),
-        ("IC-NETPAY-QRY-017", ContractType.QUERY, "RetrieveNetpayGmailSourceItem", "Retrieve one bounded tenant-scoped Gmail source item"),
-        ("IC-NETPAY-QRY-018", ContractType.QUERY, "PreviewNetpayIntakeCandidateAcceptance", "Preview candidate acceptance without side effects"),
-        ("IC-NETPAY-QRY-019", ContractType.QUERY, "ListOverdueNetpayIntakeCandidates", "List deterministically ordered overdue candidate work"),
-        ("IC-NETPAY-EVT-020", ContractType.EVENT, "NetpayGmailSourceConnected", "Record a safe Gmail source connection fact"),
-        ("IC-NETPAY-EVT-021", ContractType.EVENT, "NetpayGmailSourceDisconnected", "Record a safe Gmail source disconnection fact"),
-        ("IC-NETPAY-EVT-022", ContractType.EVENT, "NetpayGmailManualSyncStarted", "Record a manual Gmail synchronization start"),
-        ("IC-NETPAY-EVT-023", ContractType.EVENT, "NetpayGmailManualSyncCompleted", "Record bounded manual Gmail synchronization results"),
-        ("IC-NETPAY-EVT-024", ContractType.EVENT, "NetpayGmailSourceItemCaptured", "Record capture of a bounded Gmail source item"),
-        ("IC-NETPAY-EVT-025", ContractType.EVENT, "NetpayGmailSourceItemDeduplicated", "Record idempotent Gmail source deduplication"),
-        ("IC-NETPAY-EVT-026", ContractType.EVENT, "NetpayCandidateReplyDraftGenerated", "Record generation of a non-sent candidate reply draft"),
+        (
+            "IC-NETPAY-CMD-031",
+            ContractType.COMMAND,
+            "CreateNetpayIntakeCandidateFromSource",
+            "Create a tenant-owned candidate from a captured Gmail source item",
+        ),
+        (
+            "IC-NETPAY-CMD-032",
+            ContractType.COMMAND,
+            "AcceptNetpayIntakeCandidate",
+            "Accept a candidate through explicit human review and create or link its owner result",
+        ),
+        (
+            "IC-NETPAY-CMD-033",
+            ContractType.COMMAND,
+            "RejectNetpayIntakeCandidate",
+            "Reject a candidate through explicit human review",
+        ),
+        (
+            "IC-NETPAY-CMD-034",
+            ContractType.COMMAND,
+            "MarkNetpayIntakeCandidateDuplicate",
+            "Mark a candidate duplicate through explicit human review",
+        ),
+        (
+            "IC-NETPAY-CMD-035",
+            ContractType.COMMAND,
+            "LinkNetpayIntakeCandidate",
+            "Link a candidate to an existing same-tenant intake or service case",
+        ),
+        (
+            "IC-NETPAY-CMD-036",
+            ContractType.COMMAND,
+            "GenerateNetpayCandidateReplyDraft",
+            "Generate a non-sent reply draft for a reviewed candidate",
+        ),
+        (
+            "IC-NETPAY-QRY-014",
+            ContractType.QUERY,
+            "GetNetpayGmailConnectionStatus",
+            "Return safe tenant-scoped Gmail connection status",
+        ),
+        (
+            "IC-NETPAY-QRY-015",
+            ContractType.QUERY,
+            "GetNetpayGmailSyncStatus",
+            "Return safe tenant-scoped manual sync status",
+        ),
+        (
+            "IC-NETPAY-QRY-016",
+            ContractType.QUERY,
+            "ListNetpayGmailSourceItems",
+            "List bounded tenant-scoped Gmail source item summaries",
+        ),
+        (
+            "IC-NETPAY-QRY-017",
+            ContractType.QUERY,
+            "RetrieveNetpayGmailSourceItem",
+            "Retrieve one bounded tenant-scoped Gmail source item",
+        ),
+        (
+            "IC-NETPAY-QRY-018",
+            ContractType.QUERY,
+            "PreviewNetpayIntakeCandidateAcceptance",
+            "Preview candidate acceptance without side effects",
+        ),
+        (
+            "IC-NETPAY-QRY-019",
+            ContractType.QUERY,
+            "ListOverdueNetpayIntakeCandidates",
+            "List deterministically ordered overdue candidate work",
+        ),
+        (
+            "IC-NETPAY-EVT-020",
+            ContractType.EVENT,
+            "NetpayGmailSourceConnected",
+            "Record a safe Gmail source connection fact",
+        ),
+        (
+            "IC-NETPAY-EVT-021",
+            ContractType.EVENT,
+            "NetpayGmailSourceDisconnected",
+            "Record a safe Gmail source disconnection fact",
+        ),
+        (
+            "IC-NETPAY-EVT-022",
+            ContractType.EVENT,
+            "NetpayGmailManualSyncStarted",
+            "Record a manual Gmail synchronization start",
+        ),
+        (
+            "IC-NETPAY-EVT-023",
+            ContractType.EVENT,
+            "NetpayGmailManualSyncCompleted",
+            "Record bounded manual Gmail synchronization results",
+        ),
+        (
+            "IC-NETPAY-EVT-024",
+            ContractType.EVENT,
+            "NetpayGmailSourceItemCaptured",
+            "Record capture of a bounded Gmail source item",
+        ),
+        (
+            "IC-NETPAY-EVT-025",
+            ContractType.EVENT,
+            "NetpayGmailSourceItemDeduplicated",
+            "Record idempotent Gmail source deduplication",
+        ),
+        (
+            "IC-NETPAY-EVT-026",
+            ContractType.EVENT,
+            "NetpayCandidateReplyDraftGenerated",
+            "Record generation of a non-sent candidate reply draft",
+        ),
+    )
+)
+
+CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(
+        interaction_contract_id=contract_id,
+        version="1.0.0",
+        contract_type=contract_type,
+        owner_module_id="netpay_merchant_operations",
+        owning_context="Netpay Merchant Operations",
+        owning_capability="candidate human follow-up",
+        name=name,
+        semantic_purpose=purpose,
+        lifecycle=ContractLifecycle.RATIFIED,
+        operational_status=ContractOperationalStatus.PLANNED,
+        criticality=ContractCriticality.CORE,
+        primary_consumer_or_use_case="Netpay candidate human follow-up H1",
+        traceability_references=(
+            "IMPLEMENTATION_ROADMAP_AMENDMENT_021.md",
+            "IG-009_NETPAY_CANDIDATE_HUMAN_FOLLOW_UP_AUTHORIZATION.md",
+        ),
+    )
+    for contract_id, contract_type, name, purpose in (
+        (
+            "IC-NETPAY-CMD-037",
+            ContractType.COMMAND,
+            "RecordNetpayCandidateFollowUp",
+            "Append an operator-reported follow-up to a tenant-owned candidate",
+        ),
+        (
+            "IC-NETPAY-QRY-020",
+            ContractType.QUERY,
+            "ListNetpayCandidateFollowUps",
+            "Return a tenant-scoped candidate follow-up chronology",
+        ),
+        (
+            "IC-NETPAY-EVT-027",
+            ContractType.EVENT,
+            "NetpayCandidateFollowUpRecorded",
+            "Record an operator-attributed candidate follow-up without note content",
+        ),
     )
 )
 
@@ -1296,6 +1432,90 @@ CANONICAL_CONTRACTS += tuple(
             ContractType.QUERY,
             "RetrieveNetpayMasterDetail",
             "Retrieve tenant-owned Netpay master detail",
+        ),
+    )
+)
+
+
+CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(
+        interaction_contract_id=contract_id,
+        version="1.0.0",
+        contract_type=contract_type,
+        owner_module_id="netpay_merchant_operations",
+        owning_context="Netpay Merchant Operations",
+        owning_capability="candidate qualification and promotion",
+        name=name,
+        semantic_purpose=purpose,
+        lifecycle=ContractLifecycle.RATIFIED,
+        operational_status=ContractOperationalStatus.PLANNED,
+        criticality=ContractCriticality.CORE,
+        primary_consumer_or_use_case="Netpay alta H2",
+        traceability_references=(
+            "IMPLEMENTATION_ROADMAP_AMENDMENT_022.md",
+            "IG-010_NETPAY_ALTA_AND_SECOND_PILOT_BATCH_AUTHORIZATION.md",
+        ),
+    )
+    for contract_id, contract_type, name, purpose in (
+        (
+            "IC-NETPAY-CMD-038",
+            ContractType.COMMAND,
+            "CorrectNetpayCandidateQualification",
+            "Append a traced candidate qualification revision",
+        ),
+        (
+            "IC-NETPAY-CMD-039",
+            ContractType.COMMAND,
+            "CreateCommercialIntakeFromNetpayCandidate",
+            "Create one reviewed Commercial Intake with trace",
+        ),
+        (
+            "IC-NETPAY-CMD-040",
+            ContractType.COMMAND,
+            "AcceptLinkedNetpayIntakeCandidate",
+            "Accept a linked candidate after explicit review",
+        ),
+        (
+            "IC-NETPAY-QRY-021",
+            ContractType.QUERY,
+            "PreviewNetpayCandidateCommercialIntake",
+            "Preview reviewed promotion fields and provenance",
+        ),
+        (
+            "IC-NETPAY-EVT-028",
+            ContractType.EVENT,
+            "NetpayCandidateQualificationCorrected",
+            "Record safe qualification revision metadata",
+        ),
+        (
+            "IC-NETPAY-EVT-029",
+            ContractType.EVENT,
+            "NetpayCandidatePromotedToCommercialIntake",
+            "Record candidate and intake trace identifiers",
+        ),
+        (
+            "IC-NETPAY-CMD-041",
+            ContractType.COMMAND,
+            "CreateNetpayCandidateOnboardingDossier",
+            "Create one approved-catalog dossier snapshot after explicit confirmation",
+        ),
+        (
+            "IC-NETPAY-CMD-042",
+            ContractType.COMMAND,
+            "ReviewNetpayCandidateDossierRequirement",
+            "Append an attributed requirement state and optional metadata evidence reference",
+        ),
+        (
+            "IC-NETPAY-QRY-022",
+            ContractType.QUERY,
+            "RetrieveNetpayCandidateOnboardingDossier",
+            "Retrieve the immutable snapshot, current states, blockers and review history",
+        ),
+        (
+            "IC-NETPAY-EVT-030",
+            ContractType.EVENT,
+            "NetpayCandidateDossierRequirementReviewed",
+            "Record safe dossier requirement state metadata without attachment content",
         ),
     )
 )

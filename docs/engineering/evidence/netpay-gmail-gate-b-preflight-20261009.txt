@@ -1,0 +1,178 @@
+Netpay Gmail Gate B offline preflight — 2026-10-09 America/Mexico_City
+
+Authority
+- Amendment 020 and IG-008: ratified.
+- Gate A: PASS; evidence unchanged.
+- Gate B: PENDING.
+- Gate C, D3 and D2-Lite: closed/not authorized.
+
+Existing-project reuse record
+- Project display name: Yarvis Pilot
+- Project ID: yarvis-pilot
+- Project number: 1030218466633
+- Organization: netpay.com.mx
+- Gmail API: operator-confirmed enabled
+- OAuth audience: operator-confirmed Internal
+- Separate OAuth client: Yarvis Netpay Intake
+- Client type: Web application
+- Callback: http://127.0.0.1:8000/netpay/gmail/oauth/callback
+
+Supplied client validation
+- Candidate files found: exactly 1
+- JSON structure: PASS
+- Client type Web application: PASS
+- Project ID and project-number prefix: PASS
+- Exact callback: PASS
+- Required client fields and standard Google endpoints: PASS
+- Secret values printed or copied to the repository: NO
+
+Protected local configuration
+- Client ID and secret: separate protected host files outside the repository
+- AES-GCM key: existing key checked first; no key existed
+- Created key: 32 decoded bytes, nonzero, current-user-only host ACL
+- Initial unsupported RNG attempt: replaced before ciphertext existed
+- Encrypted token files at replacement time: 0; no ciphertext was invalidated
+- Runtime configuration: outside repository
+- Token/code/mailbox binding currently present: NO
+
+Runtime preflight
+- API http://127.0.0.1:8000/health: HTTP 200
+- Web http://127.0.0.1:5173/netpay-inbox/gmail: HTTP 200
+- enabled: PASS
+- provider_google: PASS
+- project_exact: PASS
+- scope_exact: PASS
+- callback_exact: PASS
+- backfill_30: PASS
+- label_exact: PASS
+- scheduler_disabled: PASS
+- worker_disabled: PASS
+- mailbox_binding_present: PASS
+- mailbox_binding_valid: PENDING (control character detected; replacement required)
+- Gate B helper Python compilation with ephemeral cache: PASS
+- Ruff for both Gate B helpers: PASS
+- git diff --check: PASS
+
+External/operator checks still required before OAuth
+1. Google Auth Platform Data Access shows only
+   https://www.googleapis.com/auth/gmail.readonly for this pilot client/project.
+2. Workspace administration: UNVERIFIED. The operator cannot enter Google Admin Console because
+   an administrator account is required. This does not prove OAuth is blocked. Effective policy
+   is UNKNOWN and may be tested by one bounded normal consent attempt after items 1, 3 and 4.
+3. Gmail label Yarvis/Netpay-Intake exists in the authorized mailbox.
+
+Completed local authority and binding check
+- Runtime authentication mode: deterministic local pilot.
+- Original failure: GET /netpay/gmail/connections, GET /netpay/gmail/candidates and
+  POST /netpay/gmail/oauth/start returned HTTP 403.
+- Cause: the Gate B web overlay supplied no local subject/token and the current database had no
+  Principal or Membership. No productive session existed or was expected in deterministic mode.
+- Correction: one active local Principal with exactly one active Membership in organization
+  Netpay Gmail Pilot, role netpay_inbox_operator.
+- Effective permission set: netpay.inbox.read and netpay.inbox.manage only.
+- Verification: connections HTTP 200; candidates HTTP 200.
+- Encrypted expected-mailbox binding: PASS; its value was not printed.
+- The failed oauth/start request was rejected by authority before handler execution. It generated
+  no Google URL and made no Google/Gmail request.
+
+Consent-test authority and boundary
+- IG-008 §4.B.4 requires recording whether Workspace Admin trust is required.
+- IG-008 §4.B.10 requires connection and validation of the mailbox and label.
+- IG-008 §9 permits Google intervention after Gate A acceptance and keeps content ingestion
+  closed until Gate B plus manifest acceptance.
+- The consent attempt requests only gmail.readonly and, after exchange, accesses profile and
+  label list only. It does not list or fetch messages.
+- Any user/admin denial, unexpected scope, mailbox mismatch or missing label stops the attempt.
+- No amendment adjustment is required; the attempt has not been executed.
+
+Post-OAuth Gate B checks still required
+- verified Principal, Membership and Organization
+- exact mailbox profile and label ID
+- metadata-only discovery of exactly 10 messages within the 30-day/label boundary
+- operator acceptance of the immutable 10-message HMAC manifest
+
+At the initial preflight stage no OAuth authorization URL had been generated and no Google or
+Gmail API call had occurred. This evidence file records no mailbox message, token, authorization
+code, complete address or raw provider identifier.
+
+Mailbox mismatch remediation
+- A later bounded consent callback returned mailbox_mismatch.
+- Safe binding inspection found one terminal-control character; no complete address was printed.
+- Exact mailbox comparison remains enabled.
+- Synthetic helper tests: 3 passed.
+- Synthetic callback mismatch/replay test: 1 passed, 5 deselected.
+- Mismatch result: zero added connections, zero added credential secrets, attempt consumed, PKCE
+  verifier deleted and replay rejected with HTTP 409.
+- The earlier live rejected attempt was explicitly invalidated locally.
+- Current persisted result: 0 unconsumed OAuth attempts, 1 consumed row, 0 OAuth-attempt files,
+  0 Google connections and 0 credential files.
+- Binding replacement remains an operator action using hidden double entry and `--replace`.
+
+Successful connection verification
+- Protected preflight: all checks PASS, including binding presence and syntax.
+- Persisted Google connections: 1; ready: 1; prior sync executions: 0.
+- Mailbox binding matches the persisted provider account: PASS.
+- Opaque encrypted credential reference: PASS.
+- Stored scope list is exactly gmail.readonly: PASS.
+- Access and refresh credential fields are present: PASS; values not printed.
+- Profile/label revalidation: PASS; no message list/get operation used.
+- Active bounded authority: Principal, netpay_inbox_operator Membership and Organization: PASS.
+- Source items: 0. Candidates: 0. Manifest IDs in credential: 0.
+- Manifest status: none; HMAC entries: 0.
+- Workspace administration: UNVERIFIED. Effective bounded consent succeeded without an
+  administrative denial; no broader policy claim is made.
+- Gate B result: PENDING until exactly ten metadata-only HMAC entries are discovered, reviewed and
+  accepted by the Architecture Authority.
+- Manifest-review UI: 4 focused tests passed; explicit TypeScript traversal and Vite build passed.
+
+Duplicate OAuth remediation
+- Trigger: Connect was selected while the same Organization/account connection was already ready.
+- Sanitized cause: unique-key conflict on organization plus provider account.
+- Original connection after failure: single, ready, profile/label validation PASS, no sync.
+- Duplicate residue before cleanup: 1 unconsumed attempt, 1 PKCE file, 1 orphan credential.
+- Final protected-store state: 1 credential file, 1 referenced; 0 unconsumed attempts; 0 PKCE files.
+- New server behavior: HTTP 409 gmail_connection_already_ready before creating another attempt.
+- Racing duplicate callback: preserves existing reference and discards the duplicate result.
+- UI behavior: Connect disabled while a ready/succeeded Google connection exists.
+- Focused fake-Google OAuth test: 1 passed, 5 deselected.
+- Focused Gmail UI tests: 4 passed. Ruff, TypeScript and diff check: PASS.
+
+Exact label boundary
+- Discovery supplies exactly the persisted parent label_id to users.messages.list.
+- Child labels have different immutable IDs and are not included by hierarchy.
+- Child-only message: excluded. Exact-parent-labeled message: included, including when it also has
+  a child label.
+- Operator must apply the exact parent label directly to only the ten pilot messages.
+
+Discovered-manifest UI recovery — 2026-10-10
+- Persisted/API state: discovered; 10 opaque HMAC entries; approved=false; no sync execution.
+- Cause of missing UI: the active Vite server served an older transformed workspace module even
+  though the bind-mounted container source contained the current review component.
+- Action: restarted only the web service. API, database, OAuth connection and encrypted
+  credentials were not changed.
+- Runtime verification: the HTTP-served module contains the manifest-review heading and opaque
+  entry-count text.
+- Focused component verification: 1 file passed, 4 tests passed, including the ten-entry
+  pre-approval rendering.
+- No approval or synchronization was invoked. Gate B remains PENDING and Gate C remains closed.
+
+Gate B acceptance — 2026-10-10
+- Architecture Authority action: the immutable ten-entry HMAC manifest was manually reviewed and
+  approved in Yarvis.
+- Fresh API/database state: 1 connection; ready; no controlled error; mailbox and label verified;
+  manifest approved; 10 entries; approval timestamp present; 0 sync runs; no last sync.
+- Protected store: exactly 10 manifest message IDs; HMAC key present; credential reference opaque.
+  No raw ID, address, token, secret or content was printed.
+- Offline preflight: 11/11 PASS (enabled, Google provider, accepted project, readonly-only scope,
+  callback, 30-day boundary, exact label, scheduler off, worker off, binding present and valid).
+- Workspace administration remains UNVERIFIED. Bounded Internal consent succeeded without an
+  administrative denial; this records effective pilot access and makes no broader Workspace
+  administration claim.
+- First-run enforcement: exact persisted label plus explicit 30-day query bounds, followed by an
+  intersection with the ten protected manifest IDs before any content fetch. The synthetic
+  provider boundary rejects an unmanifested ID and now fails closed unless the protected manifest
+  contains exactly ten distinct IDs. Direct synthetic checks: 2 PASS. Ruff: PASS. A normal host
+  pytest invocation could not resolve the Docker-only `postgres` test hostname; the direct unit
+  invocation avoided that unrelated database fixture and the production runtime was unaffected.
+- Gate B result: PASS. Gate C entry conditions are met for one manual restricted sync only.
+- No sync, approval replay, scheduling or automation was executed during this verification.

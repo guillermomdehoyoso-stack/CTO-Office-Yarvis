@@ -1,0 +1,55 @@
+NETPAY CANDIDATE HUMAN FOLLOW-UP — IG-009 H1 EVIDENCE
+Date: 2026-10-11
+Scope: synthetic isolated runtime only
+
+Authority
+- Ratified design proposal SHA-256: 37eb2c050b768e45364065f24e759ae28e89715e67d34cb8111ea001675ce076
+- Ratified Amendment 021 proposal SHA-256: 5a6c86c6314e6edfb2cc8dc20f1110d527a609c951a2b4f2482f359797897ccd
+- Ratified IG-009 proposal SHA-256: 021b1ed8545f57374c9b9cf85dd5eace8537630d239d37509b654416a15eebd5
+- Contracts: IC-NETPAY-CMD-037, IC-NETPAY-QRY-020, IC-NETPAY-EVT-027
+
+Migration
+- Pre-implementation head: 20261008_49
+- H1 revision/head: 20261011_50; direct parent: 20261008_49
+- Isolated database project: ctooffice_h1 / yarvis_test
+- Proven sequence: upgrade 20261011_50; downgrade 20261008_49; upgrade 20261011_50
+- Final `alembic current` and `alembic heads`: 20261011_50 (head)
+
+Backend verification
+- Command: pytest tests/test_netpay_gmail_intake.py tests/test_canonical_contracts.py -q
+- Result: 16 passed in 47.59s; three environment warnings only (Starlette deprecation and read-only pytest cache).
+- Synthetic coverage: all five kinds; null and supplied occurred_at; server actor/recorded time/provenance;
+  same-key replay; changed-payload conflict; cross-Organization command/query; stable chronology; fresh-session
+  row/Event readback; unlinked candidate; unchanged source fingerprint, candidate state/extraction, owner,
+  disposition and next action; safe Event without note text.
+- Static: Ruff passed; Python compileall passed; no update/delete follow-up route exists.
+
+Frontend verification
+- Focused Vitest: 6 passed in 3.88s.
+- Focused TypeScript: `tsc --noEmit` for API client and Gmail workspace passed.
+- Vite production build: 109 modules transformed; passed in 1.12s; output kept outside repository.
+- Real browser: Playwright CLI 1.64.0 with installed Microsoft Edge against 127.0.0.1:5174.
+- Browser result: 2 passed in 4.9s. The synthetic flow reviewed an exact note, submitted with a double click,
+  rendered one chronology entry, read it back after full reload, showed operator attribution, and kept evidence
+  sections separate. Blank-note submission remained disabled.
+- Ephemeral reports/traces: operating-system temporary directory only; not Git candidates.
+
+Negative controls
+- No Gmail provider call, synchronization, manifest change, attachment download or OAuth action occurred.
+- No real mailbox content, note, address or identifier appears in this evidence file.
+- No owner link, disposition, next-action change or case creation was performed by follow-up recording.
+- The real Rock N' Wok note was not created or preloaded.
+- IG-008 Gates A/B/C remain PASS; Gmail remains limited to the approved pilot.
+
+Result
+IG-009 H1: PASS
+D3 and D2-Lite remain unauthorized.
+
+Pilot runtime availability addendum — 2026-10-11
+- Initial discrepancy: 5173/8000 processes were stale and the pilot database remained at 20261008_49.
+- Activation: forward migration to 20261011_50; restart of API and web only.
+- Runtime checks: current Vite module present; H1 OpenAPI path present; pilot Alembic current=head 20261011_50.
+- Edge read-only check on 5173: follow-up GET 200; heading/form/optional date/empty chronology visible;
+  blank review disabled; zero rows before and after; zero follow-up Events; owner/disposition unchanged.
+- No note was entered and no business mutation or Gmail action occurred.
+- Pilot-runtime H1 availability: PASS, recorded separately from synthetic conformance.

@@ -1,0 +1,33 @@
+{
+  "applicability": {
+    "applicant_kinds": ["persona_fisica", "persona_moral"],
+    "initial_scope_exclusion": "ecommerce_without_physical_establishment_pending_confirmation",
+    "products": ["tpv", "ecommerce", "mixed"]
+  },
+  "approval_status": "proposed_not_approved",
+  "canonicalization": "UTF-8 exact file bytes; LF line endings; no BOM",
+  "effective_date_proposed": "2026-10-14",
+  "owner_proposed": "Responsable del proceso de Altas Netpay (persona nominal por designar)",
+  "provenance_kind": "operator_reported",
+  "requirements": [
+    {"key":"applicant_or_representative_government_id","label":"INE del titular o del representante legal","scope":"applicant_or_representative","persona_fisica":"required_for_holder","persona_moral":"required_for_legal_representative","products":["tpv","ecommerce","mixed"],"maximum_age_days":null,"review":"Registrar el titular observado; corresponde al titular para persona física y al representante legal para persona moral."},
+    {"key":"branch_address_proof","label":"Comprobante de domicilio del local comercial","scope":"branch","persona_fisica":"required","persona_moral":"required","products":["tpv","ecommerce","mixed"],"maximum_age_days":60,"review":"Registrar sucursal, dirección y fecha documental; evaluar antigüedad contra la fecha de revisión humana; e-commerce sin establecimiento físico pendiente."},
+    {"key":"receiving_account_bank_statement","label":"Estado de cuenta bancario","scope":"client_receiving_account","persona_fisica":"required","persona_moral":"required","products":["tpv","ecommerce","mixed"],"maximum_age_days":60,"sharing":"Una evidencia puede cubrir varias sucursales que comparten la misma cuenta receptora mediante referencias explícitas, sin duplicar el documento.","review":"Registrar titular, cuenta receptora identificable y fecha documental; evaluar antigüedad contra la fecha de revisión humana."},
+    {"key":"tax_status_certificate","label":"Constancia de Situación Fiscal","scope":"client_receiving_account","persona_fisica":"required","persona_moral":"required","products":["tpv","ecommerce","mixed"],"maximum_age_days":60,"review":"Registrar titular y fecha documental; evaluar antigüedad y comparar titular con el estado de cuenta."},
+    {"key":"branch_premises_photos","label":"Cuatro fotos por cada sucursal: dos del interior y dos de la fachada","scope":"branch","persona_fisica":"required","persona_moral":"required","products":["tpv","ecommerce","mixed"],"maximum_age_days":null,"review":"Contabilizar por cada sucursal dos fotos interiores y dos de fachada; no compartir cumplimiento entre sucursales; e-commerce sin establecimiento físico pendiente."},
+    {"key":"incorporation_instrument","label":"Acta constitutiva","scope":"client","persona_fisica":"not_applicable","persona_moral":"required","products":["tpv","ecommerce","mixed"],"maximum_age_days":null,"review":"Aplicar sólo a persona moral y registrar revisión humana."},
+    {"key":"legal_representative_authority","label":"Poder del representante legal","scope":"representative_client","persona_fisica":"not_applicable","persona_moral":"required","products":["tpv","ecommerce","mixed"],"maximum_age_days":null,"review":"Aplicar sólo a persona moral; no inferir facultades legales no revisadas."},
+    {"key":"applicant_or_representative_rfc","label":"RFC del titular o del representante legal","scope":"applicant_or_representative","persona_fisica":"required_for_holder","persona_moral":"required_for_legal_representative","products":["tpv","ecommerce","mixed"],"maximum_age_days":null,"review":"Registrar el RFC observado del titular para persona física o del representante legal para persona moral."},
+    {"key":"applicant_or_representative_mobile","label":"Celular del titular o del representante legal","scope":"applicant_or_representative","persona_fisica":"required_for_holder","persona_moral":"required_for_legal_representative","products":["tpv","ecommerce","mixed"],"maximum_age_days":null,"review":"Registrar el celular del titular para persona física o del representante legal para persona moral."},
+    {"key":"applicant_or_representative_email","label":"Correo electrónico del titular o del representante legal","scope":"applicant_or_representative","persona_fisica":"required_for_holder","persona_moral":"required_for_legal_representative","products":["tpv","ecommerce","mixed"],"maximum_age_days":null,"review":"Registrar el correo del titular para persona física o del representante legal para persona moral."},
+    {"key":"branch_manager_contact","label":"Nombre, teléfono y correo electrónico del encargado del comercio","scope":"branch","persona_fisica":"required","persona_moral":"required","products":["tpv","ecommerce","mixed"],"maximum_age_days":null,"sharing":"Una persona puede atender varias sucursales mediante relaciones explícitas a un único contacto, sin duplicar datos.","review":"Registrar los tres datos por cada sucursal; no identificar automáticamente al encargado como titular o representante legal; e-commerce sin establecimiento físico pendiente."},
+    {"key":"ecommerce_domain_ownership","label":"Comprobante de propiedad del dominio","scope":"ecommerce","persona_fisica":"required_by_product","persona_moral":"required_by_product","products":["ecommerce","mixed"],"maximum_age_days":null,"review":"Registrar dominio y evidencia revisada de propiedad; no inferir por nombre o correo."}
+  ],
+  "title": "Catálogo documental H2-D Netpay",
+  "title_matching": {"left":"tax_status_certificate.holder","operator":"human_reviewed_correspondence","right":"receiving_account_bank_statement.holder","outcomes":["matches","does_not_match","undetermined"]},
+  "unresolved": [
+    "Confirmar aplicabilidad de comprobante de domicilio, fotografías y datos del encargado para e-commerce sin establecimiento físico; fuera del alcance inicial propuesto."
+  ],
+  "validity_evaluation": {"applies_to":["branch_address_proof","receiving_account_bank_statement","tax_status_certificate"],"document_date_required_for_evaluation":true,"maximum_age_days":60,"reference_date":"server_recorded_human_review_date","rule":"age_days = review_date - document_date; satisfies when 0 <= age_days <= 60; a future document date is observed and does not satisfy"},
+  "version": "1.0.0"
+}

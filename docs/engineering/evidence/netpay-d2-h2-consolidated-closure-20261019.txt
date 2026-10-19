@@ -1,0 +1,92 @@
+Yarvis–Netpay D2/H1/H2 consolidated closure evidence
+Date: 2026-10-19
+Branch: feat/netpay-gmail-intake-sentinel
+Base HEAD before closure: b6bc5930ae8b608ff55aa9849e995cb7639966d7
+
+SCOPE
+
+This record covers the accumulated D2, H1, H2-Q, H2-I, H2-D and navigation
+implementation authorized by Amendments 020–022 and IG-008–IG-010. D1 was
+already versioned. D3, D2-Lite, P2, attachment content/OCR, Drive, automation,
+external communications, the Netpay Commerce Attention Portfolio and the
+proposed architectural simplification remain excluded.
+
+This is engineering conformance evidence. It is not regulatory evidence and
+does not claim the assurance level used for Energy Tracer.
+
+EVIDENCE LAYERS
+
+Historical evidence remains in its original dated records. It is not rewritten
+or treated as proof of later bytes.
+
+The initial consolidated validation used an isolated PostgreSQL 16 database,
+an internal Docker network, no published ports or host mounts and synthetic
+fixtures. Alembic had one head, 20261014_52, and the upgrade -> downgrade base
+-> upgrade round-trip passed. Ruff configured, compileall, Vitest (74 tests in
+17 files) and the Vite production build passed. The full backend run produced
+739 passes and three failures: two caused by container overrides of the
+migration URL and workspace corpus root, and one stale bootstrap expectation of
+143 contracts instead of the registered 156. The two environment failures
+passed after restoring the repository defaults and expected synthetic corpus.
+
+The H2-D existing-dossier browser test also found a stale expectation: it
+required a disabled `Crear expediente de alta` button although the implemented
+and mandated create-once behavior hides creation after a dossier exists. The UI
+already showed the existing dossier and continuation controls without issuing a
+mutation.
+
+CORRECTIONS
+
+- Bootstrap now derives its composition count from CANONICAL_CONTRACTS. The
+  canonical test independently requires 156 contracts, 156 unique IDs and the
+  distribution 72 Command, 39 Query, 43 Event and 2 Notification.
+- The ten H2 contracts CMD-038..042, QRY-021..022 and EVT-028..030 carry exact
+  Amendment 022 and IG-010 traceability references.
+- The H2-D Playwright test requires the existing dossier readback, absence of
+  the creation action, a visible continuation action and zero readback
+  mutations.
+- H2-I continues to delegate creation to owner CMD-020 and covers real
+  concurrent transactions, equivalent replay, conflicting payload, tenant
+  isolation, no duplicates, no partial effects and no Master or case creation.
+
+FINAL VALIDATION
+
+Validation against the final code, tests and configuration bytes produced:
+
+- Alembic: one head, 20261014_52; the linear 20261008_49 -> 20261011_50 ->
+  20261012_51 -> 20261014_52 chain and upgrade head -> downgrade base ->
+  upgrade head round-trip passed in disposable PostgreSQL.
+- Backend: the first full run collected 743 tests and produced 742 passes and
+  one failure caused by a disposable-runner corpus-root override. After the
+  runner alone was restored to the canonical /workspace-repository root, the
+  failed test passed. The effective final tree result is 743 demonstrated
+  passes. The focused canonical-contract suite passed 32 tests.
+- Static checks: configured Ruff, focused Ruff, compileall and focused Netpay
+  Pyright passed. Configured Pyright retained only the three diagnostics in
+  tests/test_productive_auth.py reproduced against HEAD and recorded below.
+- Frontend: Vitest passed 74 tests in 17 files; the Vite production build
+  passed with 109 modules.
+- Browser: global navigation plus D2 and H1 passed three scenarios; H2-I
+  create/readback passed one scenario; H2-D existing-dossier readback passed
+  one scenario. All browser data was synthetic and all traffic stayed on the
+  isolated internal network.
+
+Documentation-only completion was followed by the repository documentary
+validators and git diff --check; their final results accompany this record in
+the closure report.
+
+PREEXISTING DEBT AND COVERAGE LIMITS
+
+The configured global Pyright run has three diagnostics in
+tests/test_productive_auth.py, reproduced against HEAD and unrelated to Netpay.
+Direct Ruff findings in netpay_inbox.py are historical debt; the configured
+Ruff gate passes and no finding occurs on added lines. The repository declares
+no canonical TypeScript check script and has no tsconfig.json, so an independent
+tsc gate is NOT CONFIGURED / COVERAGE GAP. Vitest and the Vite build retain
+their independent results.
+
+ISOLATION
+
+No Gmail account, Google API, OAuth flow, productive secret, pilot service or
+real data was accessed. All records used by tests and browsers were synthetic.
+No operational dossier, Master or NetpayServiceCase was created.

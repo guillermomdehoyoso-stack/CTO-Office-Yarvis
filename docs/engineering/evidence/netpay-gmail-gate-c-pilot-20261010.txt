@@ -1,0 +1,128 @@
+Netpay Gmail Gate C restricted pilot evidence — 2026-10-10 America/Mexico_City
+
+Status
+- Gate A: PASS.
+- Gate B: PASS.
+- Gate C: PENDING.
+- D3, D2-Lite, scheduling and automation: NOT AUTHORIZED.
+
+Operator attempt
+- Manual sync clicks: 2.
+- Persisted runs: 2.
+- Run 1: succeeded; captured 0; deduplicated 0; conflicts 0; failed 0; failure none.
+- Run 2: succeeded; captured 0; deduplicated 0; conflicts 0; failed 0; failure none.
+- Source items: 0; unique source message IDs: 0.
+- Candidates: 0; unique candidate source references: 0; orphan candidates: 0.
+- Derived Events: sync started 2; sync completed 2; source captured 0; source deduplicated 0;
+  candidate created 0.
+- No content, raw Gmail ID, address, token, secret or callback parameter is recorded here.
+
+Finding
+- The OAuth profile history cursor was incorrectly treated as the first accepted incremental
+  cursor. Both requests therefore queried incremental history and returned no manifest content.
+- With zero persisted source items, manifest membership is vacuously true and does not establish
+  the required real-message trace.
+- The frontend permitted a second click while the first operation was active. The two requests
+  completed sequentially without data duplication, but explicit overlap protection was missing.
+
+Remediation
+- Initial Google content read ignores a bootstrap cursor until a source item has been persisted.
+- Google content fetch still requires exactly ten distinct protected manifest IDs and intersects
+  list/history results with those IDs before messages.get.
+- Frontend serializes operations and blocks the sync control while active.
+- Backend serializes sync by connection and returns gmail_sync_in_progress for overlap/running state.
+
+Verification
+- Focused backend: 1 passed, 6 deselected.
+- Focused frontend: 5 passed.
+- Synthetic manifest boundary: 2 passed earlier in this Gate C preparation.
+- Ruff: PASS. Compileall: PASS. Vite production build to temporary output: PASS.
+- Ad-hoc TypeScript invocation was not a valid project check because this package has no tsconfig
+  and lacks standalone React type declarations; no TypeScript PASS is claimed from that command.
+- Runtime API restarted with the remediation; no additional sync executed.
+
+Remaining Gate C evidence
+- Nonzero real source-to-candidate result bounded to approved manifest IDs.
+- Candidate review in Yarvis, reload and fresh database-session readback.
+- A post-success idempotent retry with no duplicate source, candidate, owner link or Event effect.
+- Final mutation-negative and safe evidence review.
+
+Local candidate review correction — 2026-10-10
+- No Gmail call, sync, attachment download or manifest change occurred.
+- Current persisted counts: 3 runs; run captures 0, 0 and 10; 10 unique source items; 10
+  candidates; 10 unique candidate-source references; 0 reviewed dispositions; 0 owner links. The
+  ten source IDs exactly equal the ten protected approved-manifest IDs; no identifier was recorded.
+- The first reviewed projection was corrected locally only after a fresh guard confirmed no human
+  decision. The immutable source, source fingerprint, source reference and candidate identity were
+  preserved.
+- Result properties recorded without mailbox content: support/incident classification; normal
+  priority; pending link; observed subject name and untyped identifier present; explicit request
+  present; 3 reported claims attributed and unverified; no ticket; no automatic owner link; review
+  description no longer duplicated; D2 rules v2.
+- Future MIME rule: plain-only PASS; HTML-only PASS; multipart/alternative selects plain once PASS;
+  attachment bytes remain unread.
+- Tests: focused backend 7 passed; direct extraction/reprocessing 3 passed; frontend 5 passed.
+  Ruff, compileall, Vite production build and diff check passed.
+- Gate C remains PENDING for corrected visual review, post-success idempotent retry and final safe
+  mutation-negative/readback evidence.
+
+Pre-retry baseline — 2026-10-10
+- The operator visually accepted the corrected Rock N' Wok candidate presentation. No disposition,
+  owner link or candidate mutation was made.
+- Fresh database-session aggregate readback: sources 10; distinct source message identities 10;
+  candidates 10; distinct candidate-source references 10; owner links 0; reviewed decisions 0;
+  immutable decisions 0; sync runs 3; maximum Gmail DomainEvent sequence 27.
+- Event baseline: source connected 1; manual sync started 3; manual sync completed 3; source item
+  captured 10; intake candidate created 10. No candidate-reviewed or source-deduplicated Event is
+  present at baseline.
+- Connection state is succeeded and active running syncs are 0. The approved manifest remains
+  unchanged. This is the safe comparison point for exactly one operator-triggered retry.
+- Visible translations were completed for request types, workflow states, extracted fields,
+  provenance, verification, attribution and missing-data keys. Original persisted values remain in
+  the collapsed technical JSON.
+- Focused frontend tests: 5 passed. Vite production build to an ephemeral directory: PASS.
+  `git diff --check`: PASS.
+- Gate C remains PENDING. Do not declare idempotency or mutation-negative PASS until the single
+  retry completes and a fresh session proves the post-retry counts and Event delta.
+
+Controlled retry and Gate C closure — 2026-10-11
+- The operator triggered exactly one further manual sync. No agent-initiated sync occurred.
+- Run 4: succeeded; captured 0; deduplicated 0; conflicts 0; failed 0; failure none; no active run.
+  This empty incremental-cursor result alone does not exercise replay deduplication.
+- Fresh-session comparison supplies the remaining evidence: sources stayed 10/10 unique;
+  candidates stayed 10/10 unique by source; owner links, dispositions and immutable candidates
+  stayed 0/0/0; captured and candidate-created Events stayed 10/10. Only one new sync-started and
+  one sync-completed audit Event were added (maximum Gmail event sequence 27 to 29). Database
+  uniqueness protects source identity and candidate-per-source identity. Previously accepted
+  synthetic replay tests exercise provider redelivery and prove two messages are deduplicated
+  without a second candidate or capture Event. Together these facts establish retry idempotency;
+  the empty real run is not used as the sole proof.
+- Mutation-negative inspection remains valid: the productive adapter requests only
+  `gmail.readonly` and exposes profile/label get, message list/get and history list. There is no
+  send, draft, modify, label mutation, archive, trash/delete, attachment download, watch,
+  scheduler, worker, webhook or Pub/Sub path. The real retry used the same read-only adapter.
+- A new attempt to rerun three focused synthetic tests from the host did not start because its test
+  configuration resolves Docker hostname `postgres`, unavailable from the host process. This is an
+  environment setup error, not a test failure; the previously accepted backend evidence is not
+  replaced or restated as a new pass. Frontend translation tests and build passed after the latest
+  UI-only change.
+- IG-008 criteria 1-14 were reviewed. Connection/run/error visibility, bounded manifest ingestion,
+  combined real/synthetic idempotency evidence, cursor preservation, tenant/use-time authority,
+  protected traceability, D2 extraction/correlation, fact/inference separation, at-most-once owner
+  contracts, browser reload/fresh-session readback, mutation-negative controls, safe evidence and
+  required accumulated checks are satisfied. One candidate received the required human review;
+  no owner disposition was warranted or invented. Reviewing the other nine is operational work,
+  not a Gate C prerequisite.
+
+Post-gate operator edit — excluded from retry comparison
+- After recording the sequence-29 retry baseline, one idempotent `IC-NETPAY-CMD-018` edit updated
+  the reviewed candidate's proposed next action to verify the internal operational form status,
+  record post-meeting pending actions and separately confirm whether a ticket exists.
+- Readback: one receipt; state `needs_review`; no owner link, disposition, immutability or explicit
+  deadline. The edit created one candidate-reviewed Event (maximum sequence 30). Browser reload
+  reproduced the action and state with technical sections collapsed and no horizontal overflow.
+- The append-only attributed candidate follow-up-note capability remains an MVP gap. No source,
+  extracted fact or mailbox evidence was changed.
+
+Gate C: PASS — restricted real-pilot evidence established. D3, D2-Lite, scheduling, Pub/Sub,
+webhooks, automation and every Gmail mutation remain unauthorized.

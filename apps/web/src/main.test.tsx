@@ -18,14 +18,24 @@ describe('Yarvis web app', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ pending_reports: 2, critical_stores: 1, churn_candidates: 3, assets_without_store: 0, identity_conflicts: 0 }) });
 
     render(
-      <MemoryRouter initialEntries={[('/')]}>
+      <MemoryRouter initialEntries={[('/mission-control')]}>
         <App />
       </MemoryRouter>,
     );
 
     expect(await screen.findByRole('heading', { name: /mission control/i })).toBeTruthy();
     expect(await screen.findByText(/pending reports/i)).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Netpay Inbox' }).getAttribute('href')).toBe('/netpay-inbox');
+    expect(screen.getByRole('link', { name: 'Operación Netpay' }).getAttribute('href')).toBe('/netpay-inbox');
+  });
+
+  it('shows three primary destinations, groups the rest in Más and marks the active section', async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+    render(<MemoryRouter initialEntries={['/netpay-data']}><App /></MemoryRouter>);
+    expect(screen.getByRole('link', { name: 'Operación Netpay' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Solicitudes Gmail' }).getAttribute('href')).toBe('/netpay-inbox/gmail');
+    expect(screen.getByRole('link', { name: 'Datos Netpay' }).className).toContain('global-nav-active');
+    expect(screen.getByText('Más').closest('details')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Mission Work' }).closest('details')).toBeTruthy();
   });
 
   it('allows sending a message and confirming context', async () => {
@@ -55,7 +65,7 @@ describe('Yarvis web app', () => {
     fetchMock.mockRejectedValueOnce(new Error('boom'));
 
     render(
-      <MemoryRouter initialEntries={[('/')]}>
+      <MemoryRouter initialEntries={[('/mission-control')]}>
         <App />
       </MemoryRouter>,
     );

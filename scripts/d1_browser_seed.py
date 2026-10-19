@@ -1,7 +1,14 @@
 """Reset and seed the isolated PostgreSQL database for the D1 browser run."""
 
+from datetime import datetime, timedelta, timezone
+
 from yarvis_api.main import app
 from yarvis_api.models import Base
+from yarvis_api.models.netpay_gmail_intake import (
+    NetpayGmailConnection,
+    NetpayGmailSourceItem,
+    NetpayIntakeCandidate,
+)
 from yarvis_api.models.netpay_master import NetpayBranch, NetpayClient, NetpayCompany, NetpayStoreReference
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.principal import Principal, PrincipalMembership
@@ -65,6 +72,82 @@ def main() -> None:
                 source_type="synthetic",
                 created_by_principal_id=operator.id,
                 updated_by_principal_id=operator.id,
+            )
+        )
+        connection = NetpayGmailConnection(
+            organization_id=org.id,
+            provider_account_id="pilot@example.invalid",
+            provider_kind="fake",
+            credential_secret_ref="memory://netpay-gmail/synthetic-browser",
+            label_id="LABEL_SYNTHETIC_NETPAY",
+            state="succeeded",
+            last_sync_at=datetime.now(timezone.utc),
+            mailbox_verified_at=datetime.now(timezone.utc),
+            manifest_status="approved",
+            manifest_entries=[],
+            manifest_approved_at=datetime.now(timezone.utc),
+            created_by_principal_id=operator.id,
+            updated_by_principal_id=operator.id,
+        )
+        db.add(connection)
+        db.flush()
+        source = NetpayGmailSourceItem(
+            organization_id=org.id,
+            connection_id=connection.id,
+            provider_account_id="pilot@example.invalid",
+            gmail_message_id="synthetic-browser-message-001",
+            gmail_thread_id="synthetic-browser-thread-001",
+            provider_received_at=datetime.now(timezone.utc) - timedelta(days=2),
+            sender="synthetic.sender@example.invalid",
+            recipient="pilot@example.invalid",
+            subject="Detalle de Envío - Caso 00199130",
+            plain_excerpt=(
+                "Producto: Rollo Individual 18 mts Netpay; Cantidad: 18; Paquetería: FedEx; "
+                "Guía: 878325984682; Estado: Esperando recolección; Número de serie: vacío"
+            ),
+            source_fingerprint="0" * 64,
+            attachment_metadata=[],
+            provenance={"provider": "fake", "label_id": "LABEL_SYNTHETIC_NETPAY"},
+        )
+        db.add(source)
+        db.flush()
+        db.add(
+            NetpayIntakeCandidate(
+                organization_id=org.id,
+                source_item_id=source.id,
+                connection_id=connection.id,
+                source_fingerprint=source.source_fingerprint,
+                received_at=source.provider_received_at,
+                state="pending_link",
+                request_type="consumable_shipment",
+                product="not_applicable",
+                description=source.plain_excerpt,
+                ticket_references=["00199130"],
+                commerce_hints=[],
+                terminal_serials=[],
+                shipment_facts={
+                    "carrier": "FedEx",
+                    "tracking_number": "878325984682",
+                    "reported_state": "Esperando recolección",
+                },
+                facts=[{"field": "ticket", "value": "00199130", "source": "message_text"}],
+                inferences=[
+                    {
+                        "field": "shipment_interpretation",
+                        "value": "reported_state_only; delivery, activation and return remain unconfirmed",
+                        "basis": "non_inference_guardrail",
+                    }
+                ],
+                contradictions=[],
+                missing_data=["verified_commerce_identifier", "terminal_serial"],
+                correlation_key="ticket:00199130",
+                priority="normal",
+                suggested_next_action="Vincular el comercio con un identificador verificable",
+                follow_up_at=datetime.now(timezone.utc) - timedelta(days=1),
+                extraction_method="deterministic",
+                extraction_version="d2-rules-v1",
+                confidence=0.75,
+                extraction_reasons=["shipment_evidence"],
             )
         )
         db.commit()

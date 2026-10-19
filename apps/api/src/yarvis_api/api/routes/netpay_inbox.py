@@ -1,4 +1,5 @@
 """Tenant-owned Netpay Inbox core. B2 operations intentionally have no route."""
+from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json
 from datetime import datetime, timezone
@@ -183,13 +184,54 @@ def _commercial_event(db,e,item,c,event_type):
     record_event(db,event_type=event_type,aggregate_type="netpay_commercial_intake",aggregate_id=item.id,organization_id=e.organization_id,correlation_id=c,causation_id=c,payload={"commercial_intake_id":str(item.id),"status":item.status,"actor_principal_id":str(e.principal_id)})
 
 
+@dataclass(frozen=True)
+class CommercialIntakeDraft:
+    kind: str
+    channel: str
+    received_at: datetime
+    provisional_company_name: str | None
+    provisional_contact_name: str | None
+    product_interest: str
+    summary: str
+    priority: str
+    assignee_principal_id: UUID | None
+    assign_to_self: bool
+    next_action: str | None
+    due_date: datetime | None
+
+
+def execute_create_commercial_intake(
+    db: Session, envelope: IdentityAuthorityEnvelope, idempotency_key: str, draft: CommercialIntakeDraft
+) -> tuple[int, dict]:
+    """Execute CMD-020 in the caller's transaction; the caller owns the commit."""
+    def mutate(current, correlation):
+        assignee = current.principal_id if draft.assign_to_self else draft.assignee_principal_id
+        _active_member(db, current, assignee)
+        item = CommercialIntakeItem(
+            organization_id=current.organization_id, kind=draft.kind, channel=draft.channel,
+            received_at=draft.received_at, provisional_company_name=draft.provisional_company_name,
+            provisional_contact_name=draft.provisional_contact_name, product_interest=draft.product_interest,
+            summary=draft.summary, priority=draft.priority, assignee_principal_id=assignee,
+            next_action=draft.next_action, due_date=draft.due_date, status="new",
+            created_by_principal_id=current.principal_id, updated_by_principal_id=current.principal_id,
+        )
+        db.add(item)
+        db.flush()
+        _commercial_event(db, current, item, correlation, "netpay_commercial_intake.created")
+        return item, 201
+
+    return _commercial_execute(
+        db, envelope, idempotency_key, "IC-NETPAY-CMD-020", asdict(draft), mutate
+    )
+
+
 @router.post("/contacts",response_model=CommercialIntakeRead,status_code=201)
 def create_commercial_intake(payload:CommercialIntakeCreate,response:Response,idempotency_key:str=Header(...,alias="Idempotency-Key"),db:Session=Depends(get_db),envelope:IdentityAuthorityEnvelope=Depends(authority_envelope)):
- def mutate(e,c):
-  assignee=e.principal_id if payload.assign_to_self else payload.assignee_principal_id
-  _active_member(db,e,assignee)
-  item=CommercialIntakeItem(organization_id=e.organization_id,kind=payload.kind,channel=payload.channel,received_at=payload.received_at,provisional_company_name=payload.provisional_company_name,provisional_contact_name=payload.provisional_contact_name,product_interest=payload.product_interest,summary=payload.summary,priority=payload.priority,assignee_principal_id=assignee,next_action=payload.next_action,due_date=payload.due_date,status="new",created_by_principal_id=e.principal_id,updated_by_principal_id=e.principal_id); db.add(item); db.flush(); _commercial_event(db,e,item,c,"netpay_commercial_intake.created"); return item,201
- try: code,body=_commercial_execute(db,envelope,idempotency_key,"IC-NETPAY-CMD-020",payload.model_dump(mode="python"),mutate); db.commit()
+ try:
+  code,body=execute_create_commercial_intake(
+   db,envelope,idempotency_key,CommercialIntakeDraft(**payload.model_dump(mode="python"))
+  )
+  db.commit()
  except IntegrityError as x: db.rollback(); raise HTTPException(409,"conflict") from x
  response.status_code=code; return body
 

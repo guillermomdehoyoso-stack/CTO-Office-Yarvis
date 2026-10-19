@@ -26,10 +26,18 @@ from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
 from yarvis_api.models.netpay_gmail_intake import (
+    NetpayCandidateCommercialIntakeTrace,
+    NetpayCandidateHumanFollowUp,
+    NetpayCandidateOnboardingDossier,
+    NetpayCandidateQualification,
+    NetpayDossierEvidenceReference,
+    NetpayDossierRequirementReview,
     NetpayGmailCommandReceipt,
     NetpayGmailConnection,
+    NetpayGmailOAuthAttempt,
     NetpayGmailSourceItem,
     NetpayGmailSyncRun,
+    NetpayIntakeCandidate,
 )
 from yarvis_api.models.netpay_inbox import (
     CommercialIntakeCommandReceipt,
@@ -182,4 +190,12 @@ __all__ = [
     "NetpayGmailSyncRun",
     "NetpayGmailSourceItem",
     "NetpayGmailCommandReceipt",
+    "NetpayGmailOAuthAttempt",
+    "NetpayIntakeCandidate",
+    "NetpayCandidateHumanFollowUp",
+    "NetpayCandidateQualification",
+    "NetpayCandidateCommercialIntakeTrace",
+    "NetpayCandidateOnboardingDossier",
+    "NetpayDossierEvidenceReference",
+    "NetpayDossierRequirementReview",
 ]

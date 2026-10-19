@@ -55,6 +55,31 @@ AMENDMENT_019_TRACEABILITY = (
     "IMPLEMENTATION_ROADMAP_AMENDMENT_019.md",
     "IG-007_NETPAY_GMAIL_INTAKE_IMPLEMENTATION_AUTHORIZATION.md",
 )
+AMENDMENT_021_CONTRACT_IDS = (
+    "IC-NETPAY-CMD-037",
+    "IC-NETPAY-QRY-020",
+    "IC-NETPAY-EVT-027",
+)
+AMENDMENT_021_TRACEABILITY = (
+    "IMPLEMENTATION_ROADMAP_AMENDMENT_021.md",
+    "IG-009_NETPAY_CANDIDATE_HUMAN_FOLLOW_UP_AUTHORIZATION.md",
+)
+AMENDMENT_022_CONTRACT_IDS = (
+    "IC-NETPAY-CMD-038",
+    "IC-NETPAY-CMD-039",
+    "IC-NETPAY-CMD-040",
+    "IC-NETPAY-QRY-021",
+    "IC-NETPAY-EVT-028",
+    "IC-NETPAY-EVT-029",
+    "IC-NETPAY-CMD-041",
+    "IC-NETPAY-CMD-042",
+    "IC-NETPAY-QRY-022",
+    "IC-NETPAY-EVT-030",
+)
+AMENDMENT_022_TRACEABILITY = (
+    "IMPLEMENTATION_ROADMAP_AMENDMENT_022.md",
+    "IG-010_NETPAY_ALTA_AND_SECOND_PILOT_BATCH_AUTHORIZATION.md",
+)
 
 CANONICAL_RUNTIME_BASELINE_V1 = (
     (
@@ -187,12 +212,48 @@ CANONICAL_RUNTIME_BASELINE_V1 = (
         "Netpay Gmail intake",
         *_RATIFIED_PLANNED,
     ),
-    ("IC-NETPAY-CMD-031", ContractType.COMMAND, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
-    ("IC-NETPAY-CMD-032", ContractType.COMMAND, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
-    ("IC-NETPAY-CMD-033", ContractType.COMMAND, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
-    ("IC-NETPAY-CMD-034", ContractType.COMMAND, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
-    ("IC-NETPAY-CMD-035", ContractType.COMMAND, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
-    ("IC-NETPAY-CMD-036", ContractType.COMMAND, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
+    (
+        "IC-NETPAY-CMD-031",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-032",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-033",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-034",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-035",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-036",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "Netpay Gmail intake",
+        *_RATIFIED_PLANNED,
+    ),
     ("IC-NETPAY-QRY-014", ContractType.QUERY, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
     ("IC-NETPAY-QRY-015", ContractType.QUERY, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
     ("IC-NETPAY-QRY-016", ContractType.QUERY, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
@@ -206,6 +267,27 @@ CANONICAL_RUNTIME_BASELINE_V1 = (
     ("IC-NETPAY-EVT-024", ContractType.EVENT, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
     ("IC-NETPAY-EVT-025", ContractType.EVENT, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
     ("IC-NETPAY-EVT-026", ContractType.EVENT, "netpay_merchant_operations", "Netpay Gmail intake", *_RATIFIED_PLANNED),
+    (
+        "IC-NETPAY-CMD-037",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "candidate human follow-up",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-020",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "candidate human follow-up",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-027",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "candidate human follow-up",
+        *_RATIFIED_PLANNED,
+    ),
     (
         "IC-NETPAY-CMD-020",
         ContractType.COMMAND,
@@ -561,6 +643,78 @@ AUTH_PROD_IDS = {
     "IC-GOVERNANCE-EVT-002",
 }
 
+CANONICAL_RUNTIME_BASELINE_V1 += (
+    (
+        "IC-NETPAY-CMD-038",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-039",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-040",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-021",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-028",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-029",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-041",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-CMD-042",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-QRY-022",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+    (
+        "IC-NETPAY-EVT-030",
+        ContractType.EVENT,
+        "netpay_merchant_operations",
+        "candidate qualification and promotion",
+        *_RATIFIED_PLANNED,
+    ),
+)
 CANONICAL_CONTRACT_IDS = tuple(contract[0] for contract in CANONICAL_RUNTIME_BASELINE_V1)
 
 
@@ -593,8 +747,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
     assert {
         contract.interaction_contract_id for contract in contracts if contract.interaction_contract_id in AUTH_PROD_IDS
     } == AUTH_PROD_IDS
-    assert len(contracts) == 143
-    assert len({contract.interaction_contract_id for contract in contracts}) == 143
+    assert len(contracts) == 156
+    assert len({contract.interaction_contract_id for contract in contracts}) == 156
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -620,6 +774,10 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
         if contract.interaction_contract_id in ADR_019_CONTRACT_IDS
         else contract.traceability_references == AMENDMENT_019_TRACEABILITY
         if contract.interaction_contract_id in AMENDMENT_019_CONTRACT_IDS
+        else contract.traceability_references == AMENDMENT_021_TRACEABILITY
+        if contract.interaction_contract_id in AMENDMENT_021_CONTRACT_IDS
+        else contract.traceability_references == AMENDMENT_022_TRACEABILITY
+        if contract.interaction_contract_id in AMENDMENT_022_CONTRACT_IDS
         else contract.traceability_references == ()
         for contract in contracts
     )
@@ -629,9 +787,9 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
     contracts = canonical_contracts()
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
-        ContractType.COMMAND: 66,
-        ContractType.QUERY: 36,
-        ContractType.EVENT: 39,
+        ContractType.COMMAND: 72,
+        ContractType.QUERY: 39,
+        ContractType.EVENT: 43,
         ContractType.NOTIFICATION: 2,
     }
     owner_counts = {
@@ -647,7 +805,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
         "knowledge": 3,
         "execution": 6,
         "mission_control": 5,
-        "netpay_merchant_operations": 80,
+        "netpay_merchant_operations": 93,
         "operational_execution": 7,
         "document_registry": 10,
     }
@@ -752,7 +910,7 @@ def test_adr019_contracts_are_immediately_before_commercial_intake_in_the_assemb
     assembled_ids = tuple(contract.interaction_contract_id for contract in canonical_contracts())
     commercial_intake_index = assembled_ids.index("IC-NETPAY-CMD-020")
 
-    assert assembled_ids[commercial_intake_index - 27 : commercial_intake_index] == (
+    assert assembled_ids[commercial_intake_index - 30 : commercial_intake_index] == (
         "IC-NETPAY-CMD-016",
         "IC-NETPAY-CMD-017",
         "IC-NETPAY-CMD-018",
@@ -762,7 +920,45 @@ def test_adr019_contracts_are_immediately_before_commercial_intake_in_the_assemb
         "IC-NETPAY-EVT-008",
         "IC-NETPAY-EVT-010",
         *AMENDMENT_019_CONTRACT_IDS,
+        *AMENDMENT_021_CONTRACT_IDS,
     )
+
+
+def test_amendment021_contracts_have_exact_ratified_metadata() -> None:
+    by_id = {contract.interaction_contract_id: contract for contract in canonical_contracts()}
+    expected = {
+        "IC-NETPAY-CMD-037": "RecordNetpayCandidateFollowUp",
+        "IC-NETPAY-QRY-020": "ListNetpayCandidateFollowUps",
+        "IC-NETPAY-EVT-027": "NetpayCandidateFollowUpRecorded",
+    }
+    for contract_id in AMENDMENT_021_CONTRACT_IDS:
+        contract = by_id[contract_id]
+        assert contract.name == expected[contract_id]
+        assert contract.owning_capability == "candidate human follow-up"
+        assert contract.lifecycle == ContractLifecycle.RATIFIED
+        assert contract.operational_status == ContractOperationalStatus.PLANNED
+        assert contract.traceability_references == (
+            "IMPLEMENTATION_ROADMAP_AMENDMENT_021.md",
+            "IG-009_NETPAY_CANDIDATE_HUMAN_FOLLOW_UP_AUTHORIZATION.md",
+        )
+
+
+def test_amendment022_contracts_have_complete_traceability() -> None:
+    by_id = {contract.interaction_contract_id: contract for contract in canonical_contracts()}
+
+    assert len(canonical_contracts()) == 156
+    assert len(by_id) == 156
+    assert {
+        kind: sum(contract.contract_type == kind for contract in by_id.values())
+        for kind in ContractType
+    } == {
+        ContractType.COMMAND: 72,
+        ContractType.QUERY: 39,
+        ContractType.EVENT: 43,
+        ContractType.NOTIFICATION: 2,
+    }
+    for contract_id in AMENDMENT_022_CONTRACT_IDS:
+        assert by_id[contract_id].traceability_references == AMENDMENT_022_TRACEABILITY
 
 
 def test_amendment019_contracts_have_exact_ratified_metadata() -> None:

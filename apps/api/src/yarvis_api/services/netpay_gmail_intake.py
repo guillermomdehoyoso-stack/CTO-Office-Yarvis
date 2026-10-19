@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from yarvis_api.models.domain_event import record_event
@@ -20,6 +20,7 @@ from yarvis_api.models.netpay_gmail_intake import (
     NetpayGmailSourceItem,
     NetpayGmailSyncRun,
 )
+from yarvis_api.services.netpay_gmail_classification import create_candidate_from_source
 from yarvis_api.services.netpay_gmail_provider import GmailProviderError, GmailSourceMessage, GmailSourceProvider
 
 MAX_EXCERPT_LENGTH = 4096
@@ -95,7 +96,7 @@ class SyncResult:
 
 
 def _cursor_for(message: GmailSourceMessage) -> str:
-    return f"{message.normalized_received_at().isoformat()}::{message.message_id}"
+    return message.provider_cursor or f"{message.normalized_received_at().isoformat()}::{message.message_id}"
 
 
 def run_manual_sync(
@@ -116,6 +117,16 @@ def run_manual_sync(
     window_start = clock - timedelta(days=backfill_days)
     correlation = correlation_id or uuid4()
     cursor_before = connection.cursor
+    has_persisted_sources = bool(
+        db.scalar(
+            select(func.count())
+            .select_from(NetpayGmailSourceItem)
+            .where(
+                NetpayGmailSourceItem.organization_id == connection.organization_id,
+                NetpayGmailSourceItem.connection_id == connection.id,
+            )
+        )
+    )
     run = NetpayGmailSyncRun(
         organization_id=connection.organization_id,
         connection_id=connection.id,
@@ -134,6 +145,10 @@ def run_manual_sync(
             provider_account_id=connection.provider_account_id,
             label_id=connection.label_id,
             query=connection.query,
+            credential_secret_ref=connection.credential_secret_ref,
+            cursor=connection.cursor if connection.provider_kind == "google" and has_persisted_sources else None,
+            window_start=window_start,
+            window_end=clock,
         )
     except GmailProviderError as error:
         run.status = "failed"
@@ -161,6 +176,7 @@ def run_manual_sync(
         if existing is not None:
             if existing.source_fingerprint == fingerprint:
                 run.deduplicated_count += 1
+                create_candidate_from_source(db, existing)
                 record_event(
                     db,
                     event_type="netpay.gmail.source_item_deduplicated",
@@ -204,7 +220,7 @@ def run_manual_sync(
             source_fingerprint=fingerprint,
             attachment_metadata=_safe_attachments(message.attachments),
             provenance={
-                "provider": "fake",
+                "provider": provider.provider_kind,
                 "label_id": connection.label_id,
                 "query": connection.query,
                 "thread_id_present": bool(message.thread_id),
@@ -212,6 +228,7 @@ def run_manual_sync(
         )
         db.add(source)
         db.flush()
+        candidate = create_candidate_from_source(db, source)
         run.captured_count += 1
         latest_cursor = max(latest_cursor or "", _cursor_for(message))
         record_event(
@@ -223,6 +240,16 @@ def run_manual_sync(
             correlation_id=correlation,
             causation_id=run.id,
             payload={"source_item_id": str(source.id), "thread_id_present": bool(message.thread_id)},
+        )
+        record_event(
+            db,
+            event_type="netpay.gmail.intake_candidate_created",
+            aggregate_type="netpay_intake_candidate",
+            aggregate_id=candidate.id,
+            organization_id=connection.organization_id,
+            correlation_id=correlation,
+            causation_id=source.id,
+            payload={"candidate_id": str(candidate.id), "source_item_id": str(source.id)},
         )
 
     run.status = "partially_failed" if conflict else "succeeded"

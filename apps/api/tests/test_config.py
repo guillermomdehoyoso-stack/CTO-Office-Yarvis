@@ -79,3 +79,43 @@ def test_worker_lease_must_exceed_poll_interval() -> None:
         pass
     else:
         raise AssertionError("invalid worker timing must be rejected")
+def _gmail_settings(**overrides):
+    values = {
+        "gmail_intake_enabled": True,
+        "gmail_provider": "google",
+        "gmail_google_project_id": "synthetic-project",
+        "gmail_oauth_client_id_file": "/safe/client-id",
+        "gmail_oauth_client_secret_file": "/safe/client-secret",
+        "gmail_token_key_file": "/safe/token-key",
+        "gmail_token_store_root": "/safe/token-store",
+        "gmail_mailbox_binding": "file-aesgcm://netpay-gmail/binding",
+    }
+    values.update(overrides)
+    return values
+
+
+def test_gmail_pilot_accepts_only_exact_local_readonly_configuration() -> None:
+    settings = Settings.model_validate(_gmail_settings())
+    assert settings.gmail_oauth_scopes == "https://www.googleapis.com/auth/gmail.readonly"
+    assert settings.gmail_oauth_redirect_uri == "http://127.0.0.1:8000/netpay/gmail/oauth/callback"
+    assert settings.gmail_backfill_days == 30
+    assert settings.scheduler_enabled is False
+    assert settings.worker_enabled is False
+
+
+def test_gmail_pilot_fails_closed_for_scope_runtime_or_callback_expansion() -> None:
+    invalid = (
+        {"gmail_oauth_scopes": "https://mail.google.com/"},
+        {"gmail_oauth_redirect_uri": "http://localhost:8000/other"},
+        {"gmail_backfill_days": 31},
+        {"scheduler_enabled": True},
+        {"worker_enabled": True},
+        {"environment": "test"},
+    )
+    for override in invalid:
+        try:
+            Settings.model_validate(_gmail_settings(**override))
+        except ValidationError:
+            pass
+        else:
+            raise AssertionError(f"Gmail pilot expansion must be rejected: {override}")

@@ -1,0 +1,43 @@
+NETPAY H2-D CONFORMANCE EVIDENCE — 2026-10-14
+
+Authority
+- Amendment 022 and IG-010 ratified.
+- Approved catalog v1.0.0 SHA-256: 4995bf2c1efb96df780249121a68c5d33352eeb5303446638f01a529202c896b.
+- Named pilot operational owner: Guillermo De Hoyos. This is not corporate Netpay approval.
+
+Migration
+- Single Alembic head: 20261014_52; parent: 20261012_51.
+- Isolated database yarvis_h2d_test: full upgrade -> downgrade 20261012_51 -> upgrade head -> current 20261014_52 PASS.
+- Pilot database: forward-only upgrade 20261012_51 -> 20261014_52 PASS. No pilot downgrade.
+
+Backend conformance
+- Command: docker compose exec -T api pytest -q tests/test_netpay_gmail_intake.py -k h2d
+- Result: 1 passed, 9 deselected.
+- Combined H1/H2-Q/H2-D and canonical contract check: 3 passed, 15 deselected.
+- Ruff focal files: PASS. compileall src: PASS.
+- Evidence: immutable version/hash snapshot; terminal-candidate independence; preview; create/review replay;
+  idempotency conflict; organization isolation before replay; all six states; append-only database trigger;
+  stable history/readback; 60-day boundary; holder correspondence; two interior plus two facade photos per
+  branch; one metadata evidence reference shared without duplication; one reviewed manager contact reused by
+  four explicit review references; completeness/blockers; event payload excludes review comments; source,
+  candidate decision and H1 chronology preserved. Filename/MIME metadata never validates a document.
+
+Frontend and runtime
+- Vitest NetpayGmailIntakeWorkspace: 13/13 PASS, including terminal-candidate dossier preview.
+- Vite build in Compose: PASS, 109 modules.
+- HTTP 5173 transformed module contains Expediente de alta, previewCandidateDossier and Crear expediente.
+- OpenAPI contains dossier-preview and dossier/reviews.
+- Microsoft Edge Playwright against http://127.0.0.1:5173: final run 1/1 PASS in 4.6 seconds;
+  full reload passed and request observer saw zero POST/PUT/PATCH/DELETE.
+- Pilot preview showed catalog v1.0.0, products e-commerce/TPV, five branches and 24 pending requirements.
+
+Post-browser pilot readback
+- dossiers=0, dossier reviews=0, dossier evidence references=0.
+- Candidate remains accepted, immutable, owner commercial_intake, reviewed_at present.
+- One promotion trace still targets the same Commercial Intake.
+- Four append-only qualification overlays and one H1 note remain; latest overlay has two products and five branches.
+
+Gate result
+- H2-D PASS within approved physical-location scope.
+- E-commerce without a physical establishment remains excluded.
+- Attachment content/OCR, Drive and P2 remain closed.

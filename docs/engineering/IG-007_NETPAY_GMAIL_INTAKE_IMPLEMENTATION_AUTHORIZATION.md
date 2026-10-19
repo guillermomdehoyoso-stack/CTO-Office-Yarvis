@@ -10,6 +10,25 @@ source slice is implemented and evidenced in this branch. Productive OAuth,
 credential access, real Gmail access, scheduler, Pub/Sub and deployment remain
 outside the execution. **GMAIL INTAKE D3 — NOT AUTHORIZED.**
 
+## Documentary reconciliation — 2026-10-15
+
+The versioned HEAD is `b6bc5930ae8b608ff55aa9849e995cb7639966d7`;
+its parent `95b7aaabcbedd8ebca724ad39d5af524213f46b9` already ratified
+this gate. Section 4 retains the existing local correction: the D1 closure
+proved the source slice only. The broader D2 checklist previously attributed
+to D1 in HEAD is not supported by the D1 evidence and is not repeated here.
+
+D2 was conditional at the IG-007 closure. The later local authority is
+[Amendment 020](IMPLEMENTATION_ROADMAP_AMENDMENT_020.md) and
+[IG-008](IG-008_NETPAY_GMAIL_PRODUCTIVE_PILOT_AND_D2_AUTHORIZATION.md), whose
+historical A/B/C closures are distinct from D1. D2 implementation and those
+later records remain uncommitted; current runtime and whole-tree conformance
+are **TO BE VERIFIED**. No tests were rerun or new PASS issued here.
+
+The phase conditions below retain their original scope. They do not reopen
+D1, re-ratify this gate or authorize Gmail/OAuth, pilot operations, D3,
+D2-Lite, P2, attachment content/OCR, Drive or publication in this execution.
+
 ## 1. Candidate package
 
 | Field | Value |
@@ -20,7 +39,7 @@ outside the execution. **GMAIL INTAKE D3 — NOT AUTHORIZED.**
 | Owner | Netpay Merchant Operations |
 | Design authority | Amendments 014, 018 and ratified 019 |
 | Contract allocation | Existing planned `CMD-016..018`, `QRY-007..008`, `EVT-007/008/010`; ratified next-free D1/D2 IDs in Amendment 019 |
-| Current status | D1 source slice implemented; Evidence Gate passed for synthetic/local D1; D2 conditional |
+| Status at IG-007 closure | D1 source slice implemented; Evidence Gate passed for synthetic/local D1; D2 conditional |
 
 ## 2. Preconditions before any implementation
 
@@ -74,8 +93,8 @@ send/reply, Cloud Run and real pilot are deferred to separate gates.
 
 ### Migration lineage
 
-No migration revision is reserved by IG-007. The reviewed repository has four
-current Alembic heads: `20260712_04`, `20260802_25`, `20260802_26` and
+No migration revision is reserved by IG-007. At mandate preparation, the
+recorded Alembic heads were: `20260712_04`, `20260802_25`, `20260802_26` and
 `20260823_47`. Any future persistence work must resolve the actual heads at
 implementation time, use one valid `down_revision` (or an explicit merge
 revision for multiple heads), and prove `upgrade -> downgrade -> upgrade`.
@@ -84,12 +103,17 @@ ratified by this gate.
 
 ## 4. Evidence Gate for the D1 package
 
-The D1 review verified the D1 source checklist,
-including tenant isolation, exact 30-day bound, label fail-closed behavior,
-message/thread replay, partial failure, classification determinism and AI
-separation, aging/priority/owner/next-action ordering, concurrent human
-acceptance, owner idempotency, readback/reload, migration round-trip, frontend
-typecheck/build, static checks and browser E2E using only synthetic fixtures.
+The D1 review verified only the implemented source slice: tenant isolation,
+the exact 30-day bound, label fail-closed behavior, message/thread replay,
+partial failure without cursor advance, source-item idempotency,
+readback/reload, the four-head merge migration round-trip, relevant backend
+regression and static checks using only synthetic fixtures.
+
+Classification, AI separation, candidate persistence, aging, priority,
+responsible and next-action ordering, human acceptance, owner idempotency,
+frontend candidate review and browser E2E are D2 evidence requirements. They
+were not implemented or accepted by the D1 Evidence Gate and require the
+separate D2 decision described in §3.
 
 The evidence must prove that no email was sent or modified and that no case or
 Commercial Intake item was created automatically. The reproducible record is
@@ -103,10 +127,11 @@ lineage, and leaves existing Inbox/Commercial Intake/Case behavior unchanged.
 Productive OAuth disconnect/revocation is a separate operational act and is not
 performed by this draft.
 
-## 6. Decision requested
+## 6. Historical IG-007 closure decision
 
 `RATIFIED — IMPLEMENTATION AUTHORITY FOR GMAIL INTAKE D1/D2`: the synthetic/local
-D1 source slice is implemented and its Evidence Gate is passed. D2 remains
-conditional and is not implemented. Ratification is not Gmail access, OAuth
+D1 source slice is implemented and its Evidence Gate is passed. At this
+closure, D2 remained conditional and was not implemented; the subsequent
+local D2 record is reconciled above. Ratification is not Gmail access, OAuth
 consent, credential creation, productive implementation or D3 authorization.
 D2-Lite remains a separate decision.

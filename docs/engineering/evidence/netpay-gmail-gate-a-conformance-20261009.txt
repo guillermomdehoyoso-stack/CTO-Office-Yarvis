@@ -1,0 +1,45 @@
+NETPAY GMAIL INTAKE — IG-008 GATE A OFFLINE CONFORMANCE
+Date: 2026-10-09 America/Mexico_City
+Base HEAD: b6bc5930ae8b608ff55aa9849e995cb7639966d7
+Data: synthetic only; no Google OAuth or Gmail access occurred
+
+Authority hashes
+- Amendment 020: 3f407daf60f780ea8e12c836b631952d067a476f019d0fa47c2af138248a4936
+- IG-008: e3810e4f5a0b02b5059b923be4356b78bc53b4e08028de668bc934931cf15b43
+
+Migration
+- Single head: 20261008_49, descending from 20261008_48.
+- Clean upgrade, downgrade, re-upgrade and idempotent second upgrade: PASS.
+
+Backend
+- Relevant regression: 42 passed in 80.47 s.
+- Final Gmail/config/secret set: 18 passed in 40.52 s.
+- Fake Google transport + encrypted store: 3 passed in 18.65 s.
+- Pyright: 0 errors, 0 warnings. Ruff and compileall: PASS.
+- Negative scan for Gmail mutations, drafts, watch, Pub/Sub, webhook and scheduler: no matches.
+
+Frontend
+- Full Vitest: 17 files, 61 tests passed in 31.81 s.
+- Explicit TypeScript traversal: PASS.
+- Vite build: PASS in 1.28 s; output remained under %TEMP%.
+
+Browser E2E
+- Playwright 1.64.0 with installed Microsoft Edge (`channel: msedge`).
+- Web http://127.0.0.1:5174; API http://127.0.0.1:8001.
+- Run 1: 1/1 passed in 5.5 s. Run 2: 1/1 passed in 4.5 s.
+- Covered connection status, pending/overdue candidate, facts/inferences, synthetic source
+  evidence, reload/readback and absence of external mutation controls.
+- SQL readback: pending_link|consumable_shipment|synthetic-browser-message-001|
+  synthetic-browser-thread-001.
+- Browser reports/traces stayed under %TEMP%; no generated artifact is in Git.
+
+Limitations recorded
+- Repository-wide pytest collection requires a repository-root mount for the unrelated
+  test_digitalocean_deploy_package.py; that attempted run is not accepted as evidence.
+- Pyright in python:3.12-slim lacked libatomic.so.1; pinned Pyright ran on Windows with the
+  project virtualenv and passed.
+
+RESULT: GATE A — PASS — OFFLINE IMPLEMENTATION CONFORMANCE ESTABLISHED.
+Gate B remains closed pending an accepted non-secret Google project reuse record and the
+10-message HMAC manifest procedure. Gate C remains closed. Gmail intake is not yet operational.
+D3 and D2-Lite remain unauthorized.

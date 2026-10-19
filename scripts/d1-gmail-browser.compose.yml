@@ -1,0 +1,13 @@
+# Port-isolated overlay for the synthetic IG-008 Gate A browser run.
+services:
+  api:
+    ports: !override
+      - "127.0.0.1:8001:8000"
+    environment:
+      YARVIS_CORS_ORIGINS: http://127.0.0.1:5174
+      YARVIS_CSRF_ALLOWED_ORIGINS: http://127.0.0.1:5174
+  web:
+    ports: !override
+      - "127.0.0.1:5174:5173"
+    environment:
+      VITE_API_BASE_URL: http://api:8001

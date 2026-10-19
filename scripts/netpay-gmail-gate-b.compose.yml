@@ -1,0 +1,18 @@
+# Local-only Gate B runtime. Secrets remain in the host directory supplied by
+# YARVIS_GMAIL_HOST_SECRET_ROOT and are never copied into this repository.
+services:
+  api:
+    env_file:
+      - ${YARVIS_GMAIL_HOST_SECRET_ROOT:?set YARVIS_GMAIL_HOST_SECRET_ROOT}/runtime.env
+    environment:
+      YARVIS_ENVIRONMENT: local
+    volumes:
+      - ${YARVIS_GMAIL_HOST_SECRET_ROOT:?set YARVIS_GMAIL_HOST_SECRET_ROOT}:/run/secrets/netpay-gmail
+      - ./scripts:/workspace-scripts:ro
+  web:
+    environment:
+      VITE_API_BASE_URL: http://127.0.0.1:8000
+      VITE_YARVIS_CAPABILITIES: netpay.inbox.read,netpay.inbox.manage
+      VITE_YARVIS_ORGANIZATION_LABEL: Netpay Gmail Pilot
+      VITE_YARVIS_SUBJECT: netpay-gmail:operator
+      VITE_YARVIS_AUTH_TOKEN: deterministic-inbound-intake
