@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Literal
 from uuid import uuid4
 
 import pytest
@@ -23,6 +24,9 @@ EXPECTED_PERMISSIONS = frozenset(
         "netpay.master.manage",
         "netpay.inbox.read",
         "netpay.inbox.manage",
+        "netpay.portfolio.read",
+        "netpay.portfolio.sensitive.read",
+        "netpay.portfolio.reconciliation.read",
     }
 )
 
@@ -62,7 +66,14 @@ def _organization(session, name="Netpay Local"):
     return organization_id
 
 
-def _provision(session, organization_id, *, environment="local", subject="local:netpay", role=NETPAY_OPERATIONS_ROLE):
+def _provision(
+    session,
+    organization_id,
+    *,
+    environment: Literal["local", "test", "production"] = "local",
+    subject="local:netpay",
+    role=NETPAY_OPERATIONS_ROLE,
+):
     settings = _production_oidc_settings() if environment == "production" else Settings(environment=environment)
     return provision_local_netpay_operator(
         session,
@@ -76,11 +87,9 @@ def _provision(session, organization_id, *, environment="local", subject="local:
 def test_combined_role_is_exact_and_closed():
     assert permissions_for_role(NETPAY_OPERATIONS_ROLE) == EXPECTED_PERMISSIONS
     assert permissions_for_role("netpay_master_operator") == frozenset(
-        {"netpay.master.read", "netpay.master.manage"}
+        {"netpay.master.read", "netpay.master.manage", "netpay.portfolio.read"}
     )
-    assert permissions_for_role("netpay_inbox_operator") == frozenset(
-        {"netpay.inbox.read", "netpay.inbox.manage"}
-    )
+    assert permissions_for_role("netpay_inbox_operator") == frozenset({"netpay.inbox.read", "netpay.inbox.manage"})
     assert all(
         not permission.startswith(
             (

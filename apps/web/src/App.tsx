@@ -12,6 +12,7 @@ import { OperationalRadar } from './components/radar/OperationalRadar';
 import { CommercialIntakeDetail, NetpayCaseDetail, NetpayInboxWorkspace } from './components/netpay/NetpayInboxWorkspace';
 import { NetpayGmailIntakeWorkspace } from './components/netpay/NetpayGmailIntakeWorkspace';
 import { NetpayDataWorkspace } from './components/netpay/NetpayDataWorkspace';
+import { NetpayCommerceAttentionDetail, NetpayCommerceAttentionPortfolio } from './components/netpay/NetpayCommerceAttentionPortfolio';
 import { beginProductiveLogin, loadProductiveSession, productiveLogout } from './api/netpay';
 
 const api = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? '' : 'http://localhost:8000');
@@ -62,6 +63,7 @@ function Layout({ productive = false }: { productive?: boolean }) {
         <NavLink className={active} to="/netpay-inbox">Operación Netpay</NavLink>
         <NavLink className={active} to="/netpay-inbox/gmail">Solicitudes Gmail</NavLink>
         <NavLink className={active} to="/netpay-data">Datos Netpay</NavLink>
+        <NavLink className={active} to="/netpay-portfolio">Cartera operativa</NavLink>
         <details className="global-nav-more"><summary className={moreActive?'global-nav-active':undefined}>Más</summary><div>
           <NavLink className={active} to="/mission-control">Mission Control</NavLink><NavLink className={active} to="/cases">Cases</NavLink><NavLink className={active} to="/conversation">Conversación</NavLink><NavLink className={active} to="/organizations">Organización</NavLink><NavLink className={active} to="/people">Personas</NavLink><NavLink className={active} to="/radar-netpay">Radar Netpay</NavLink><NavLink className={active} to="/recovery-queue">Cola de recuperación</NavLink><NavLink className={active} to="/workspace">Development Workspace</NavLink><NavLink className={active} to="/mission-work">Mission Work</NavLink>
         </div></details>
@@ -82,6 +84,8 @@ function Layout({ productive = false }: { productive?: boolean }) {
         <Route path="/netpay-inbox/contacts/:contactId" element={<CommercialIntakeDetail />} />
         <Route path="/netpay-inbox/:caseId" element={<NetpayCaseDetail />} />
         <Route path="/netpay-data" element={<NetpayDataWorkspace />} />
+        <Route path="/netpay-portfolio" element={<NetpayCommerceAttentionPortfolio />} />
+        <Route path="/netpay-portfolio/:rowKey" element={<NetpayCommerceAttentionDetail />} />
         <Route path="/recovery-queue" element={<RecoveryQueuePage />} />
         <Route path="/workspace/*" element={<WorkspaceShell />} />
         <Route path="/mission-work" element={<MissionWorkQueue />} />

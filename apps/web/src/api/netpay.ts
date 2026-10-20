@@ -53,6 +53,13 @@ export type MasterPage = {
   limit: number;
   total: number;
 };
+export type PortfolioContact = { available: boolean; label: string; source_scope: "client" | "company" | "branch" | null; name: string | null; email: string | null; phone: string | null; verification: string; updated_at: string | null };
+export type PortfolioRow = { row_key: string; entity_scope: "client" | "company" | "branch"; client_id: string; company_id: string | null; branch_id: string | null; store_reference_id: string | null; store_id: string | null; store_reference_count: number; commerce_name: string; legal_name: string | null; branch_name: string | null; masked_rfc: string | null; contact: PortfolioContact; reconciliation_status: string; availability_reasons: string[]; source_badges: { master: boolean; cases_available: number; linked_pre_master: number; unlinked_records: number | null; d1: string; terminals: string }; updated_at: string };
+export type PortfolioDetail = PortfolioRow & { full_rfc: string | null; mid: string; data_quality: string[] };
+export type PortfolioPage = { items: PortfolioRow[]; page: number; page_size: number; total: number; filtered_total: number; pages: number };
+export type PortfolioQuery = { page?: number; page_size?: number; search?: string; entity_scopes?: string[]; reconciliation_statuses?: string[]; has_company?: boolean; has_branch?: boolean; has_store_reference?: boolean; has_contact?: boolean; sort_field?: string; sort_direction?: "asc" | "desc" };
+export type PortfolioReconciliationItem = { record_type: "candidate" | "commercial_intake" | "dossier"; record_id: string; label_hint: string; provenance: string; reconciliation_status: string; reasons: string[]; updated_at: string };
+export type PortfolioReconciliationPage = { items: PortfolioReconciliationItem[]; total: number };
 export type ChecklistItem = {
   id: string;
   requirement_key: string;
@@ -487,6 +494,20 @@ export class NetpayApiClient {
   }
   getMasterDetail(branchId: string) {
     return this.request<NetpayClient>(`/netpay/master/branches/${branchId}`);
+  }
+  listCommerceAttention(query: PortfolioQuery = {}) {
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (Array.isArray(value)) value.forEach((item) => params.append(key, item));
+      else if (value !== undefined && value !== "") params.set(key, String(value));
+    });
+    return this.request<PortfolioPage>(`/netpay/commerce-attention?${params}`);
+  }
+  listCommerceAttentionReconciliation() {
+    return this.request<PortfolioReconciliationPage>("/netpay/commerce-attention/reconciliation");
+  }
+  getCommerceAttentionDetail(rowKey: string, includeSensitive = false) {
+    return this.request<PortfolioDetail>(`/netpay/commerce-attention/${encodeURIComponent(rowKey)}?include_sensitive=${includeSensitive}`);
   }
   createClient(payload: Record<string, unknown>, key: string) {
     return this.request<NetpayClient>(

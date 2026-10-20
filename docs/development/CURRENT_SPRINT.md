@@ -1,5 +1,18 @@
 # Current Sprint
 
+## Commerce Attention Portfolio P0/P1 closure — 2026-10-20
+
+| Field | Current value |
+| --- | --- |
+| Work package | P0/P1 Cartera operativa reportada, implemented and technically closed. |
+| Closed gate | IG-011 PASS with synthetic isolated evidence. |
+| Contracts | QRY-023 and QRY-024 implemented as read-only list/detail. |
+| Permissions | Portfolio general, sensitive-detail and reconciliation scopes are effective with least disclosure. |
+| Operational effect | None; no productive data, Gmail, OAuth, mutation, model or migration. |
+| Next package | P2 commercial performance is proposed and not authorized. P3–P5 remain closed. |
+
+Evidence: [P0/P1 conformance 2026-10-20](../engineering/evidence/netpay-commerce-attention-p0-p1-conformance-20261020.txt).
+
 ## Commerce Attention Portfolio P0/P1 authorization — 2026-10-19
 
 | Field | Current value |

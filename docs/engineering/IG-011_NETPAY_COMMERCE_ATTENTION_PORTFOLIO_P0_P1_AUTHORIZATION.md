@@ -2,12 +2,18 @@
 
 ## Status
 
-**RATIFIED — IMPLEMENTATION AUTHORITY OPEN FOR P0/P1 ONLY**
+**CLOSED — P0/P1 TECHNICAL CONFORMANCE PASS**
 
 **Effective date:** 2026-10-19
 **Requires:** ratified [Amendment 024](IMPLEMENTATION_ROADMAP_AMENDMENT_024.md)
 **Design:** [Netpay Commerce Attention Portfolio Design](NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DESIGN.md)
 **Privacy:** [Portfolio Data, Privacy and Assurance Matrix](NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DATA_PRIVACY_MATRIX.md)
+
+**Closure date:** 2026-10-20
+**Evidence:** [P0/P1 conformance record](evidence/netpay-commerce-attention-p0-p1-conformance-20261020.txt)
+
+The evidence gate passed with isolated PostgreSQL and synthetic fixtures. This
+closure records implementation conformance only and grants no P2–P5 authority.
 
 ## Authorized gate
 

@@ -138,24 +138,33 @@ def test_fake_oidc_full_session_csrf_logout_and_replay(monkeypatch):
             "netpay.inbox.read",
             "netpay.master.manage",
             "netpay.master.read",
+            "netpay.portfolio.read",
+            "netpay.portfolio.reconciliation.read",
+            "netpay.portfolio.sensitive.read",
         ]
         assert client.get("/netpay/data/datasets").status_code == 200
-        assert client.post(
-            "/netpay/data/datasets/00000000-0000-0000-0000-000000000001/reject",
-            headers={"Origin": "https://web.example", "Idempotency-Key": "synthetic-reject"},
-        ).status_code == 403
+        assert (
+            client.post(
+                "/netpay/data/datasets/00000000-0000-0000-0000-000000000001/reject",
+                headers={"Origin": "https://web.example", "Idempotency-Key": "synthetic-reject"},
+            ).status_code
+            == 403
+        )
         denied = client.post("/auth/logout", headers={"Origin": "https://web.example"})
         assert denied.status_code == 403
         csrf = client.cookies.get("yarvis_csrf")
         assert csrf is not None
-        assert client.post(
-            "/netpay/data/datasets/00000000-0000-0000-0000-000000000001/reject",
-            headers={
-                "Origin": "https://web.example",
-                "X-CSRF-Token": csrf,
-                "Idempotency-Key": "synthetic-reject",
-            },
-        ).status_code == 404
+        assert (
+            client.post(
+                "/netpay/data/datasets/00000000-0000-0000-0000-000000000001/reject",
+                headers={
+                    "Origin": "https://web.example",
+                    "X-CSRF-Token": csrf,
+                    "Idempotency-Key": "synthetic-reject",
+                },
+            ).status_code
+            == 404
+        )
         assert (
             client.post("/auth/logout", headers={"Origin": "https://web.example", "X-CSRF-Token": csrf}).status_code
             == 204

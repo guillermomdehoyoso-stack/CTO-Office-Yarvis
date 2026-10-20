@@ -1,6 +1,21 @@
 # Current Engineering State
 
-## Commerce Attention Portfolio P0/P1 authorized — 2026-10-19
+## Commerce Attention Portfolio P0/P1 closed — 2026-10-20
+
+P0/P1 of **Cartera operativa reportada** is implemented and technically closed
+under Amendment 024 and IG-011. QRY-023/QRY-024 provide tenant-scoped read-only
+list/detail, minimized data, masked RFC, deterministic filters/sort/pagination,
+and a separately protected reconciliation queue. The effective permissions are
+`netpay.portfolio.read`, `.sensitive.read`, and `.reconciliation.read`.
+
+Closure evidence is recorded in
+[`netpay-commerce-attention-p0-p1-conformance-20261020.txt`](../engineering/evidence/netpay-commerce-attention-p0-p1-conformance-20261020.txt).
+Validation used synthetic data only and imported no productive data. D1 remains
+not incorporated; MID and terminals have no authorized source. P2 is proposed
+but unauthorized; P3 colors and P4/P5 remain closed. Portfolio preferences are
+transient only and reset on full reload.
+
+## Commerce Attention Portfolio P0/P1 authorization — 2026-10-19
 
 [Amendment 024](../engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_024.md), the
 [lean Portfolio design](../engineering/NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DESIGN.md),

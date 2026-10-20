@@ -1,0 +1,43 @@
+NETPAY COMMERCE ATTENTION PORTFOLIO P0/P1 CONFORMANCE — 2026-10-20
+
+Authority: ratified Amendment 024 and IG-011. Scope: P0/P1 read-only Portfolio only.
+
+Implemented QRY-023 list and QRY-024 detail over the tenant-scoped Netpay Master
+universe. Lowest-unit rows are Branch, Company without Branch, or Client without
+Company. StoreReferences are summarized without duplicating Branch rows.
+
+Permissions are separated: netpay.portfolio.read returns minimized rows and
+masked RFC; netpay.portfolio.sensitive.read expands PII only in detail;
+netpay.portfolio.reconciliation.read enables the separate safe queue. Negative
+tests cover missing/wrong scope, foreign tenant, invalid/foreign row_key, hidden
+PII search, count leakage, list redaction and direct reconciliation access.
+The static /reconciliation route precedes /{row_key} and its 403 negative test
+proves it is not interpreted as a row key.
+
+Frontend evidence covers list/detail, filters, sort, pagination, column selector,
+five synthetic hierarchy variants, multiple StoreReferences, neutral missing-data
+labels, reconciliation permission, redacted detail, and list-detail-list state.
+Portfolio view state is volatile, isolated by client/organization/session
+capability identity, and resets to defaults on full reload. No browser storage is
+used. Playwright observed only GET requests.
+
+Current validation:
+- clean image from pinned requirements; internal Docker network; PostgreSQL 16
+  on tmpfs; no ports or host mounts; synthetic data only;
+- Alembic single head 20261014_52; upgrade head used only to prepare the database;
+- backend full: 745 passed, 3 environmental failures; after correcting only
+  canonical environment/corpus composition, the exact three tests passed;
+- Ruff configured PASS; compileall PASS; Pyright focal PASS;
+- Pyright configured: exactly three preexisting test_productive_auth.py findings;
+- Vitest full PASS (78 tests); final Portfolio focal PASS (4 tests);
+- Vite production build PASS; Playwright Edge Portfolio PASS;
+- git diff checks PASS with line-ending warnings only.
+
+Initial corrections included visibility of multiple StoreReferences, separate
+frontend reconciliation, and removal of persistent Portfolio preferences after
+the ratified design/P5 boundary was reconciled. No historical evidence changed.
+
+No model, migration, write route, receipt, event, contact action, Gmail/OAuth,
+pilot access, productive data, Excel report, secret or real PII was introduced.
+D1, profitability/no-use, MID inference, terminals, P2, P3 colors, P4/P5,
+export, communications and every mutation remain excluded and unauthorized.
