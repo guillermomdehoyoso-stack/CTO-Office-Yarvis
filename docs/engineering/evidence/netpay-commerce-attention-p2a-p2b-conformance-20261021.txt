@@ -1,0 +1,62 @@
+NETPAY COMMERCE ATTENTION P2A/P2B — IG-012 TECHNICAL CONFORMANCE
+Date: 2026-10-21 (America/Mexico_City)
+Authority: Ratified Amendment 025 and IG-012
+Base HEAD: df3dce175adab3e90e6c1c0463d84bf6dba385ea
+Branch: feat/netpay-gmail-intake-sentinel
+Result: TECHNICAL PASS ON LOCAL UNCOMMITTED BYTES; NOT PUBLISHED
+
+Isolation
+- Disposable PostgreSQL 16 used tmpfs storage and a Docker internal network.
+- No host ports or host mounts were used.
+- Fixtures and credentials were synthetic. No productive source, Gmail, OAuth,
+  pilot data, real Excel workbook or secret was used.
+
+Current validation
+- Focused backend: 73 passed.
+- Full backend: 749 passed, 1 third-party deprecation warning.
+- Alembic: single head 20261021_53; parent 20261014_52; the focused migration
+  round-trip test passed on disposable PostgreSQL.
+- Canonical contracts and duplicate/collision tests passed. The canonical
+  contract catalog remains byte-equivalent to HEAD.
+- Ruff configured and changed-file focal: passed.
+- compileall: passed.
+- Pyright focal P2A/P2B: 0 errors. Configured Pyright reports only the three
+  pre-existing test_productive_auth.py diagnostics previously reproduced on
+  HEAD; authentication was not modified.
+- Vitest: 78 passed in 18 files.
+- Vite production build: passed, 110 modules transformed.
+- Playwright Portfolio: 2 passed. The scenarios cover read-only list/detail
+  navigation, transient view restoration, reload defaults, P2 amounts and
+  coverage, individual zero volume, aggregate zero volume and GET-only traffic.
+- git diff --check: passed.
+- Independent TypeScript gate: NOT CONFIGURED / COVERAGE GAP. package.json has
+  no typecheck script and the web package has no tsconfig.json. Vitest and the
+  Vite build retain their own passing results.
+
+Behavior evidenced
+- Decimal/MXN facts preserve source values and scale; legacy Float facts remain
+  classified and are excluded from exact aggregation.
+- Rentabilidad is exposed as distributor commission and Volumen as monthly
+  Store sales; the percentage uses commission / sales for compatible tenant,
+  Store, period and effective version.
+- Totals use ratio of sums, expose compatible/excluded coverage and never
+  average Store percentages. Missing or zero denominator has no numeric result
+  and carries an explicit cause. Negative commission remains negative.
+- Supersession requires explicit predecessor and reason and records actor;
+  equal replay, conflicting replay and real concurrent acceptance retain the
+  original request payload and pass.
+- No-use without confirmed cutoff remains metadata_pending. Authorized metadata
+  completion uses ValidateOperationalDataset idempotency, supports equivalent
+  replay, rejects conflicting replay and contributes no effective temporal
+  indicator before completion.
+- Portfolio P2 queries preserve tenant isolation and permissions and create no
+  D1, Master, case or Portfolio mutation.
+
+Limits
+- This evidence authorizes no productive import, migration, deployment,
+  staging, commit or push.
+- No-use cutoff remains required batch metadata; no filename or receipt-time
+  inference was introduced.
+- P3-P5, MID, terminals, export, communications, D2-Lite, Gmail/OAuth and pilot
+  access remain excluded.
+- Remote state was UNKNOWN because the read-only query could not connect.

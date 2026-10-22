@@ -1,6 +1,7 @@
 """Tenant-owned D1 operational dataset aggregates; never stores source binaries."""
 
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -11,6 +12,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     String,
     UniqueConstraint,
     func,
@@ -30,7 +32,7 @@ class OperationalDataBatch(Base):
             "dataset_type IN ('monthly_store_profitability','no_usage_campaign')", name="ck_netpay_data_batch_dataset"
         ),
         CheckConstraint(
-            "status IN ('uploaded','validating','needs_review','accepted','rejected')",
+            "status IN ('uploaded','validating','needs_review','metadata_pending','accepted','rejected')",
             name="ck_netpay_data_batch_status",
         ),
         Index("ix_netpay_data_batches_org_type_period", "organization_id", "dataset_type", "reporting_period"),
@@ -47,6 +49,14 @@ class OperationalDataBatch(Base):
     preview_token: Mapped[str] = mapped_column(String(64), nullable=False)
     store_state_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="uploaded")
+    source_profile: Mapped[str] = mapped_column(String(64), nullable=False, default="legacy_d1")
+    currency_code: Mapped[str | None] = mapped_column(String(3))
+    completeness_status: Mapped[str] = mapped_column(String(16), nullable=False, default="partial")
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    source_generated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    data_cutoff_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    source_producer: Mapped[str] = mapped_column(String(128), nullable=False, default="Netpay")
+    delivery_channel: Mapped[str | None] = mapped_column(String(128))
     row_counts: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     source_discarded: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     uploaded_by_principal_id: Mapped[UUID] = mapped_column(
@@ -117,6 +127,24 @@ class StoreProfitabilityFact(Base):
     cost: Mapped[float | None] = mapped_column(Float)
     commissions: Mapped[float | None] = mapped_column(Float)
     profitability: Mapped[float | None] = mapped_column(Float)
+    volume_exact: Mapped[Decimal | None] = mapped_column(Numeric(24, 8))
+    distributor_commission_exact: Mapped[Decimal | None] = mapped_column(Numeric(24, 8))
+    source_scale: Mapped[int | None] = mapped_column(Integer)
+    precision_classification: Mapped[str] = mapped_column(
+        String(40), nullable=False, default="legacy_float_precision_unverified"
+    )
+    effective_status: Mapped[str] = mapped_column(String(16), nullable=False, default="effective")
+    predecessor_fact_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_store_profitability_facts.id", ondelete="RESTRICT")
+    )
+    superseded_by_fact_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_store_profitability_facts.id", ondelete="RESTRICT")
+    )
+    correction_reason: Mapped[str | None] = mapped_column(String(255))
+    correction_actor_principal_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("principals.id", ondelete="RESTRICT")
+    )
+    effective_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     no_use_indicator: Mapped[bool | None] = mapped_column(Boolean)
     row_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
@@ -145,6 +173,18 @@ class NoUsageCampaignEntry(Base):
     outcome_code: Mapped[str | None] = mapped_column(String(64))
     follow_up_code: Mapped[str | None] = mapped_column(String(64))
     row_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    effective_status: Mapped[str] = mapped_column(String(16), nullable=False, default="effective")
+    predecessor_entry_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_no_usage_campaign_entries.id", ondelete="RESTRICT")
+    )
+    superseded_by_entry_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_no_usage_campaign_entries.id", ondelete="RESTRICT")
+    )
+    correction_reason: Mapped[str | None] = mapped_column(String(255))
+    correction_actor_principal_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("principals.id", ondelete="RESTRICT")
+    )
+    effective_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 

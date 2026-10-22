@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+from decimal import Decimal
+from uuid import UUID
 
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
@@ -6,10 +8,43 @@ from sqlalchemy import func, select
 from yarvis_api.main import app
 from yarvis_api.models.netpay_inbox import CommercialIntakeItem
 from yarvis_api.models.netpay_master import NetpayBranch, NetpayClient, NetpayCompany, NetpayStoreReference
+from yarvis_api.models.netpay_operational_data import OperationalDataBatch, StoreProfitabilityFact
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.principal import Principal, PrincipalMembership
+from yarvis_api.schemas.netpay_commerce_attention import PortfolioContact, PortfolioP2Metrics, PortfolioRow
+from yarvis_api.services.netpay_commerce_attention import NetpayCommerceAttentionService
 
 client = TestClient(app)
+
+
+def _totals_row(sales: str | None, commission: str | None, suffix: str) -> PortfolioRow:
+    return PortfolioRow(
+        row_key=f"client:00000000-0000-0000-0000-0000000000{suffix}",
+        entity_scope="client",
+        client_id=UUID(f"00000000-0000-0000-0000-0000000000{suffix}"),
+        commerce_name=f"Synthetic {suffix}",
+        contact=PortfolioContact(available=False),
+        updated_at=datetime.now(timezone.utc),
+        p2=PortfolioP2Metrics(
+            monthly_sales_mxn=Decimal(sales) if sales is not None else None,
+            distributor_commission_mxn=Decimal(commission) if commission is not None else None,
+            percentage_status="calculated" if sales not in (None, "0") and commission is not None else "not_calculable",
+        ),
+    )
+
+
+def test_p2_totals_use_ratio_of_sums_and_report_zero_aggregate_denominator() -> None:
+    weighted = NetpayCommerceAttentionService._p2_totals(
+        [_totals_row("100", "10", "01"), _totals_row("300", "15", "02"), _totals_row(None, "9", "03")]
+    )
+    assert weighted.effective_commission_on_sales_percent == Decimal("6.25")
+    assert weighted.compatible_stores == 2 and weighted.excluded_stores == 1
+
+    zero = NetpayCommerceAttentionService._p2_totals(
+        [_totals_row("100", "10", "04"), _totals_row("-100", "-5", "05")]
+    )
+    assert zero.effective_commission_on_sales_percent is None
+    assert zero.percentage_status == "not_calculable" and zero.percentage_reason == "aggregate_volume_zero"
 
 
 def _headers(subject: str) -> dict[str, str]:
@@ -134,6 +169,41 @@ def _setup() -> dict[str, str]:
             updated_by_principal_id=operator.id,
         )
         db.add_all((active_ref, inactive_ref, intake))
+        db.flush()
+        batch = OperationalDataBatch(
+            organization_id=org.id,
+            dataset_type="monthly_store_profitability",
+            reporting_period="2026-09",
+            selected_sheet="Synthetic",
+            sanitized_filename="synthetic.csv",
+            source_hash="a" * 64,
+            preview_token="b" * 64,
+            store_state_hash="c" * 64,
+            status="accepted",
+            source_profile="netpay_monthly_store_v1",
+            currency_code="MXN",
+            completeness_status="partial",
+            row_counts={},
+            uploaded_by_principal_id=operator.id,
+        )
+        db.add(batch)
+        db.flush()
+        db.add(
+            StoreProfitabilityFact(
+                organization_id=org.id,
+                batch_id=batch.id,
+                store_reference_id=active_ref.id,
+                reporting_period="2026-09",
+                volume=1000.0,
+                profitability=-25.0,
+                volume_exact=Decimal("1000.00"),
+                distributor_commission_exact=Decimal("-25.00"),
+                source_scale=2,
+                precision_classification="exact_decimal_source",
+                effective_status="effective",
+                row_fingerprint="d" * 64,
+            )
+        )
         db.commit()
         return {"branch_key": f"branch:{branch.id}", "foreign_key": f"client:{foreign_client.id}"}
 
@@ -149,6 +219,15 @@ def test_portfolio_permissions_redaction_granularity_filters_and_stable_paginati
     assert response.status_code == 200
     page = response.json()
     assert page["total"] == 3 and page["filtered_total"] == 3 and len(page["items"]) == 2
+    assert page["p2_totals"] == {
+        "monthly_sales_mxn": "1000.00000000",
+        "distributor_commission_mxn": "-25.00000000",
+        "effective_commission_on_sales_percent": "-2.50",
+        "percentage_status": "calculated",
+        "percentage_reason": None,
+        "compatible_stores": 1,
+        "excluded_stores": 2,
+    }
     second = client.get(
         "/netpay/commerce-attention?page=2&page_size=2&sort_field=commerce", headers=_headers("portfolio:viewer")
     ).json()
@@ -161,6 +240,14 @@ def test_portfolio_permissions_redaction_granularity_filters_and_stable_paginati
     assert payload["store_id"] == "STORE-002" and payload["store_reference_count"] == 1
     assert payload["full_rfc"] is None
     assert payload["contact"]["phone"] == "Disponible"
+    assert payload["p2"]["monthly_sales_mxn"] == "1000.00000000"
+    assert payload["p2"]["distributor_commission_mxn"] == "-25.00000000"
+    assert payload["p2"]["effective_commission_on_sales_percent"] == "-2.50"
+    assert payload["p2"]["source_fields"] == {
+        "monthly_sales_mxn": "Volumen",
+        "distributor_commission_mxn": "Rentabilidad",
+    }
+    assert payload["p2"]["currency_code"] == "MXN" and payload["p2"]["reporting_period"] == "2026-09"
     assert "RFC987654XYZ" not in branch.text and "5550000002" not in branch.text
 
     sensitive = client.get(

@@ -43,7 +43,35 @@ def preview(dataset=DATASETS[0], key="upload", value: int | str = 10, period="20
     return result.json()
 
 
-def command(batch, action, key, subject="data:operator", reference=None):
+def accept_payload(batch):
+    payload = {"preview_token": batch["preview_token"]}
+    row = batch["rows"][0]
+    with app.state.yarvis.persistence.create_session() as db:
+        stored_batch = db.get(OperationalDataBatch, UUID(batch["id"]))
+        assert stored_batch is not None
+        model = StoreProfitabilityFact if batch["dataset_type"] == DATASETS[0] else NoUsageCampaignEntry
+        period_column = (
+            StoreProfitabilityFact.reporting_period
+            if model is StoreProfitabilityFact
+            else NoUsageCampaignEntry.campaign_period
+        )
+        predecessor = db.scalar(
+            select(model).where(
+                model.organization_id == stored_batch.organization_id,
+                model.store_reference_id == UUID(row["store_reference_id"]),
+                period_column == batch["reporting_period"],
+                model.effective_status == "effective",
+            )
+        )
+    if predecessor is not None:
+        payload.update(
+            expected_predecessors={row["store_reference_id"]: str(predecessor.id)},
+            correction_reason="Synthetic correction",
+        )
+    return payload
+
+
+def command(batch, action, key, subject="data:operator", reference=None, payload=None):
     client = TestClient(app)
     try:
         path = f"/netpay/data/datasets/{batch['id']}"
@@ -53,10 +81,12 @@ def command(batch, action, key, subject="data:operator", reference=None):
                 headers=headers(subject, key),
                 json={"store_reference_id": str(reference)},
             )
+        if action == "accept" and payload is None:
+            payload = accept_payload(batch)
         return client.post(
             f"{path}/{action}",
             headers=headers(subject, key),
-            json={"preview_token": batch["preview_token"]} if action == "accept" else None,
+            json=payload,
         )
     finally:
         client.close()
@@ -137,13 +167,14 @@ def test_real_concurrent_accept_is_one_transition(dataset, unchanged, same_key):
         assert batch["row_counts"]["unchanged"] == 1
     else:
         batch = baseline
+    payload = accept_payload(batch)
     first, second = race(
-        lambda: command(batch, "accept", "accept-one"),
-        lambda: command(batch, "accept", "accept-one" if same_key else "accept-two"),
+        lambda: command(batch, "accept", "accept-one", payload=payload),
+        lambda: command(batch, "accept", "accept-one" if same_key else "accept-two", payload=payload),
     )
     assert first.status_code == second.status_code == 200
     assert first.json() == second.json()
-    assert command(batch, "accept", "accept-one").json() == first.json()
+    assert command(batch, "accept", "accept-one", payload=payload).json() == first.json()
     with app.state.yarvis.persistence.create_session() as db:
         assert db.query(StoreProfitabilityFact if dataset == DATASETS[0] else NoUsageCampaignEntry).count() == 1
         events = db.scalars(
@@ -455,7 +486,7 @@ def test_provenance_corruption_fails_closed(corruption):
         elif corruption == "rejected":
             source.status = "rejected"
         elif corruption == "payload":
-            fact.profitability = 999
+                fact.distributor_commission_exact = 999
         else:
             row = db.scalar(select(OperationalDataRow).where(OperationalDataRow.batch_id == UUID(equivalent["id"])))
             assert row is not None
@@ -670,6 +701,8 @@ def test_http_e2e_survives_api_process_restart(dataset):
         b"RFC-SYN-OTHER,OTHER-001,2026/8,99\n"
     )
     form = {"dataset_type": dataset, "rfc_filter": "RFC-SYN-ALLOW"}
+    if dataset == DATASETS[1]:
+        form["data_cutoff_at"] = "2026-08-31T23:59:59Z"
     with real_http_server() as client:
         created = client.post(
             "/netpay/data/datasets",

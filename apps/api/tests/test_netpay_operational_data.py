@@ -92,10 +92,12 @@ def headers(subject="data:operator", key="data-key"):
     return {"X-Yarvis-Subject": subject, "X-Yarvis-Auth-Token": "deterministic-inbound-intake", "Idempotency-Key": key}
 
 
-def upload(name, data, dataset, key, rfc=None):
+def upload(name, data, dataset, key, rfc=None, *, with_cutoff=True):
     form = {"dataset_type": dataset}
     if rfc:
         form["rfc_filter"] = rfc
+    if dataset == "no_usage_campaign" and with_cutoff:
+        form["data_cutoff_at"] = "2026-08-31T23:59:59Z"
     return client.post(
         "/netpay/data/datasets", headers=headers(key=key), data=form, files={"file": (name, data, "text/csv")}
     )
@@ -146,17 +148,52 @@ def test_no_usage_rfc_filter_is_ephemeral_and_fail_closed():
     )
     missing = upload("synthetic-no-usage.csv", content, "no_usage_campaign", "missing")
     assert missing.status_code == 422
-    created = upload("synthetic-no-usage.csv", content, "no_usage_campaign", "no-usage", "RFC-SYN-ALLOW")
+    created = upload(
+        "synthetic-no-usage.csv",
+        content,
+        "no_usage_campaign",
+        "no-usage",
+        "RFC-SYN-ALLOW",
+        with_cutoff=False,
+    )
     assert created.status_code == 201
     payload = created.json()
+    assert payload["status"] == "metadata_pending" and payload["data_cutoff_at"] is None
     assert payload["row_counts"]["received"] == 2 and payload["row_counts"]["authorized"] == 1
     assert "RFC-SYN" not in str(payload)
-    accepted = client.post(
+    blocked = client.post(
         f"/netpay/data/datasets/{payload['id']}/accept",
         headers=headers(key="no-usage-accept"),
         json={"preview_token": payload["preview_token"]},
     )
-    assert accepted.status_code == 200
+    assert blocked.status_code == 409 and blocked.json()["detail"] == "data_cutoff_required"
+    completed = client.put(
+        f"/netpay/data/datasets/{payload['id']}/metadata",
+        headers=headers(key="no-usage-metadata"),
+        json={"data_cutoff_at": "2026-08-31T23:59:59Z", "reason": "Synthetic authorized cutoff"},
+    )
+    assert completed.status_code == 200 and completed.json()["status"] == "needs_review"
+    assert completed.json()["rows"][0]["validation_status"] == "valid", completed.json()
+    assert completed.json()["rows"][0]["match_status"] == "matched", completed.json()
+    assert completed.json()["reporting_period"] == "2026-08", completed.json()
+    replay = client.put(
+        f"/netpay/data/datasets/{payload['id']}/metadata",
+        headers=headers(key="no-usage-metadata"),
+        json={"data_cutoff_at": "2026-08-31T23:59:59Z", "reason": "Synthetic authorized cutoff"},
+    )
+    assert replay.status_code == 200 and replay.json() == completed.json()
+    conflict = client.put(
+        f"/netpay/data/datasets/{payload['id']}/metadata",
+        headers=headers(key="no-usage-metadata"),
+        json={"data_cutoff_at": "2026-07-31T23:59:59Z", "reason": "Different synthetic cutoff"},
+    )
+    assert conflict.status_code == 409 and conflict.json()["detail"] == "idempotency_conflict"
+    accepted = client.post(
+        f"/netpay/data/datasets/{payload['id']}/accept",
+        headers=headers(key="no-usage-accept-after-metadata"),
+        json={"preview_token": payload["preview_token"]},
+    )
+    assert accepted.status_code == 200, accepted.text
     assert (
         len(
             client.get(f"/netpay/data/datasets/{payload['id']}/results", headers=headers(key="no-usage-results")).json()

@@ -1,5 +1,22 @@
 # Current Engineering State
 
+## Commerce Attention Portfolio P2A/P2B technical closure — 2026-10-21
+
+Amendment 025 and IG-012 are ratified. P2A source integrity and P2B read-only
+monthly indicators are implemented and passed the required synthetic isolated
+gate. The effective Alembic head is `20261021_53`.
+The Portfolio exposes monthly sales, distributor commission and commission on
+sales with Decimal/MXN provenance, explicit non-calculable causes and ratio-of-
+sums coverage. No-use batches without a confirmed cutoff remain
+`metadata_pending` and non-effective.
+
+Evidence is recorded in
+[`netpay-commerce-attention-p2a-p2b-conformance-20261021.txt`](../engineering/evidence/netpay-commerce-attention-p2a-p2b-conformance-20261021.txt).
+This state is part of the single authorized closure payload. Repository commit
+and publication are distinct from the technical PASS; deployment, productive
+migration and source import remain unperformed. P3-P5, terminals, MID, D2-Lite,
+export, communications, Gmail/OAuth and pilot access remain closed.
+
 ## Commerce Attention Portfolio P0/P1 closed — 2026-10-20
 
 P0/P1 of **Cartera operativa reportada** is implemented and technically closed

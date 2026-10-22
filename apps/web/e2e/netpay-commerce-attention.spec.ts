@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-const base = { client_id: '00000000-0000-0000-0000-000000000001', company_id: null, branch_id: null, store_reference_id: null, store_id: null, store_reference_count: 0, legal_name: null, branch_name: null, masked_rfc: '*********4XYZ', contact: { available: false, label: 'Contacto registrado', source_scope: null, name: null, email: null, phone: null, verification: 'not_available', updated_at: null }, reconciliation_status: 'exact_match', availability_reasons: [], source_badges: { master: true, cases_available: 0, linked_pre_master: 0, unlinked_records: null, d1: 'No incorporado en P0/P1', terminals: 'Sin fuente canónica autorizada' }, updated_at: '2026-10-19T12:00:00Z' };
+const p2 = { reporting_period:'2026-09',currency_code:'MXN',monthly_sales_mxn:1000,distributor_commission_mxn:-25,effective_commission_on_sales_percent:-2.5,percentage_status:'calculated',percentage_reason:null,source_fields:{monthly_sales_mxn:'Volumen',distributor_commission_mxn:'Rentabilidad'},source_batch_id:'00000000-0000-0000-0000-000000000099',precision_classification:'exact_decimal_source',freshness_at:'2026-10-19T12:00:00Z',quality:'qualified' };
+const base = { client_id: '00000000-0000-0000-0000-000000000001', company_id: null, branch_id: null, store_reference_id: null, store_id: null, store_reference_count: 0, legal_name: null, branch_name: null, masked_rfc: '*********4XYZ', contact: { available: false, label: 'Contacto registrado', source_scope: null, name: null, email: null, phone: null, verification: 'not_available', updated_at: null }, reconciliation_status: 'exact_match', availability_reasons: [], source_badges: { master: true, cases_available: 0, linked_pre_master: 0, unlinked_records: null, d1: 'No incorporado en P0/P1', terminals: 'Sin fuente canónica autorizada' }, updated_at: '2026-10-19T12:00:00Z', p2 };
 const rows = [
   { ...base, row_key: 'client:00000000-0000-0000-0000-000000000001', entity_scope: 'client', commerce_name: 'Comercio Sintético', availability_reasons: ['Sin Company', 'Sin Branch', 'Sin StoreReference'] },
-  { ...base, row_key: 'client:00000000-0000-0000-0000-000000000002', client_id: '00000000-0000-0000-0000-000000000002', entity_scope: 'client', commerce_name: 'Cliente sin empresa' },
+  { ...base, row_key: 'client:00000000-0000-0000-0000-000000000002', client_id: '00000000-0000-0000-0000-000000000002', entity_scope: 'client', commerce_name: 'Cliente sin empresa', p2:{...p2,monthly_sales_mxn:0,effective_commission_on_sales_percent:null,percentage_status:'not_calculable',percentage_reason:'volume_zero'} },
   { ...base, row_key: 'company:00000000-0000-0000-0000-000000000003', entity_scope: 'company', commerce_name: 'Comercio empresa', company_id: '00000000-0000-0000-0000-000000000003', legal_name: 'Empresa sin sucursal' },
   { ...base, row_key: 'branch:00000000-0000-0000-0000-000000000004', entity_scope: 'branch', commerce_name: 'Comercio sucursal', company_id: '00000000-0000-0000-0000-000000000003', branch_id: '00000000-0000-0000-0000-000000000004', branch_name: 'Sucursal sin tienda' },
   { ...base, row_key: 'branch:00000000-0000-0000-0000-000000000005', entity_scope: 'branch', commerce_name: 'Comercio multi tienda', company_id: '00000000-0000-0000-0000-000000000003', branch_id: '00000000-0000-0000-0000-000000000005', branch_name: 'Sucursal multi', store_reference_id: '00000000-0000-0000-0000-000000000006', store_id: 'STORE-001', store_reference_count: 2, availability_reasons: ['2 StoreReferences'] },
@@ -19,10 +20,11 @@ test('portfolio list, filters, detail and back remain read-only', async ({ page 
   await page.route('**/netpay/commerce-attention?*', async (route) => {
     const url = new URL(route.request().url()); const pageNumber = Number(url.searchParams.get('page') || '1'); const search = url.searchParams.get('search');
     const items = search ? [rows[0]] : pageNumber === 1 ? rows.slice(0, 4) : rows.slice(4);
-    await route.fulfill({ json: { items, page: pageNumber, page_size: 50, total: 5, filtered_total: search ? 1 : 5, pages: search ? 1 : 2 } });
+    await route.fulfill({ json: { items, page: pageNumber, page_size: 50, total: 5, filtered_total: search ? 1 : 5, pages: search ? 1 : 2, p2_totals:{monthly_sales_mxn:1000,distributor_commission_mxn:-25,effective_commission_on_sales_percent:-2.5,percentage_status:'calculated',percentage_reason:null,compatible_stores:1,excluded_stores:4} } });
   });
   await page.goto('/netpay-portfolio');
   await expect(page.getByRole('heading', { name: 'Cartera operativa reportada' })).toBeVisible();
+  await expect(page.getByText(/1 Stores incluidos/)).toBeVisible(); await expect(page.getByText(/4 excluidos/)).toBeVisible(); await expect(page.getByText('Comisión del distribuidor (MXN)')).toBeVisible(); await expect(page.getByText('Venta mensual igual a cero')).toBeVisible();
   await expect(page.getByText('Cliente sin empresa')).toBeVisible(); await expect(page.getByText('Empresa sin sucursal')).toBeVisible(); await expect(page.getByText('Sucursal sin tienda')).toBeVisible();
   await page.getByRole('button', { name: 'Siguiente' }).click(); await expect(page.getByText('Página 2 de 2')).toBeVisible(); await expect(page.getByText('2 StoreReferences')).toBeVisible();
   await page.getByLabel('Buscar cartera').fill('sintético'); await expect(page.getByText('Comercio Sintético')).toBeVisible();
@@ -31,4 +33,11 @@ test('portfolio list, filters, detail and back remain read-only', async ({ page 
   await page.getByRole('link', { name: /Volver a cartera/ }).click(); await expect(page.getByLabel('Buscar cartera')).toHaveValue('sintético'); await expect(page.getByLabel('Cliente')).toBeChecked(); await expect(page.getByLabel('Orden')).toHaveValue('updated_at');
   await page.reload(); await expect(page.getByLabel('Buscar cartera')).toHaveValue(''); await expect(page.getByLabel('Cliente')).not.toBeChecked(); await expect(page.getByLabel('Orden')).toHaveValue('commerce'); await expect(page.getByText('Página 1 de 2')).toBeVisible();
   expect(methods.every((method) => method === 'GET')).toBeTruthy();
+});
+
+test('aggregate zero sales is explicitly not calculable', async ({ page }) => {
+  await page.route('**/netpay/commerce-attention?*', (route) => route.fulfill({json:{items:[rows[0]],page:1,page_size:50,total:1,filtered_total:1,pages:1,p2_totals:{monthly_sales_mxn:0,distributor_commission_mxn:5,effective_commission_on_sales_percent:null,percentage_status:'not_calculable',percentage_reason:'aggregate_volume_zero',compatible_stores:2,excluded_stores:0}}}));
+  await page.goto('/netpay-portfolio');
+  await expect(page.getByLabel('Totales mensuales P2')).toContainText('Comisión efectiva: No calculable');
+  await expect(page.getByText('Venta agregada igual a cero')).toBeVisible();
 });

@@ -1,5 +1,19 @@
 # Current Sprint
 
+## Commerce Attention Portfolio P2A/P2B technical closure — 2026-10-21
+
+| Field | Current value |
+| --- | --- |
+| Work package | P2A source integrity and P2B read-only monthly Portfolio indicators. |
+| Ratified authority | Amendment 025 and IG-012. |
+| Gate result | Technical PASS; 749 backend, 78 Vitest and 2 Playwright tests passed. |
+| Migration | Single head `20261021_53`, parent `20261014_52`; disposable round-trip passed. |
+| Operational effect | None; no productive import, migration, Gmail/OAuth, pilot access or real data. |
+| Publication | Included in the single authorized closure commit; deployment, productive migration and import remain unperformed. |
+| Closed scope | P3-P5, MID, terminals, export, communications, D2-Lite and productive activation remain closed. |
+
+Evidence: [P2A/P2B conformance 2026-10-21](../engineering/evidence/netpay-commerce-attention-p2a-p2b-conformance-20261021.txt).
+
 ## Commerce Attention Portfolio P0/P1 closure — 2026-10-20
 
 | Field | Current value |

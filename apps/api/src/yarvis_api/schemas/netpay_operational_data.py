@@ -28,6 +28,14 @@ class OperationalDataBatchRead(BaseModel):
     preview_token: str
     duplicate_upload: bool = False
     status: str
+    source_profile: str
+    currency_code: str | None
+    completeness_status: str
+    received_at: datetime
+    source_generated_at: datetime | None
+    data_cutoff_at: datetime | None
+    source_producer: str
+    delivery_channel: str | None
     row_counts: dict
     source_discarded: bool
     created_at: datetime
@@ -47,3 +55,10 @@ class OperationalRowResolution(BaseModel):
 
 class OperationalDataAcceptance(BaseModel):
     preview_token: str = Field(min_length=64, max_length=64)
+    expected_predecessors: dict[str, UUID] = Field(default_factory=dict)
+    correction_reason: str | None = Field(default=None, min_length=3, max_length=255)
+
+
+class OperationalDataMetadataCompletion(BaseModel):
+    data_cutoff_at: datetime
+    reason: str = Field(min_length=3, max_length=255)

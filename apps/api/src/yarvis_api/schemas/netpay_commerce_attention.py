@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
@@ -28,6 +29,31 @@ class PortfolioSourceBadges(BaseModel):
     terminals: str = "Sin fuente canónica autorizada"
 
 
+class PortfolioP2Metrics(BaseModel):
+    reporting_period: str | None = None
+    currency_code: str | None = None
+    monthly_sales_mxn: Decimal | None = None
+    distributor_commission_mxn: Decimal | None = None
+    effective_commission_on_sales_percent: Decimal | None = None
+    percentage_status: Literal["calculated", "not_calculable", "unknown"] = "unknown"
+    percentage_reason: str | None = None
+    source_fields: dict[str, str] = Field(default_factory=dict)
+    source_batch_id: UUID | None = None
+    precision_classification: str | None = None
+    freshness_at: datetime | None = None
+    quality: str = "unknown"
+
+
+class PortfolioP2Totals(BaseModel):
+    monthly_sales_mxn: Decimal | None = None
+    distributor_commission_mxn: Decimal | None = None
+    effective_commission_on_sales_percent: Decimal | None = None
+    percentage_status: Literal["calculated", "not_calculable", "unknown"] = "unknown"
+    percentage_reason: str | None = None
+    compatible_stores: int = 0
+    excluded_stores: int = 0
+
+
 class PortfolioRow(BaseModel):
     row_key: str
     entity_scope: EntityScope
@@ -46,6 +72,7 @@ class PortfolioRow(BaseModel):
     availability_reasons: list[str] = Field(default_factory=list)
     source_badges: PortfolioSourceBadges = Field(default_factory=PortfolioSourceBadges)
     updated_at: datetime
+    p2: PortfolioP2Metrics = Field(default_factory=PortfolioP2Metrics)
 
 
 class PortfolioPage(BaseModel):
@@ -55,6 +82,7 @@ class PortfolioPage(BaseModel):
     total: int
     filtered_total: int
     pages: int
+    p2_totals: PortfolioP2Totals = Field(default_factory=PortfolioP2Totals)
 
 
 class PortfolioDetail(PortfolioRow):

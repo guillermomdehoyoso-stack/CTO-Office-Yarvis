@@ -10,6 +10,7 @@ import re
 import unicodedata
 import zipfile
 from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
 from io import BytesIO, StringIO
 from pathlib import Path
 from uuid import UUID
@@ -37,6 +38,7 @@ from yarvis_api.schemas.netpay_operational_data import (
     OperationalDataAcceptance,
     OperationalDataBatchPage,
     OperationalDataBatchRead,
+    OperationalDataMetadataCompletion,
     OperationalDataRowRead,
     OperationalRowResolution,
 )
@@ -107,6 +109,21 @@ def _number(value: object) -> float | None:
         return number if math.isfinite(number) else None
     except (TypeError, ValueError):
         return None
+
+
+def _decimal_text(value: object) -> str | None:
+    if value in (None, "") or isinstance(value, bool):
+        return None
+    try:
+        number = Decimal(str(value).replace(",", "").replace("$", "").strip())
+    except (InvalidOperation, ValueError):
+        return None
+    return format(number, "f") if number.is_finite() else None
+
+
+def _decimal_scale(value: str) -> int:
+    exponent = Decimal(value).as_tuple().exponent
+    return max(0, -exponent) if isinstance(exponent, int) else 0
 
 
 def _integer(value: object) -> int | None:
@@ -235,6 +252,7 @@ def _latest_fact(
             model.organization_id == organization_id,
             model.store_reference_id == store_reference_id,
             period_column == period,
+            model.effective_status == "effective",
         )
         .order_by(model.created_at.desc(), model.id.desc())
     )
@@ -265,18 +283,29 @@ def _verify_fact_source(db, fact):
             "client_external_reference",
             "reporting_period",
             "product_uen",
-            "volume",
             "transaction_count",
             "income",
             "cost",
             "commissions",
-            "profitability",
         )
         if isinstance(fact, StoreProfitabilityFact)
         else ("months_without_usage", "merchant_status", "alert_code", "outcome_code", "follow_up_code")
     )
     if any(getattr(fact, key) != material.get(key) for key in fields):
         raise HTTPException(409, "accepted_provenance_unverified")
+    if isinstance(fact, StoreProfitabilityFact):
+        if fact.volume_exact is not None:
+            if material.get("volume") is None or fact.volume_exact != Decimal(str(material["volume"])):
+                raise HTTPException(409, "accepted_provenance_unverified")
+        elif fact.volume != material.get("volume"):
+            raise HTTPException(409, "accepted_provenance_unverified")
+        if fact.distributor_commission_exact is not None:
+            if material.get("profitability") is None or fact.distributor_commission_exact != Decimal(
+                str(material["profitability"])
+            ):
+                raise HTTPException(409, "accepted_provenance_unverified")
+        elif fact.profitability != material.get("profitability"):
+            raise HTTPException(409, "accepted_provenance_unverified")
     if isinstance(fact, NoUsageCampaignEntry) and fact.campaign_period != material.get("reporting_period"):
         raise HTTPException(409, "accepted_provenance_unverified")
 
@@ -476,6 +505,8 @@ async def upload_dataset(
     file: UploadFile = File(...),
     dataset_type: str = Form(...),
     rfc_filter: str | None = Form(None),
+    data_cutoff_at: datetime | None = Form(None),
+    source_generated_at: datetime | None = Form(None),
     idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255),
     db: Session = Depends(get_db),
     envelope: IdentityAuthorityEnvelope = Depends(authority_envelope),
@@ -552,6 +583,15 @@ async def upload_dataset(
             preview_token="0" * 64,
             store_state_hash="0" * 64,
             status="validating",
+            source_profile=(
+                "netpay_monthly_store_v1" if dataset_type == "monthly_store_profitability" else "netpay_no_usage_v1"
+            ),
+            currency_code="MXN",
+            completeness_status="partial",
+            source_generated_at=source_generated_at,
+            data_cutoff_at=data_cutoff_at,
+            source_producer="Netpay Operations" if dataset_type == "no_usage_campaign" else "Netpay",
+            delivery_channel="regional_commercial_manager" if dataset_type == "no_usage_campaign" else None,
             row_counts={},
             uploaded_by_principal_id=current.principal_id,
         )
@@ -563,11 +603,11 @@ async def upload_dataset(
             store, store_error = _store_id(_find(source, "store id", "store_id"))
             period = _period(_find(source, "mes", "periodo", "reporting period", "campaign period"))
             errors = [item for item in (store_error, None if period else "missing_reporting_period") if item]
-            profitability, months = (
-                _number(_find(source, "rentabilidad", "profitability")),
+            profitability_exact, months = (
+                _decimal_text(_find(source, "rentabilidad", "profitability")),
                 _integer(_find(source, "meses sin uso", "months without use")),
             )
-            if dataset_type == "monthly_store_profitability" and profitability is None:
+            if dataset_type == "monthly_store_profitability" and profitability_exact is None:
                 errors.append("invalid_profitability")
             if dataset_type == "no_usage_campaign" and months is None:
                 errors.append("invalid_months_without_usage")
@@ -584,12 +624,12 @@ async def upload_dataset(
                 "client_external_reference": client_ref,
                 "reporting_period": period,
                 "product_uen": str(_find(source, "producto", "product", "uen") or "").strip() or None,
-                "volume": _number(_find(source, "volumen", "volume")),
+                "volume": _decimal_text(_find(source, "volumen", "volume")),
                 "transaction_count": _integer(_find(source, "transacciones", "transaction count")),
                 "income": _number(_find(source, "ingresos", "income")),
                 "cost": _number(_find(source, "costos", "cost")),
                 "commissions": _number(_find(source, "comisiones", "commissions")),
-                "profitability": profitability,
+                "profitability": profitability_exact,
                 "months_without_usage": months,
                 "merchant_status": str(_find(source, "estatus", "estado", "merchant status") or "").strip()[:64]
                 or None,
@@ -674,7 +714,9 @@ async def upload_dataset(
             _digest([dataset_type, source_hash, selected_sheet, state_hash, preview_material]),
         )
         batch.row_counts = {"received": len(raw), "authorized": len(authorized), **counts}
-        batch.status = "needs_review"
+        batch.status = (
+            "metadata_pending" if dataset_type == "no_usage_campaign" and data_cutoff_at is None else "needs_review"
+        )
         _event(db, current, batch, "netpay.operational_dataset.uploaded")
         _event(db, current, batch, "netpay.operational_dataset.validated")
         return batch, 201
@@ -748,6 +790,8 @@ def accept_dataset(
             raise HTTPException(409, "preview_expired_or_mismatched")
         if batch.status == "accepted":
             return batch, 200
+        if batch.status == "metadata_pending":
+            raise HTTPException(409, "data_cutoff_required")
         if batch.status != "needs_review":
             raise HTTPException(409, "preview_expired_or_mismatched")
         rows = db.scalars(
@@ -822,6 +866,10 @@ def accept_dataset(
             if row.projected_action == "unchanged" and previous:
                 row.controlled_payload = {**item, "accepted_fact_id": str(previous.id)}
                 continue
+            if previous:
+                expected = payload.expected_predecessors.get(str(row.store_reference_id))
+                if expected != previous.id or not payload.correction_reason:
+                    raise HTTPException(409, "explicit_predecessor_and_reason_required")
             common = {
                 "organization_id": current.organization_id,
                 "batch_id": batch.id,
@@ -841,6 +889,13 @@ def accept_dataset(
                     cost=item["cost"],
                     commissions=item["commissions"],
                     profitability=item["profitability"],
+                    volume_exact=Decimal(item["volume"]) if item["volume"] is not None else None,
+                    distributor_commission_exact=Decimal(item["profitability"]),
+                    source_scale=_decimal_scale(item["profitability"]),
+                    precision_classification="exact_decimal_source",
+                    predecessor_fact_id=previous.id if previous else None,
+                    correction_reason=payload.correction_reason if previous else None,
+                    correction_actor_principal_id=current.principal_id if previous else None,
                     no_use_indicator=None,
                 )
             else:
@@ -852,9 +907,18 @@ def accept_dataset(
                     alert_code=item["alert_code"],
                     outcome_code=item["outcome_code"],
                     follow_up_code=item["follow_up_code"],
+                    predecessor_entry_id=previous.id if previous else None,
+                    correction_reason=payload.correction_reason if previous else None,
+                    correction_actor_principal_id=current.principal_id if previous else None,
                 )
             db.add(fact)
             db.flush()
+            if previous:
+                previous.effective_status = "superseded"
+                if isinstance(previous, StoreProfitabilityFact):
+                    previous.superseded_by_fact_id = fact.id
+                else:
+                    previous.superseded_by_entry_id = fact.id
             row.controlled_payload = {**item, "accepted_fact_id": str(fact.id)}
         batch.row_counts = counts
         batch.status = "accepted"
@@ -867,13 +931,56 @@ def accept_dataset(
             current,
             idempotency_key,
             "IC-NETPAY-CMD-028",
-            {"batch_id": str(batch_id), "preview_token": payload.preview_token},
+            {
+                "batch_id": str(batch_id),
+                "preview_token": payload.preview_token,
+                "expected_predecessors": {key: str(value) for key, value in payload.expected_predecessors.items()},
+                "correction_reason": payload.correction_reason,
+            },
             mutation,
         )
         db.commit()
     except IntegrityError as error:
         db.rollback()
         raise HTTPException(409, "concurrent_confirmation_conflict") from error
+    response.status_code = code
+    return body
+
+
+@router.put("/datasets/{batch_id}/metadata", response_model=OperationalDataBatchRead)
+def complete_dataset_metadata(
+    batch_id: UUID,
+    payload: OperationalDataMetadataCompletion,
+    response: Response,
+    idempotency_key: str = Header(..., alias="Idempotency-Key", min_length=1, max_length=255),
+    db: Session = Depends(get_db),
+    envelope: IdentityAuthorityEnvelope = Depends(authority_envelope),
+):
+    current = _operator(envelope)
+
+    def mutation():
+        batch = _target(db, current, batch_id, lock=True)
+        if batch.dataset_type != "no_usage_campaign" or batch.status != "metadata_pending":
+            raise HTTPException(409, "metadata_completion_not_allowed")
+        batch.data_cutoff_at = payload.data_cutoff_at
+        batch.status = "needs_review"
+        batch.row_counts = {**batch.row_counts, "metadata_completion_reason": payload.reason}
+        _event(db, current, batch, "netpay.operational_dataset.metadata_completed")
+        return batch, 200
+
+    code, body = _receipt(
+        db,
+        current,
+        idempotency_key,
+        "IC-NETPAY-CMD-027",
+        {
+            "batch_id": str(batch_id),
+            "data_cutoff_at": payload.data_cutoff_at.isoformat(),
+            "reason": payload.reason,
+        },
+        mutation,
+    )
+    db.commit()
     response.status_code = code
     return body
 
