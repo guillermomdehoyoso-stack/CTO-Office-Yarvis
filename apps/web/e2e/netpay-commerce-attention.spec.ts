@@ -60,3 +60,33 @@ test('aggregate zero sales is explicitly not calculable', async ({ page }) => {
   await expect(page.getByLabel('Totales mensuales P2')).toContainText('Comisión efectiva: No calculable');
   await expect(page.getByText('Venta agregada igual a cero')).toBeVisible();
 });
+
+test('empty catalog, filtered result and access failures have distinct guidance', async ({ page }) => {
+  await page.route('**/netpay/commerce-attention/reconciliation', route=>route.fulfill({json:{items:[],total:0}}));
+  await page.route('**/netpay/commerce-attention?*', (route) => route.fulfill({json:{items:[],page:1,page_size:50,total:0,filtered_total:0,pages:1}}));
+  await page.goto('/netpay-portfolio');
+  await expect(page.getByRole('heading',{name:'Aún no hay comercios registrados'})).toBeVisible();
+  await expect(page.getByText(/todavía no tiene registros Master/)).toBeVisible();
+
+  await page.unroute('**/netpay/commerce-attention?*');
+  await page.route('**/netpay/commerce-attention?*', (route) => route.fulfill({json:{items:[],page:1,page_size:50,total:5,filtered_total:0,pages:1}}));
+  await page.getByLabel('Buscar cartera').fill('sin coincidencia');
+  await expect(page.getByRole('heading',{name:'Sin resultados'})).toBeVisible();
+  await expect(page.getByText('Ajusta o limpia los filtros activos.')).toBeVisible();
+
+  await page.unroute('**/netpay/commerce-attention?*');
+  await page.route('**/netpay/commerce-attention?*', (route) => route.fulfill({status:403,json:{detail:'permission denied'}}));
+  await page.reload();
+  await expect(page.getByRole('alert')).toHaveText('Tu identidad no tiene permiso para consultar la Cartera de esta organización.');
+  await expect(page.getByText('permission denied')).toHaveCount(0);
+
+  await page.unroute('**/netpay/commerce-attention?*');
+  await page.route('**/netpay/commerce-attention?*', (route) => route.fulfill({status:401,json:{detail:'session expired'}}));
+  await page.reload();
+  await expect(page.getByRole('alert')).toHaveText('Tu sesión no está activa. Inicia sesión nuevamente para consultar la Cartera.');
+
+  await page.unroute('**/netpay/commerce-attention?*');
+  await page.route('**/netpay/commerce-attention?*', (route) => route.abort('connectionrefused'));
+  await page.reload();
+  await expect(page.getByRole('alert')).toHaveText('No fue posible cargar la cartera desde la API local.');
+});

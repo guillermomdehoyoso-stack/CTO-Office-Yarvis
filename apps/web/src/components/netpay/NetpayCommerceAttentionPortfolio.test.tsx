@@ -2,7 +2,7 @@
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { NetpayApiClient, type PortfolioRow } from '../../api/netpay';
+import { NetpayApiClient, NetpayApiError, type PortfolioRow } from '../../api/netpay';
 import { NetpayCommerceAttentionDetail, NetpayCommerceAttentionPortfolio } from './NetpayCommerceAttentionPortfolio';
 
 const row: PortfolioRow = {
@@ -68,5 +68,38 @@ describe('Cartera operativa reportada', () => {
     expect((screen.getByLabelText('Buscar cartera') as HTMLInputElement).value).toBe('');
     expect((screen.getByLabelText('Orden') as HTMLSelectElement).value).toBe('commerce');
     expect(storage).not.toHaveBeenCalled();
+  });
+  it('explains an empty Master catalog without blaming filters', async () => {
+    const client=configured(); vi.mocked(client.listCommerceAttention).mockResolvedValue({items:[],page:1,page_size:50,total:0,filtered_total:0,pages:1});
+    render(<MemoryRouter><NetpayCommerceAttentionPortfolio client={client}/></MemoryRouter>);
+    expect(await screen.findByRole('heading',{name:'Aún no hay comercios registrados'})).toBeTruthy();
+    expect(screen.getByText(/todavía no tiene registros Master/)).toBeTruthy();
+    expect(screen.queryByText('Ajusta los filtros.')).toBeNull();
+  });
+  it('keeps a filtered empty result distinct from an empty Master catalog', async () => {
+    const client=configured(); vi.mocked(client.listCommerceAttention).mockResolvedValue({items:[],page:1,page_size:50,total:5,filtered_total:0,pages:1});
+    render(<MemoryRouter><NetpayCommerceAttentionPortfolio client={client}/></MemoryRouter>);
+    await userEvent.type(screen.getByLabelText('Buscar cartera'),'sin coincidencia');
+    expect(await screen.findByRole('heading',{name:'Sin resultados'})).toBeTruthy();
+    expect(screen.getByText('Ajusta o limpia los filtros activos.')).toBeTruthy();
+    expect(screen.queryByText(/todavía no tiene registros Master/)).toBeNull();
+  });
+  it('distinguishes unauthenticated, forbidden and unavailable responses', async () => {
+    const client=configured(); vi.mocked(client.listCommerceAttention).mockRejectedValue(new NetpayApiError(403,'forbidden','permission denied'));
+    const view=render(<MemoryRouter><NetpayCommerceAttentionPortfolio client={client}/></MemoryRouter>);
+    expect((await screen.findByRole('alert')).textContent).toMatch(/identidad no tiene permiso/);
+    expect(screen.queryByText(/permission denied/)).toBeNull();
+    view.unmount();
+
+    const expired=configured(); vi.mocked(expired.listCommerceAttention).mockRejectedValue(new NetpayApiError(401,'unavailable','session expired'));
+    const expiredView=render(<MemoryRouter><NetpayCommerceAttentionPortfolio client={expired}/></MemoryRouter>);
+    expect((await screen.findByRole('alert')).textContent).toMatch(/sesión no está activa/);
+    expect(screen.queryByText(/session expired/)).toBeNull();
+    expiredView.unmount();
+
+    const unavailable=configured(); vi.mocked(unavailable.listCommerceAttention).mockRejectedValue(new TypeError('connection refused'));
+    render(<MemoryRouter><NetpayCommerceAttentionPortfolio client={unavailable}/></MemoryRouter>);
+    expect((await screen.findByRole('alert')).textContent).toBe('No fue posible cargar la cartera desde la API local.');
+    expect(screen.queryByText(/connection refused/)).toBeNull();
   });
 });
