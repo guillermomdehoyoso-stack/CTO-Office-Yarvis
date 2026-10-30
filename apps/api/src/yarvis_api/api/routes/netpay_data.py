@@ -42,10 +42,11 @@ from yarvis_api.schemas.netpay_operational_data import (
     OperationalDataRowRead,
     OperationalRowResolution,
 )
+from yarvis_api.services import netpay_commission_settlement as settlement
 
 router = APIRouter(prefix="/netpay/data", tags=["netpay-operational-data"])
 _MAX_BYTES, _MAX_ROWS, _MAX_COLUMNS, _MAX_SHEETS = 5_242_880, 5_000, 50, 10
-_DATASETS = {"monthly_store_profitability", "no_usage_campaign"}
+_DATASETS = {"monthly_store_profitability", "no_usage_campaign", "commission_settlement"}
 _REQUIRED = {
     "monthly_store_profitability": (
         {"storeid"},
@@ -96,7 +97,7 @@ def _store_id(value: object) -> tuple[str | None, str | None]:
 
 def _filename(name: str) -> str:
     value = Path(name or "dataset").name
-    if not re.fullmatch(r"[A-Za-z0-9._ -]{1,255}", value) or Path(value).suffix.lower() not in {".xlsx", ".csv"}:
+    if not re.fullmatch(r"[A-Za-z0-9._ ()-]{1,255}", value) or Path(value).suffix.lower() not in {".xlsx", ".csv"}:
         raise HTTPException(422, "unsupported_file")
     return value
 
@@ -145,6 +146,10 @@ def _find(row: dict[str, object], *names: str) -> object | None:
 
 def _valid_headers(headers: list[str], dataset_type: str) -> bool:
     normalized = [_normal(header) for header in headers]
+    components = {_normal(name) for name in settlement.COMPONENTS.values()}
+    if dataset_type == "monthly_store_profitability" and components.intersection(normalized):
+        if not components.issubset(normalized):
+            return False
     return (
         bool(normalized)
         and all(normalized)
@@ -155,11 +160,12 @@ def _valid_headers(headers: list[str], dataset_type: str) -> bool:
 
 def _read_rows(headers: list[str], values) -> list[dict[str, object]]:
     rows = []
-    for raw in values:
+    for number, raw in enumerate(values, 2):
         if any(isinstance(value, str) and value.startswith("=") for value in raw):
             raise HTTPException(422, "formulas_not_allowed")
         item = {headers[index]: raw[index] for index in range(min(len(headers), len(raw)))}
         if any(value not in (None, "") for value in item.values()):
+            item["__source_row_number"] = number
             rows.append(item)
     return rows
 
@@ -202,7 +208,8 @@ def _parse(filename: str, content: bytes, dataset_type: str) -> tuple[list[dict[
         if len(candidates) != 1:
             raise HTTPException(422, "worksheet_missing_or_ambiguous")
         sheet_name, headers = candidates[0]
-        values = workbook[sheet_name].iter_rows(values_only=True)
+        workbook.close()
+        values = iter(settlement.exact_rows(content, sheet_name))
         next(values, None)
         rows = _read_rows(headers, values)
     if len(headers) > _MAX_COLUMNS or len(rows) > _MAX_ROWS:
@@ -294,6 +301,19 @@ def _verify_fact_source(db, fact):
     if any(getattr(fact, key) != material.get(key) for key in fields):
         raise HTTPException(409, "accepted_provenance_unverified")
     if isinstance(fact, StoreProfitabilityFact):
+        if fact.metric_definition_version == settlement.DEFINITION:
+            for column, key in (
+                ("sales_v2_exact", "volume"),
+                ("combined_benefit_exact", "profitability"),
+                ("activation_bonus_exact", "activation_bonus"),
+                ("referrer_commission_exact", "referrer_commission"),
+                ("base_commission_exact", "base_commission"),
+                ("commission_v2_exact", "commission_v2"),
+            ):
+                expected = Decimal(material[key]) if material.get(key) is not None else None
+                if getattr(fact, column) != expected:
+                    raise HTTPException(409, "accepted_provenance_unverified")
+            return
         if fact.volume_exact is not None:
             if material.get("volume") is None or fact.volume_exact != Decimal(str(material["volume"])):
                 raise HTTPException(409, "accepted_provenance_unverified")
@@ -518,8 +538,21 @@ async def upload_dataset(
         raise HTTPException(422, "rfc_filter_required")
     filename, content = _filename(file.filename or ""), await file.read()
     source_hash = hashlib.sha256(content).hexdigest()
-    raw, selected_sheet = _parse(filename, content, dataset_type)
-    source_numbers = {id(row): number for number, row in enumerate(raw, start=2)}
+    if dataset_type == "commission_settlement":
+        if not content or len(content) > _MAX_BYTES or not filename.endswith(".xlsx"):
+            raise HTTPException(422, "settlement_requires_xlsx")
+        raw, selected_sheet, settlement_metadata = settlement.parse_settlement(content)
+    else:
+        raw, selected_sheet = _parse(filename, content, dataset_type)
+    core_v2 = (
+        dataset_type == "monthly_store_profitability"
+        and bool(raw)
+        and all(_normal(name) in {_normal(key) for key in raw[0]} for name in settlement.COMPONENTS.values())
+    )
+    source_numbers = {
+        id(row): row.get("__source_row_number", row.get("source_row_number", number))
+        for number, row in enumerate(raw, start=2)
+    }
     authorized = raw
     if dataset_type == "no_usage_campaign":
         expected = _normal(rfc_filter)
@@ -531,6 +564,12 @@ async def upload_dataset(
 
     def mutation():
         _lock(db, ["d1-source", str(current.organization_id), dataset_type, source_hash])
+        if dataset_type == "commission_settlement":
+            batch, code = settlement.stage(db, current, raw, selected_sheet, settlement_metadata, source_hash)
+            if code == 201:
+                _event(db, current, batch, "netpay.operational_dataset.uploaded")
+                _event(db, current, batch, "netpay.operational_dataset.validated")
+            return batch, code
         existing = db.scalar(
             select(OperationalDataBatch).where(
                 OperationalDataBatch.organization_id == current.organization_id,
@@ -584,7 +623,11 @@ async def upload_dataset(
             store_state_hash="0" * 64,
             status="validating",
             source_profile=(
-                "netpay_monthly_store_v1" if dataset_type == "monthly_store_profitability" else "netpay_no_usage_v1"
+                "netpay_monthly_store_v2"
+                if core_v2
+                else "netpay_monthly_store_v1"
+                if dataset_type == "monthly_store_profitability"
+                else "netpay_no_usage_v1"
             ),
             currency_code="MXN",
             completeness_status="partial",
@@ -607,7 +650,7 @@ async def upload_dataset(
                 _decimal_text(_find(source, "rentabilidad", "profitability")),
                 _integer(_find(source, "meses sin uso", "months without use")),
             )
-            if dataset_type == "monthly_store_profitability" and profitability_exact is None:
+            if dataset_type == "monthly_store_profitability" and profitability_exact is None and not core_v2:
                 errors.append("invalid_profitability")
             if dataset_type == "no_usage_campaign" and months is None:
                 errors.append("invalid_months_without_usage")
@@ -638,6 +681,31 @@ async def upload_dataset(
                 "follow_up_code": str(_find(source, "seguimiento", "follow up") or "").strip()[:64] or None,
             }
             row_key = _digest([_normal(store), period])
+            if core_v2:
+                components = {key: _decimal_text(_find(source, name)) for key, name in settlement.COMPONENTS.items()}
+                # Missing is unknown, never zero. Malformed non-empty values fail validation.
+                for key, name in settlement.COMPONENTS.items():
+                    if components[key] is not None:
+                        settlement.decimal_value(components[key])
+                    if components[key] is None and _find(source, name) not in (None, ""):
+                        errors.append("invalid_" + key)
+                for key, name in (("volume", "Volumen"), ("profitability", "Rentabilidad")):
+                    if payload[key] is not None:
+                        settlement.decimal_value(payload[key])
+                    if payload[key] is None and _find(source, name) not in (None, ""):
+                        errors.append("invalid_" + key)
+                payload.update(components)
+                payload["commission_v2"] = (
+                    str(settlement.exact_sum(Decimal(v) for v in components.values()))
+                    if all(v is not None for v in components.values())
+                    else None
+                )
+                payload["metric_definition_version"] = settlement.DEFINITION
+                payload["source_fields"] = {
+                    **settlement.COMPONENTS,
+                    "profitability": "Rentabilidad",
+                    "volume": "Volumen",
+                }
             if store and period:
                 natural_keys[row_key] = natural_keys.get(row_key, 0) + 1
                 normalized_ids.add(_normal(store))
@@ -789,11 +857,17 @@ def accept_dataset(
         if payload.preview_token != batch.preview_token:
             raise HTTPException(409, "preview_expired_or_mismatched")
         if batch.status == "accepted":
+            if batch.dataset_type == "commission_settlement":
+                settlement.verified_rows(db, batch)
             return batch, 200
         if batch.status == "metadata_pending":
             raise HTTPException(409, "data_cutoff_required")
         if batch.status != "needs_review":
             raise HTTPException(409, "preview_expired_or_mismatched")
+        if batch.dataset_type == "commission_settlement":
+            result = settlement.accept(db, current, batch, payload, _lock)
+            _event(db, current, batch, "netpay.operational_dataset.accepted")
+            return result
         rows = db.scalars(
             select(OperationalDataRow)
             .where(OperationalDataRow.batch_id == batch.id)
@@ -870,6 +944,12 @@ def accept_dataset(
                 expected = payload.expected_predecessors.get(str(row.store_reference_id))
                 if expected != previous.id or not payload.correction_reason:
                     raise HTTPException(409, "explicit_predecessor_and_reason_required")
+                if (
+                    isinstance(previous, StoreProfitabilityFact)
+                    and previous.metric_definition_version != settlement.DEFINITION
+                    and item.get("metric_definition_version") == settlement.DEFINITION
+                ):
+                    raise HTTPException(409, "legacy_reprocessing_requires_verified_source_workflow")
             common = {
                 "organization_id": current.organization_id,
                 "batch_id": batch.id,
@@ -890,8 +970,21 @@ def accept_dataset(
                     commissions=item["commissions"],
                     profitability=item["profitability"],
                     volume_exact=Decimal(item["volume"]) if item["volume"] is not None else None,
-                    distributor_commission_exact=Decimal(item["profitability"]),
-                    source_scale=_decimal_scale(item["profitability"]),
+                    distributor_commission_exact=Decimal(item["profitability"])
+                    if item.get("metric_definition_version") != settlement.DEFINITION
+                    else None,
+                    metric_definition_version=item.get("metric_definition_version", "legacy_as_v1"),
+                    activation_bonus_exact=item.get("activation_bonus"),
+                    referrer_commission_exact=item.get("referrer_commission"),
+                    base_commission_exact=item.get("base_commission"),
+                    commission_v2_exact=item.get("commission_v2"),
+                    combined_benefit_exact=item.get("profitability")
+                    if item.get("metric_definition_version") == settlement.DEFINITION
+                    else None,
+                    sales_v2_exact=item.get("volume")
+                    if item.get("metric_definition_version") == settlement.DEFINITION
+                    else None,
+                    source_scale=_decimal_scale(item["profitability"]) if item["profitability"] is not None else None,
                     precision_classification="exact_decimal_source",
                     predecessor_fact_id=previous.id if previous else None,
                     correction_reason=payload.correction_reason if previous else None,
@@ -1046,6 +1139,12 @@ def resolve_match(
             raise HTTPException(409, "store_identifier_mismatch")
         if row.resolved_by_principal_id is not None:
             return batch, 200
+        if batch.dataset_type == "commission_settlement":
+            row.store_reference_id, row.match_status = reference.id, "matched"
+            row.resolved_by_principal_id = current.principal_id
+            row.error_codes, row.validation_status = [], "valid"
+            _event(db, current, batch, "netpay.operational_data_row.resolved")
+            return batch, 200
         row.store_reference_id, row.match_status, row.resolved_by_principal_id = (
             reference.id,
             "matched",
@@ -1129,6 +1228,18 @@ def dataset_results(
     batch = _target(db, current, batch_id)
     if batch.status != "accepted":
         return []
+    if batch.dataset_type == "commission_settlement":
+        return [
+            {
+                **r.controlled_payload,
+                "source_batch_id": str(batch.id),
+                "source_hash": batch.source_hash,
+                "source_sheet": batch.selected_sheet,
+                "match_status": r.match_status,
+                "bank_status": "not_confirmed",
+            }
+            for r in settlement.verified_rows(db, batch)
+        ]
     if batch.dataset_type == "monthly_store_profitability":
         rows = _accepted_results(db, batch, StoreProfitabilityFact)
         return [
@@ -1139,6 +1250,9 @@ def dataset_results(
                 "volume": row.volume,
                 "transaction_count": row.transaction_count,
                 "profitability": row.profitability,
+                "metric_definition_version": row.metric_definition_version,
+                "commission_v2": str(row.commission_v2_exact) if row.commission_v2_exact is not None else None,
+                "combined_benefit": str(row.combined_benefit_exact) if row.combined_benefit_exact is not None else None,
                 "result": "unchanged" if action == "unchanged" else "available",
                 "source_batch_id": str(row.batch_id),
                 "source_fact_id": str(row.id),

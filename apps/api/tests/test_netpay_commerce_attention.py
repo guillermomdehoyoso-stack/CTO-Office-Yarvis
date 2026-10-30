@@ -180,7 +180,7 @@ def _setup() -> dict[str, str]:
             preview_token="b" * 64,
             store_state_hash="c" * 64,
             status="accepted",
-            source_profile="netpay_monthly_store_v1",
+            source_profile="netpay_monthly_store_v2",
             currency_code="MXN",
             completeness_status="partial",
             row_counts={},
@@ -197,7 +197,13 @@ def _setup() -> dict[str, str]:
                 volume=1000.0,
                 profitability=-25.0,
                 volume_exact=Decimal("1000.00"),
-                distributor_commission_exact=Decimal("-25.00"),
+                metric_definition_version="ap_aq_ar_v2",
+                activation_bonus_exact=Decimal("0"),
+                referrer_commission_exact=Decimal("0"),
+                base_commission_exact=Decimal("-25.00000000"),
+                commission_v2_exact=Decimal("-25.00000000"),
+                sales_v2_exact=Decimal("1000.00000000"),
+                combined_benefit_exact=Decimal("700.00"),
                 source_scale=2,
                 precision_classification="exact_decimal_source",
                 effective_status="effective",
@@ -220,6 +226,10 @@ def test_portfolio_permissions_redaction_granularity_filters_and_stable_paginati
     page = response.json()
     assert page["total"] == 3 and page["filtered_total"] == 3 and len(page["items"]) == 2
     assert page["p2_totals"] == {
+        "reporting_period": "2026-09",
+        "combined_benefit_mxn": "700.00",
+        "monetary_stores": 1,
+        "monetary_excluded_stores": 2,
         "monthly_sales_mxn": "1000.00000000",
         "distributor_commission_mxn": "-25.00000000",
         "effective_commission_on_sales_percent": "-2.50",
@@ -245,7 +255,8 @@ def test_portfolio_permissions_redaction_granularity_filters_and_stable_paginati
     assert payload["p2"]["effective_commission_on_sales_percent"] == "-2.50"
     assert payload["p2"]["source_fields"] == {
         "monthly_sales_mxn": "Volumen",
-        "distributor_commission_mxn": "Rentabilidad",
+        "distributor_commission_mxn": "Bono de Activación + Comisión - Referenciador + Total Comisiones (sin Activación ni Referenciador)",
+        "combined_benefit_mxn": "Rentabilidad",
     }
     assert payload["p2"]["currency_code"] == "MXN" and payload["p2"]["reporting_period"] == "2026-09"
     assert "RFC987654XYZ" not in branch.text and "5550000002" not in branch.text

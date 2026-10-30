@@ -9,7 +9,7 @@ from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from yarvis_api.models.netpay_gmail_intake import NetpayCandidateOnboardingDossier, NetpayIntakeCandidate
@@ -28,6 +28,7 @@ from yarvis_api.schemas.netpay_commerce_attention import (
     ReconciliationItem,
     ReconciliationPage,
 )
+from yarvis_api.services.netpay_commission_settlement import exact_sum
 
 _SORT_FIELDS = {
     "commerce": lambda row: row.commerce_name.casefold(),
@@ -96,9 +97,20 @@ class PortfolioFilters:
 
 
 class NetpayCommerceAttentionService:
-    def __init__(self, db: Session, organization_id: UUID):
+    def __init__(self, db: Session, organization_id: UUID, reporting_period: str | None = None):
         self.db = db
         self.organization_id = organization_id
+        self.reporting_period = reporting_period or db.scalar(
+            select(func.max(StoreProfitabilityFact.reporting_period))
+            .join(OperationalDataBatch, OperationalDataBatch.id == StoreProfitabilityFact.batch_id)
+            .where(
+                StoreProfitabilityFact.organization_id == organization_id,
+                OperationalDataBatch.organization_id == organization_id,
+                OperationalDataBatch.status == "accepted",
+                OperationalDataBatch.currency_code == "MXN",
+                StoreProfitabilityFact.effective_status == "effective",
+            )
+        )
 
     def _rows(self, *, sensitive: bool = False) -> list[PortfolioRow]:
         clients = self.db.scalars(
@@ -226,6 +238,7 @@ class NetpayCommerceAttentionService:
             .join(OperationalDataBatch, OperationalDataBatch.id == StoreProfitabilityFact.batch_id)
             .where(
                 StoreProfitabilityFact.organization_id == self.organization_id,
+                StoreProfitabilityFact.reporting_period == self.reporting_period,
                 StoreProfitabilityFact.store_reference_id == reference.id,
                 StoreProfitabilityFact.effective_status == "effective",
                 OperationalDataBatch.organization_id == self.organization_id,
@@ -234,11 +247,35 @@ class NetpayCommerceAttentionService:
             )
             .order_by(StoreProfitabilityFact.reporting_period.desc(), StoreProfitabilityFact.effective_at.desc())
         )
-        if fact is None or fact.precision_classification != "exact_decimal_source":
+        if fact is None:
             return PortfolioP2Metrics(percentage_status="unknown", percentage_reason="exact_fact_missing")
+        if fact.precision_classification != "exact_decimal_source":
+            return PortfolioP2Metrics(
+                reporting_period=fact.reporting_period,
+                metric_definition_version=fact.metric_definition_version,
+                precision_classification=fact.precision_classification,
+                source_batch_id=fact.batch_id,
+                quality="pending_reprocessing",
+                percentage_status="not_calculable",
+                percentage_reason="commission_components_unavailable",
+            )
         batch = self.db.get(OperationalDataBatch, fact.batch_id)
-        sales, commission = fact.volume_exact, fact.distributor_commission_exact
-        if sales is None:
+        corrected = fact.metric_definition_version == "ap_aq_ar_v2"
+        sales = fact.sales_v2_exact if corrected else fact.volume_exact
+        commission = fact.commission_v2_exact if corrected else None
+        benefit = fact.combined_benefit_exact if corrected else fact.distributor_commission_exact
+        components = (
+            {
+                "activation_bonus": fact.activation_bonus_exact,
+                "referrer_commission": fact.referrer_commission_exact,
+                "base_commission": fact.base_commission_exact,
+            }
+            if corrected
+            else {}
+        )
+        if not corrected:
+            status, reason, percentage = "not_calculable", "commission_components_unavailable", None
+        elif sales is None:
             status, reason, percentage = "not_calculable", "volume_missing", None
         elif sales == 0:
             status, reason, percentage = "not_calculable", "volume_zero", None
@@ -246,10 +283,12 @@ class NetpayCommerceAttentionService:
             status, reason, percentage = "not_calculable", "commission_missing", None
         else:
             status, reason = "calculated", None
-            percentage = ((commission / sales) * Decimal("100")).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            percentage = ((commission / sales) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         return PortfolioP2Metrics(
+            metric_definition_version=fact.metric_definition_version,
+            combined_benefit_mxn=benefit,
+            commission_components=components,
+            missing_components=[key for key, value in components.items() if value is None],
             reporting_period=fact.reporting_period,
             currency_code=batch.currency_code if batch else None,
             monthly_sales_mxn=sales,
@@ -257,15 +296,51 @@ class NetpayCommerceAttentionService:
             effective_commission_on_sales_percent=percentage,
             percentage_status=status,
             percentage_reason=reason,
-            source_fields={"monthly_sales_mxn": "Volumen", "distributor_commission_mxn": "Rentabilidad"},
+            source_fields={
+                "monthly_sales_mxn": "Volumen",
+                "combined_benefit_mxn": "Rentabilidad",
+                "distributor_commission_mxn": (
+                    "Bono de Activación + Comisión - Referenciador + "
+                    "Total Comisiones (sin Activación ni Referenciador)"
+                )
+                if corrected
+                else "unavailable_legacy_as_v1",
+            },
             source_batch_id=fact.batch_id,
             precision_classification=fact.precision_classification,
             freshness_at=fact.effective_at,
-            quality="qualified",
+            quality="qualified"
+            if corrected and commission is not None
+            else "pending_reprocessing"
+            if not corrected
+            else "components_missing",
         )
 
     @staticmethod
     def _p2_totals(rows: list[PortfolioRow]) -> PortfolioP2Totals:
+        periods = {r.p2.reporting_period for r in rows if r.p2.reporting_period}
+        if len(periods) > 1:
+            return PortfolioP2Totals(
+                percentage_status="not_calculable",
+                percentage_reason="period_mismatch",
+                excluded_stores=len(rows),
+                monetary_excluded_stores=len(rows),
+            )
+        unique = {r.store_reference_id or r.row_key: r for r in rows}
+        rows = list(unique.values())
+        monetary = [r for r in rows if r.p2.distributor_commission_mxn is not None]
+        def total(values):
+            return exact_sum(values) if values else None
+        amounts = dict(
+            reporting_period=next(iter(periods), None),
+            monthly_sales_mxn=total([r.p2.monthly_sales_mxn for r in rows if r.p2.monthly_sales_mxn is not None]),
+            distributor_commission_mxn=total([r.p2.distributor_commission_mxn for r in monetary]),
+            combined_benefit_mxn=total(
+                [r.p2.combined_benefit_mxn for r in rows if r.p2.combined_benefit_mxn is not None]
+            ),
+            monetary_stores=len(monetary),
+            monetary_excluded_stores=len(rows) - len(monetary),
+        )
         compatible: list[tuple[Decimal, Decimal]] = []
         for row in rows:
             sales = row.p2.monthly_sales_mxn
@@ -274,22 +349,20 @@ class NetpayCommerceAttentionService:
                 compatible.append((sales, commission))
         if not compatible:
             return PortfolioP2Totals(
+                **amounts,
                 percentage_status="not_calculable",
                 percentage_reason="no_compatible_stores",
                 excluded_stores=len(rows),
             )
-        sales = sum((item[0] for item in compatible), Decimal("0"))
-        commission = sum((item[1] for item in compatible), Decimal("0"))
+        sales = exact_sum(item[0] for item in compatible)
+        commission = exact_sum(item[1] for item in compatible)
         percentage = (
             None
             if sales == 0
-            else ((commission / sales) * Decimal("100")).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP
-            )
+            else ((commission / sales) * Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         )
         return PortfolioP2Totals(
-            monthly_sales_mxn=sales,
-            distributor_commission_mxn=commission,
+            **amounts,
             effective_commission_on_sales_percent=percentage,
             percentage_status="not_calculable" if percentage is None else "calculated",
             percentage_reason="aggregate_volume_zero" if percentage is None else None,
@@ -303,9 +376,7 @@ class NetpayCommerceAttentionService:
             unlinked = self.reconciliation().total
             rows = [
                 row.model_copy(
-                    update={
-                        "source_badges": row.source_badges.model_copy(update={"unlinked_records": unlinked})
-                    }
+                    update={"source_badges": row.source_badges.model_copy(update={"unlinked_records": unlinked})}
                 )
                 for row in rows
             ]
@@ -339,6 +410,7 @@ class NetpayCommerceAttentionService:
         p2_totals = self._p2_totals(rows)
         start = (filters.page - 1) * filters.page_size
         return PortfolioPage(
+            reporting_period=self.reporting_period,
             items=rows[start : start + filters.page_size],
             page=filters.page,
             page_size=filters.page_size,

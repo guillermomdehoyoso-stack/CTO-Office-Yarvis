@@ -15,6 +15,40 @@ PostgreSQL. The final candidate had one Alembic head; Ruff and 99 affected
 Governance, authentication, bootstrap and authorization tests passed. The
 operational Membership transition remains blocked and was not executed.
 
+## IG-015 Core v2 and commission settlement technical closure — 2026-10-29
+
+Amendment 028 and IG-015 are ratified. Gates A–F passed on the reconstructed
+publication candidate based on Governance commit
+`a743205055d683108ba3e4b7064012373bbd5956`. Gate F was rerun on 2026-10-30
+against the exact hash-identified source and the same parser bytes validated by
+Gates A–E. The earlier publication-access block remains historical evidence.
+Core v2 now defines distributor commission as AP + AQ + AR and preserves AS as
+combined distributor/Netpay benefit. Legacy v1 facts retain their original AS
+definition and expose corrected commission as pending reprocessing when no
+verified original is linked.
+
+The settlement profile preserves signed Decimal movements, entity, optional
+Store, original concept, earned period and file/sheet/row provenance. Read-only
+reconciliation leaves concept comparability, missing Store and unmatched Store
+visible and keeps reported payment net distinct from bank confirmation.
+
+The migration graph has one head, `20261028_55`, descending from
+`20261022_54`. Its round trip passed in disposable PostgreSQL. On the final
+candidate, Ruff passed, 125 affected backend tests passed, 80 Vitest tests
+passed, 3 affected Playwright journeys passed and a fresh Vite build transformed
+110 modules.
+Evidence is recorded in
+[`netpay-commission-ig015-conformance-20261029.txt`](../engineering/evidence/netpay-commission-ig015-conformance-20261029.txt).
+
+No real settlement file was imported during closure. Historical Gate F evidence
+from 2026-10-29 read the authorized source without modifying it and identified it by SHA-256
+`04ca3675a8075c119a4db503a71e9ddb3759df525dce66be534aea1d29eb7978`.
+The final parser reproduced all controls twice and isolated PostgreSQL staging,
+replay and concurrent acceptance passed again on 2026-10-30. This evidence does not confirm a bank
+deposit or authorize operational import. Production data, deployment,
+productive migration, OIDC, roles, identity rules, commit and push remain
+outside the authorization.
+
 ## Commerce Attention Portfolio P2A/P2B technical closure — 2026-10-21
 
 Amendment 025 and IG-012 are ratified. P2A source integrity and P2B read-only

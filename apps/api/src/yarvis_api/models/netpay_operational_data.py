@@ -29,7 +29,8 @@ class OperationalDataBatch(Base):
     __table_args__ = (
         UniqueConstraint("organization_id", "dataset_type", "source_hash", name="uq_netpay_data_batch_hash"),
         CheckConstraint(
-            "dataset_type IN ('monthly_store_profitability','no_usage_campaign')", name="ck_netpay_data_batch_dataset"
+            "dataset_type IN ('monthly_store_profitability','no_usage_campaign','commission_settlement')",
+            name="ck_netpay_data_batch_dataset",
         ),
         CheckConstraint(
             "status IN ('uploaded','validating','needs_review','metadata_pending','accepted','rejected')",
@@ -59,6 +60,11 @@ class OperationalDataBatch(Base):
     delivery_channel: Mapped[str | None] = mapped_column(String(128))
     row_counts: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     source_discarded: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    settlement_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict, server_default="{}")
+    settlement_effective: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    predecessor_batch_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_operational_data_batches.id")
+    )
     uploaded_by_principal_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("principals.id", ondelete="RESTRICT"), nullable=False
     )
@@ -129,6 +135,15 @@ class StoreProfitabilityFact(Base):
     profitability: Mapped[float | None] = mapped_column(Float)
     volume_exact: Mapped[Decimal | None] = mapped_column(Numeric(24, 8))
     distributor_commission_exact: Mapped[Decimal | None] = mapped_column(Numeric(24, 8))
+    metric_definition_version: Mapped[str] = mapped_column(
+        String(48), nullable=False, default="legacy_as_v1", server_default="legacy_as_v1"
+    )
+    activation_bonus_exact: Mapped[Decimal | None] = mapped_column(Numeric())
+    referrer_commission_exact: Mapped[Decimal | None] = mapped_column(Numeric())
+    base_commission_exact: Mapped[Decimal | None] = mapped_column(Numeric())
+    commission_v2_exact: Mapped[Decimal | None] = mapped_column(Numeric())
+    combined_benefit_exact: Mapped[Decimal | None] = mapped_column(Numeric())
+    sales_v2_exact: Mapped[Decimal | None] = mapped_column(Numeric())
     source_scale: Mapped[int | None] = mapped_column(Integer)
     precision_classification: Mapped[str] = mapped_column(
         String(40), nullable=False, default="legacy_float_precision_unverified"

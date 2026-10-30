@@ -30,6 +30,10 @@ class PortfolioSourceBadges(BaseModel):
 
 
 class PortfolioP2Metrics(BaseModel):
+    metric_definition_version: str = "unknown"
+    combined_benefit_mxn: Decimal | None = None
+    commission_components: dict[str, Decimal | None] = Field(default_factory=dict)
+    missing_components: list[str] = Field(default_factory=list)
     reporting_period: str | None = None
     currency_code: str | None = None
     monthly_sales_mxn: Decimal | None = None
@@ -45,6 +49,10 @@ class PortfolioP2Metrics(BaseModel):
 
 
 class PortfolioP2Totals(BaseModel):
+    reporting_period: str | None = None
+    combined_benefit_mxn: Decimal | None = None
+    monetary_stores: int = 0
+    monetary_excluded_stores: int = 0
     monthly_sales_mxn: Decimal | None = None
     distributor_commission_mxn: Decimal | None = None
     effective_commission_on_sales_percent: Decimal | None = None
@@ -76,6 +84,7 @@ class PortfolioRow(BaseModel):
 
 
 class PortfolioPage(BaseModel):
+    reporting_period: str | None = None
     items: list[PortfolioRow]
     page: int
     page_size: int

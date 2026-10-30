@@ -1,0 +1,125 @@
+{
+  "date": "2026-10-28",
+  "branch": "feat/netpay-gmail-intake-sentinel",
+  "head": "99709fc1dacc852d783dc45e09bd5d5a6b3a902f",
+  "initial_status": [
+    " M apps/api/src/yarvis_api/api/routes/governance.py",
+    " M apps/api/src/yarvis_api/application/authority.py",
+    " M apps/api/src/yarvis_api/canonical_contracts.py",
+    " M apps/api/src/yarvis_api/models/principal.py",
+    " M apps/api/src/yarvis_api/services/governance_authority.py",
+    " M apps/api/tests/test_authority_resolution.py",
+    " M apps/api/tests/test_canonical_contracts.py",
+    " M apps/api/tests/test_governance_authority_contracts.py",
+    " M apps/web/e2e/netpay-commerce-attention.spec.ts",
+    " M apps/web/src/components/netpay/NetpayCommerceAttentionPortfolio.test.tsx",
+    " M apps/web/src/components/netpay/NetpayCommerceAttentionPortfolio.tsx",
+    " M docs/architecture/INTERACTION_CONTRACT_CATALOG.md",
+    "?? AUDIT_REPORT.md",
+    "?? apps/api/migrations/versions/20261022_54_governance_membership_role_transition.py",
+    "?? apps/api/tests/test_ig014_migration.py",
+    "?? docs/engineering/F-011_GOVERNANCE_CONTRACT_AMENDMENT_002.md",
+    "?? docs/engineering/IG-013_NETPAY_COMMERCE_ATTENTION_P2A_P2B_PILOT_ACTIVATION.md",
+    "?? docs/engineering/IG-014_NETPAY_PORTFOLIO_AUTHENTICATED_READER_AUTHORIZATION.md",
+    "?? docs/engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_026.md",
+    "?? docs/engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_027.md",
+    "?? docs/engineering/evidence/netpay-p2-local-activation-20261022.txt",
+    "?? docs/engineering/evidence/netpay-p2-local-gate-a-b-preflight-20261022.txt",
+    "?? docs/engineering/evidence/netpay-portfolio-authenticated-reader-ig014-conformance-20261022.txt"
+  ],
+  "preexisting_sha256": [
+    {
+      "Path": "AUDIT_REPORT.md",
+      "Hash": "AF58D21996AB67113F8C3898444D50817D0147FED65B69846E0CD88E81537241"
+    },
+    {
+      "Path": "apps/api/migrations/versions/20261022_54_governance_membership_role_transition.py",
+      "Hash": "BA058636F22972A6BB10C0190D09F87B9EE29F5F4AEDC32021C67BCB76C0396C"
+    },
+    {
+      "Path": "apps/api/tests/test_ig014_migration.py",
+      "Hash": "D1BFA53B5C6B4EEC12CB6F319C9D8B792F871A040FBA1BD9B4BDAAD06DDDD5F5"
+    },
+    {
+      "Path": "docs/engineering/F-011_GOVERNANCE_CONTRACT_AMENDMENT_002.md",
+      "Hash": "A1CA111ECA7F9496A15FC8CA1E0D9B1081D776F5CAF1C7FFB08511C974B242B5"
+    },
+    {
+      "Path": "docs/engineering/IG-013_NETPAY_COMMERCE_ATTENTION_P2A_P2B_PILOT_ACTIVATION.md",
+      "Hash": "62FDDCEEEE777A92D4F0C41678240BE3FB2747E00D0D38E7BEFB55677C7E5EAA"
+    },
+    {
+      "Path": "docs/engineering/IG-014_NETPAY_PORTFOLIO_AUTHENTICATED_READER_AUTHORIZATION.md",
+      "Hash": "6573D8263B817CCE977E2E63213B94C8CB5519747995BB99FE1698435DB3A7B2"
+    },
+    {
+      "Path": "docs/engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_026.md",
+      "Hash": "6DDD6D9E1B25392CFC7024733427E515F7FF3D69D65B3EE351B99E06781F2B8A"
+    },
+    {
+      "Path": "docs/engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_027.md",
+      "Hash": "3CEA070C6EB8431F92CC70F3638646AB486C8989E61D42CEB6C4E1CB9EC65E53"
+    },
+    {
+      "Path": "docs/engineering/evidence/netpay-p2-local-activation-20261022.txt",
+      "Hash": "6E441AAE9678C3CD63993749546714DF28006F0799B2817523ED62B1B45BAFF4"
+    },
+    {
+      "Path": "docs/engineering/evidence/netpay-p2-local-gate-a-b-preflight-20261022.txt",
+      "Hash": "C3227CB637649ED76EB9CC20F99942DF26D21590E7A44EA72E898CFF1453C8DA"
+    },
+    {
+      "Path": "docs/engineering/evidence/netpay-portfolio-authenticated-reader-ig014-conformance-20261022.txt",
+      "Hash": "A394DD78207EC9359A6CB93BAD5F9B6A4BDEC41B061E56C6799F858E88571ADE"
+    },
+    {
+      "Path": "apps/api/src/yarvis_api/api/routes/governance.py",
+      "Hash": "BBBF96959C8CA8771EBD6233A3F360392BDC0EB158A16935A1C1DFE2ED7D0558"
+    },
+    {
+      "Path": "apps/api/src/yarvis_api/application/authority.py",
+      "Hash": "5930B26000722EBAD1BDA0F94FD8FA4B7D7A13952D48C29A3AD3D09D54277CCF"
+    },
+    {
+      "Path": "apps/api/src/yarvis_api/canonical_contracts.py",
+      "Hash": "1A7A3C37F418676524D7881C0E193E158C3EAB20F76EBFD405679CF5F68271CF"
+    },
+    {
+      "Path": "apps/api/src/yarvis_api/models/principal.py",
+      "Hash": "F34E4CCBEB183F81A6A15019C427D8DCCA5E81C7337AD9D674F4D09A1B12F7D3"
+    },
+    {
+      "Path": "apps/api/src/yarvis_api/services/governance_authority.py",
+      "Hash": "8D209DC5DE6B43FD077AAF72BDBA4059D94007CBAA9492DFD2753BD26C9D323E"
+    },
+    {
+      "Path": "apps/api/tests/test_authority_resolution.py",
+      "Hash": "F890E9E821EFCC71E4701C73A2584C9ADC2DDDC2942350ABF473B9487E777A15"
+    },
+    {
+      "Path": "apps/api/tests/test_canonical_contracts.py",
+      "Hash": "495BF0835C818B9467C6D1E749F9F4C26D2EE3699980BD1721157F75BD827AC9"
+    },
+    {
+      "Path": "apps/api/tests/test_governance_authority_contracts.py",
+      "Hash": "56239774CD46D6C044D72F2AF81987629EE2BE57D9F497E19C921C21A4084A23"
+    },
+    {
+      "Path": "apps/web/e2e/netpay-commerce-attention.spec.ts",
+      "Hash": "D0EAB5DB672FEB71F42013FDD62FDBCB0627B2914C8146999D504AB5690B7654"
+    },
+    {
+      "Path": "apps/web/src/components/netpay/NetpayCommerceAttentionPortfolio.test.tsx",
+      "Hash": "127F3DA46E61002FCEFFF22F552B629293222F2ED58E6A22C83AC07C69E3C840"
+    },
+    {
+      "Path": "apps/web/src/components/netpay/NetpayCommerceAttentionPortfolio.tsx",
+      "Hash": "02A34A466A50175FB2DFF3B5DADD1983983FC9540D90212CF42DB72930973FC7"
+    },
+    {
+      "Path": "docs/architecture/INTERACTION_CONTRACT_CATALOG.md",
+      "Hash": "E5C462489013F55723EE1587669E5C26E0746ED3B7C68046D781DF2773C8AF19"
+    }
+  ],
+  "scope": "Preexisting files; hashes checked again at close. Runtime and remote not inspected."
+}

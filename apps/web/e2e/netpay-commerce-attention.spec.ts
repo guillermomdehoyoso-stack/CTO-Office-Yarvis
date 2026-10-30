@@ -1,5 +1,23 @@
 import { expect, test } from '@playwright/test';
 
+test('IG-015 corrected amounts, period, settlement lineage and bank status remain read-only', async ({ page }) => {
+  const methods:string[]=[];
+  page.on('request',r=>{if(r.url().includes('/netpay/commerce-attention'))methods.push(r.method());});
+  await page.route('**/netpay/commerce-attention?*', route=>route.fulfill({json:{items:[{...rows[0],p2:{...p2,metric_definition_version:'ap_aq_ar_v2',combined_benefit_mxn:'700.00',distributor_commission_mxn:'100.00',effective_commission_on_sales_percent:'10.00'}}],page:1,page_size:50,total:1,filtered_total:1,pages:1,p2_totals:{monthly_sales_mxn:'1000.00',combined_benefit_mxn:'700.00',distributor_commission_mxn:'100.00',effective_commission_on_sales_percent:'10.00',compatible_stores:1,excluded_stores:0,monetary_stores:1}}}));
+  await page.route('**/netpay/commerce-attention/settlements?*',route=>route.fulfill({json:[{batch_id:'synthetic',reporting_period:'2026-09',net_reported:'11.00',positive:'13.00',negative:'-2.00',announced_payment_date:'2026-10-15',bank_status:'not_confirmed',unexplained_difference:null,movements:['Asesor','Distribuidor','Asociado 15'].map((entity,i)=>({entity_original:entity,store_id:i===2?null:'SYN-001',concept_original:'COMISION ORIGINAL',amount_signed:i===2?'-2':'6.5',source_sheet:'sheet1',source_row_number:8+i,source_hash:'a'.repeat(64),reasons:['concept_mapping_pending']}))}]}));
+  await page.goto('/netpay-portfolio?period=2026-09');
+  await expect(page.getByLabel('Periodo mensual')).toHaveValue('2026-09');
+  await expect(page.getByLabel('Totales mensuales P2')).toContainText('Beneficio total combinado: $700.00');
+  await expect(page.getByLabel('Totales mensuales P2')).toContainText('Comisión: $100.00');
+  await page.getByRole('button',{name:'Ver liquidaciones'}).click();
+  await expect(page.getByText('Asesor',{exact:true})).toBeVisible();
+  await expect(page.getByText('Distribuidor',{exact:true})).toBeVisible();
+  await expect(page.getByText('Asociado 15',{exact:true})).toBeVisible();
+  await expect(page.getByText('Sin Store — sin asignar')).toBeVisible();
+  await expect(page.getByText('Cobro bancario: No confirmado')).toBeVisible();
+  expect(methods.every(m=>m==='GET')).toBeTruthy();
+});
+
 const p2 = { reporting_period:'2026-09',currency_code:'MXN',monthly_sales_mxn:1000,distributor_commission_mxn:-25,effective_commission_on_sales_percent:-2.5,percentage_status:'calculated',percentage_reason:null,source_fields:{monthly_sales_mxn:'Volumen',distributor_commission_mxn:'Rentabilidad'},source_batch_id:'00000000-0000-0000-0000-000000000099',precision_classification:'exact_decimal_source',freshness_at:'2026-10-19T12:00:00Z',quality:'qualified' };
 const base = { client_id: '00000000-0000-0000-0000-000000000001', company_id: null, branch_id: null, store_reference_id: null, store_id: null, store_reference_count: 0, legal_name: null, branch_name: null, masked_rfc: '*********4XYZ', contact: { available: false, label: 'Contacto registrado', source_scope: null, name: null, email: null, phone: null, verification: 'not_available', updated_at: null }, reconciliation_status: 'exact_match', availability_reasons: [], source_badges: { master: true, cases_available: 0, linked_pre_master: 0, unlinked_records: null, d1: 'No incorporado en P0/P1', terminals: 'Sin fuente canónica autorizada' }, updated_at: '2026-10-19T12:00:00Z', p2 };
 const rows = [
@@ -15,6 +33,7 @@ test('portfolio list, filters, detail and back remain read-only', async ({ page 
   page.on('request', (request) => { if (request.url().includes('/netpay/commerce-attention')) methods.push(request.method()); });
   await page.route('**/netpay/commerce-attention/**', async (route) => {
     const key = decodeURIComponent(new URL(route.request().url()).pathname.split('/').pop() || '');
+    if (key === 'reconciliation') { await route.fulfill({json:{items:[],total:0}}); return; }
     await route.fulfill({ json: { ...rows[0], row_key: key, full_rfc: null, mid: 'MID no disponible', data_quality: rows[0].availability_reasons } });
   });
   await page.route('**/netpay/commerce-attention?*', async (route) => {

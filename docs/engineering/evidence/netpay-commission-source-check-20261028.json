@@ -1,0 +1,149 @@
+﻿{
+  "scope": "Offline source audit only; not canonical reconciliation or runtime conformance",
+  "settlement_sha256": "04ca3675a8075c119a4db503a71e9ddb3759df525dce66be534aea1d29eb7978",
+  "core_sha256": "71aec24bc0fe5d8cb66e3d35103e4d51934e1a15f508746d170d9a24fc74b86d",
+  "settlement_bytes": 23977,
+  "core_bytes": 469525,
+  "period": "2026-09",
+  "announced_payment_date": "2026-10-15",
+  "currency": "MXN (user-confirmed)",
+  "movement_count": 291,
+  "header_rows": [
+    7,
+    152,
+    161
+  ],
+  "positive": "25668.64",
+  "negative": "-8187.85",
+  "net": "17480.79",
+  "entities": {
+    "Asesor": 140,
+    "Asociado 15": 4,
+    "Distribuidor": 147
+  },
+  "missing_store_movements": 6,
+  "exact_core_store_matches": 239,
+  "unmatched_including_missing": 52,
+  "groups": [
+    {
+      "entity": "Asesor",
+      "concept_family": "COMERCIOS NO RENTABLES",
+      "count": 1,
+      "amount": "-187.31"
+    },
+    {
+      "entity": "Asesor",
+      "concept_family": "PAGO COMISIONES AGREGADOR ASESOR",
+      "count": 61,
+      "amount": "10706.73"
+    },
+    {
+      "entity": "Asesor",
+      "concept_family": "PAGO COMISIONES ECOMERCE ASESOR",
+      "count": 42,
+      "amount": "1026.87"
+    },
+    {
+      "entity": "Asesor",
+      "concept_family": "PAGO COMISIONES RENTA TPV ASESOR",
+      "count": 4,
+      "amount": "68.62"
+    },
+    {
+      "entity": "Asesor",
+      "concept_family": "PENALIZACION ASE TPV NO RECUPERADA",
+      "count": 31,
+      "amount": "-3300.00"
+    },
+    {
+      "entity": "Asesor",
+      "concept_family": "REV COMERCIOS NO RENTABLES",
+      "count": 1,
+      "amount": "168.51"
+    },
+    {
+      "entity": "Asociado 15",
+      "concept_family": "COMISION POR ACTIVACION",
+      "count": 2,
+      "amount": "1200.00"
+    },
+    {
+      "entity": "Asociado 15",
+      "concept_family": "PAGO COMISIONES AGREGADOR ASOC ISYPAY",
+      "count": 2,
+      "amount": "254.94"
+    },
+    {
+      "entity": "Distribuidor",
+      "concept_family": "COBRO ASESOR INTERNO 3 PORCIENTO",
+      "count": 1,
+      "amount": "-263.23"
+    },
+    {
+      "entity": "Distribuidor",
+      "concept_family": "COMERCIOS NO RENTABLES",
+      "count": 1,
+      "amount": "-187.31"
+    },
+    {
+      "entity": "Distribuidor",
+      "concept_family": "PAGO COMISIONES AGREGADOR DISTRIBUIDOR",
+      "count": 61,
+      "amount": "10706.73"
+    },
+    {
+      "entity": "Distribuidor",
+      "concept_family": "PAGO COMISIONES AGREGADOR DISTRIBUIDOR ISYPAY",
+      "count": 2,
+      "amount": "254.94"
+    },
+    {
+      "entity": "Distribuidor",
+      "concept_family": "PAGO COMISIONES ECOMERCE DISTRIBUIDOR",
+      "count": 45,
+      "amount": "1044.17"
+    },
+    {
+      "entity": "Distribuidor",
+      "concept_family": "PAGO COMISIONES RENTA TPV DISTRIBUIDOR",
+      "count": 4,
+      "amount": "68.62"
+    },
+    {
+      "entity": "Distribuidor",
+      "concept_family": "PENALIZACION DIST TPV NO RECUPERADA",
+      "count": 31,
+      "amount": "-3300.00"
+    },
+    {
+      "entity": "Distribuidor",
+      "concept_family": "REV COMERCIOS NO RENTABLES",
+      "count": 1,
+      "amount": "168.51"
+    },
+    {
+      "entity": "Distribuidor",
+      "concept_family": "SERVICIO ASESOR INTERNO",
+      "count": 1,
+      "amount": "-950.00"
+    }
+  ],
+  "core_headers": {
+    "AP": "Bono de Activaci\u00f3n",
+    "AQ": "Comisi\u00f3n - Referenciador",
+    "AR": "Total Comisiones (sin Activaci\u00f3n ni Referenciador)",
+    "AS": "Rentabilidad"
+  },
+  "core_rows": 348,
+  "core_totals_raw_decimal": {
+    "S": "17059943.31000000002493",
+    "AP": "1200",
+    "AQ": "0",
+    "AR": "24327.3600000000001804",
+    "AS": "58981.7300000000002650"
+  },
+  "core_commission_sum_display": "25527.36",
+  "core_zero_sales": 194,
+  "core_negative_commissions": 0,
+  "checks": "PASS: headers, 291 movements, signed controls, header net, dates, Core fields and uniqueness"
+}

@@ -1,4 +1,4 @@
-export type NetpayStoreReference = {
+﻿export type NetpayStoreReference = {
   id: string;
   store_id: string;
   source_type: string;
@@ -54,12 +54,12 @@ export type MasterPage = {
   total: number;
 };
 export type PortfolioContact = { available: boolean; label: string; source_scope: "client" | "company" | "branch" | null; name: string | null; email: string | null; phone: string | null; verification: string; updated_at: string | null };
-export type PortfolioP2Metrics = { reporting_period:string|null; currency_code:string|null; monthly_sales_mxn:number|null; distributor_commission_mxn:number|null; effective_commission_on_sales_percent:number|null; percentage_status:'calculated'|'not_calculable'|'unknown'; percentage_reason:string|null; source_fields:Record<string,string>; source_batch_id:string|null; precision_classification:string|null; freshness_at:string|null; quality:string };
-export type PortfolioP2Totals = { monthly_sales_mxn:number|null; distributor_commission_mxn:number|null; effective_commission_on_sales_percent:number|null; percentage_status:'calculated'|'not_calculable'|'unknown'; percentage_reason:string|null; compatible_stores:number; excluded_stores:number };
+export type PortfolioP2Metrics = { reporting_period:string|null; currency_code:string|null; monthly_sales_mxn:number|string|null; distributor_commission_mxn:number|string|null; effective_commission_on_sales_percent:number|string|null; combined_benefit_mxn?:number|string|null; metric_definition_version?:string; quality?:string; monetary_stores?:number; monetary_excluded_stores?:number; percentage_status:'calculated'|'not_calculable'|'unknown'; percentage_reason:string|null; source_fields:Record<string,string>; source_batch_id:string|null; precision_classification:string|null; freshness_at:string|null };
+export type PortfolioP2Totals = { monthly_sales_mxn:number|string|null; distributor_commission_mxn:number|string|null; effective_commission_on_sales_percent:number|string|null; combined_benefit_mxn?:number|string|null; metric_definition_version?:string; quality?:string; monetary_stores?:number; monetary_excluded_stores?:number; percentage_status:'calculated'|'not_calculable'|'unknown'; percentage_reason:string|null; compatible_stores:number; excluded_stores:number };
 export type PortfolioRow = { row_key: string; entity_scope: "client" | "company" | "branch"; client_id: string; company_id: string | null; branch_id: string | null; store_reference_id: string | null; store_id: string | null; store_reference_count: number; commerce_name: string; legal_name: string | null; branch_name: string | null; masked_rfc: string | null; contact: PortfolioContact; reconciliation_status: string; availability_reasons: string[]; source_badges: { master: boolean; cases_available: number; linked_pre_master: number; unlinked_records: number | null; d1: string; terminals: string }; updated_at: string; p2?:PortfolioP2Metrics };
 export type PortfolioDetail = PortfolioRow & { full_rfc: string | null; mid: string; data_quality: string[] };
 export type PortfolioPage = { items: PortfolioRow[]; page: number; page_size: number; total: number; filtered_total: number; pages: number; p2_totals?:PortfolioP2Totals };
-export type PortfolioQuery = { page?: number; page_size?: number; search?: string; entity_scopes?: string[]; reconciliation_statuses?: string[]; has_company?: boolean; has_branch?: boolean; has_store_reference?: boolean; has_contact?: boolean; sort_field?: string; sort_direction?: "asc" | "desc" };
+export type PortfolioQuery = { reporting_period?: string; page?: number; page_size?: number; search?: string; entity_scopes?: string[]; reconciliation_statuses?: string[]; has_company?: boolean; has_branch?: boolean; has_store_reference?: boolean; has_contact?: boolean; sort_field?: string; sort_direction?: "asc" | "desc" };
 export type PortfolioReconciliationItem = { record_type: "candidate" | "commercial_intake" | "dossier"; record_id: string; label_hint: string; provenance: string; reconciliation_status: string; reasons: string[]; updated_at: string };
 export type PortfolioReconciliationPage = { items: PortfolioReconciliationItem[]; total: number };
 export type ChecklistItem = {
@@ -505,11 +505,14 @@ export class NetpayApiClient {
     });
     return this.request<PortfolioPage>(`/netpay/commerce-attention?${params}`);
   }
+  listCommissionSettlements(period = "", includeDetails = false) {
+    return this.request<CommissionSettlement[]>(`/netpay/commerce-attention/settlements?include_details=${includeDetails}${period ? `&reporting_period=${encodeURIComponent(period)}` : ""}`);
+  }
   listCommerceAttentionReconciliation() {
     return this.request<PortfolioReconciliationPage>("/netpay/commerce-attention/reconciliation");
   }
-  getCommerceAttentionDetail(rowKey: string, includeSensitive = false) {
-    return this.request<PortfolioDetail>(`/netpay/commerce-attention/${encodeURIComponent(rowKey)}?include_sensitive=${includeSensitive}`);
+  getCommerceAttentionDetail(rowKey: string, includeSensitive = false, period = "") {
+    return this.request<PortfolioDetail>(`/netpay/commerce-attention/${encodeURIComponent(rowKey)}?include_sensitive=${includeSensitive}${period ? `&reporting_period=${encodeURIComponent(period)}` : ""}`);
   }
   createClient(payload: Record<string, unknown>, key: string) {
     return this.request<NetpayClient>(
@@ -938,3 +941,5 @@ export function apiErrorMessage(error: unknown): string {
   if (error.kind === "validation") return `Revisa los datos: ${error.message}`;
   return error.message;
 }
+
+export type CommissionSettlement = { batch_id:string; reporting_period:string; currency_code:string; net_reported:string; positive:string; negative:string; announced_payment_date:string; bank_status:string; unexplained_difference:string|null; difference_reason:string; movements?:{source_row_number:number;source_sheet:string;source_hash:string;entity_original:string;concept_original:string;store_id:string|null;amount_signed:string;reasons:string[]}[]; core_without_settlement?:string[] };

@@ -1,0 +1,87 @@
+IG-015 GATE F — REAL SOURCE VALIDATION
+Date: 2026-10-29 America/Mexico_City
+Current result: PASS FOR PUBLICATION REVALIDATION (2026-10-30)
+
+HISTORY
+- Initial result: BLOCKED because the earlier attachment lacked an identity-preserving readable reference.
+- After the literal (3).xlsx path was authorized, the accessible source produced FAIL because the then-current parser rejected non-canonical OOXML relationship entry names.
+- A narrow local importer remediation was then authorized. Current result is unambiguously PASS; BLOCKED and FAIL remain historical context.
+
+SOURCE IDENTITY
+- Effective name: GUILLERMO MARIO DE HOYOS OLIVERA (3).xlsx
+- Effective path: C:/Users/minos/Downloads/GUILLERMO MARIO DE HOYOS OLIVERA (3).xlsx
+- Exists: yes
+- Size: 23,977 bytes
+- Last write UTC: 2026-10-29T02:17:55.6837819Z
+- SHA-256: 04ca3675a8075c119a4db503a71e9ddb3759df525dce66be534aea1d29eb7978
+- This hash equals settlement_sha256 in netpay-commission-source-check-20261028.json. It establishes identity with those audited bytes only; no equivalence is inferred from filename or claimed for (3)(2).xlsx.
+
+PREFLIGHT
+- Branch: feat/netpay-gmail-intake-sentinel
+- Base HEAD: 99709fc1dacc852d783dc45e09bd5d5a6b3a902f
+- Alembic: 20261028_55 (head)
+- Final parser SHA-256: efee446d3031f7780b2ce2f6315f5652b778021fef53038c2af37d55a1d72bbb
+- Final upload route SHA-256: 05064f55569f41dd9ff9b3d52b674b2a04a97e2306abf9b614e574b7dae14c1c
+- Workspace and isolated-container execution bytes matched before the passing real-source run.
+
+STRUCTURE
+- Worksheet sheet1; XML xl/worksheets/sheet1.xml; 9 package entries.
+- Declared dimension absent; bounds derived in memory.
+- Repeated transaction headers at physical rows 7, 152 and 161.
+- Producer metadata: Application Composer; AppVersion 202.2232; Company Alteryx,Inc; description SRC Composer Report; revision 1.
+- Producer entries xl\_rels\workbook.xml.rels and _rels\.rels are canonicalized in memory. Source bytes and hash remain unchanged.
+- No default style; openpyxl applies its default in memory.
+
+FINAL PARSER CONTROLS
+- Two parser runs returned equal structured results.
+- Period 2026-09; announced payment date 2026-10-15; currency MXN under the ratified source profile.
+- Movements 291; positive 25,668.64; negative -8,187.85; net 17,480.79; header 17,480.79; equality yes.
+- Entities: Asesor 140; Distribuidor 147; Asociado 15 4.
+- Missing Store 6; distinct non-null Stores 137; distinct original concepts 228.
+- Entity, optional Store, original concept, signed Decimal amount, period, sheet and physical row provenance remain preserved; repeated headers are excluded.
+- No identical entity/Store/concept/amount tuple occurs in this source. Synthetic acceptance covers legitimate duplicates.
+
+LOCAL ISOLATED ACCEPTANCE
+- Disposable PostgreSQL in ig015-api-20261029, with no published database port.
+- First staging created one batch and 291 movements; exact replay returned the same batch.
+- Two concurrent accepts produced one effective transition and one accepted domain event.
+- Persisted provenance retained the original source hash, not the in-memory normalized package hash.
+- Fixture teardown removed test state; no operational or productive persistence occurred.
+
+REMEDIATION AND SECURITY
+- Canonical OOXML stays a byte-for-byte no-op; only entry separators are canonicalized in memory and XML payload bytes stay unchanged.
+- Rejections cover unsafe paths, duplicates/collisions, case-fold collisions, encrypted or unsupported entries, external relationships, unsupported types, malformed XML, truncated archives and ZIP limits.
+- Missing dimensions and merged non-transaction cells are handled without changing transaction identity.
+- Parenthesized source filenames are accepted while the allowlist and .xlsx requirement remain enforced.
+
+RESULTS
+- Real Gate F: 1 passed, 2 warnings in 4.62s.
+- Final affected backend regression: 114 passed, 2 warnings in 75.68s.
+- Ruff affected backend: all checks passed.
+- Warnings: existing Starlette deprecation, deliberate duplicate-ZIP fixture, and real workbook missing default style.
+- No source modification, operational import, historical reprocessing, productive migration, commit, push or deployment occurred.
+
+GATE DECISION
+PASS. The exact hash-identified source reproduces all Gate F controls under the final workspace parser. Determinism, isolated replay, concurrent single acceptance, original-hash provenance and synthetic duplicate preservation pass. This does not confirm a bank deposit or authorize operational import, historical reprocessing, production migration or deployment.
+
+PUBLICATION REVALIDATION — 2026-10-30 America/Mexico_City
+- Candidate base: a743205055d683108ba3e4b7064012373bbd5956 (published Governance/IG-014).
+- Required literal path: C:/Users/minos/Downloads/GUILLERMO MARIO DE HOYOS OLIVERA (3).xlsx.
+- Read-only preflight result: EXISTS=false (command exit 2). No alternate path, filename, container copy or historical result was substituted.
+- Final candidate independent checks passed: Ruff; Alembic head 20261028_55; 125 affected backend tests; 80 Vitest tests; 3 affected Playwright journeys; fresh Vite build of 110 modules; git diff check pending final documentation update.
+- Current Gate F result for publication: BLOCKED. The 2026-10-29 hash-identified PASS above remains historical evidence, but it was not rerun against the final publication candidate in this execution.
+- Consequence: the authorized all-gates condition for commit and push is not satisfied. No commit or push may be performed until the exact literal source is readable and Gate F is rerun on these final parser bytes.
+
+PUBLICATION REVALIDATION COMPLETED — 2026-10-30 America/Mexico_City
+- The exact literal path became readable without search or substitution.
+- Identity before parsing: 23,977 bytes; SHA-256 04ca3675a8075c119a4db503a71e9ddb3759df525dce66be534aea1d29eb7978.
+- Candidate execution hashes matched the A–E validation: parser efee446d3031f7780b2ce2f6315f5652b778021fef53038c2af37d55a1d72bbb; upload route 05064f55569f41dd9ff9b3d52b674b2a04a97e2306abf9b614e574b7dae14c1c; IG-015 test 06a2a8177c7568b20bcbe4160410a62b253e4787e961285ff0df56e48e55e13f.
+- The source and candidate were bind-mounted read-only into a disposable runtime on network ig015-synthetic-20261029. No XLSX copy or alternate source was used.
+- Two parser executions were equal. Controls: 291 movements; positive 25,668.64 MXN; negative -8,187.85 MXN; net and header 17,480.79 MXN; Asesor 140; Distribuidor 147; Asociado 15 4; six missing Store; 137 distinct non-null Stores; period 2026-09; announced payment 2026-10-15; header rows 7, 152 and 161 excluded from movements; concept, sign, optional Store and physical-row provenance preserved.
+- Isolated acceptance: first staging created one batch with 291 movements; exact replay returned the same batch; two concurrent accepts produced one accepted transition and one domain event; persisted source hash equals the original XLSX hash.
+- Synthetic duplicate control remained separate and passed in the same run.
+- Command result: 2 passed, 2 warnings in 18.06s. Warnings were the existing Starlette deprecation and the real workbook missing a default style.
+- Historical sequence is preserved: BLOCKED (attachment access) → FAIL (OOXML compatibility) → PASS (remediated source validation) → BLOCKED (publication source unavailable) → PASS (this final candidate revalidation).
+
+CURRENT GATE DECISION
+PASS. Gates A–F apply to the same final candidate bytes. This authorizes only the separately approved repository closure; it does not authorize operational import, historical reprocessing, production migration or deployment.

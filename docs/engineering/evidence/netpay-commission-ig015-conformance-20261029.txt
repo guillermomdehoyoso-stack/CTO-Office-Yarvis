@@ -1,0 +1,70 @@
+IG-015 LOCAL CONFORMANCE EVIDENCE
+Date: 2026-10-29 America/Mexico_City
+Authority: ratified Amendment 028 and IG-015
+Branch: feat/netpay-gmail-intake-sentinel
+Base HEAD: 99709fc1dacc852d783dc45e09bd5d5a6b3a902f
+Scope: local implementation, synthetic fixtures and disposable PostgreSQL only
+
+RECOVERY AND PRESERVATION
+- Existing containers: ig015-api-20261029 and ig015-postgres-20261029.
+- No published ports. Both use only ig015-synthetic-20261029. PostgreSQL data is tmpfs and has no mounts.
+- The interrupted copy-to-workspace plus Ruff command had been rejected before execution. No copy from that command occurred.
+- A preceding Ruff invocation had changed /app only. /app and the read-only /source/api bind were compared before integration.
+- Current workspace semantics were recopied into /app, formatted there, extracted to data/ig015-container-formatted-20261029, reviewed and integrated selectively.
+- Inventory docs/engineering/evidence/netpay-commission-worktree-20261028.json contains 23 preexisting files.
+- All 23 snapshots under data/ig015-preexisting match their recorded SHA-256.
+- The 20 non-overlap workspace files still match their recorded SHA-256.
+- Three intentional overlap files retain their original snapshots and contain reviewed additive IG-015 changes:
+  apps/web/e2e/netpay-commerce-attention.spec.ts
+  apps/web/src/components/netpay/NetpayCommerceAttentionPortfolio.test.tsx
+  apps/web/src/components/netpay/NetpayCommerceAttentionPortfolio.tsx
+
+GATE A — PASS
+- Branch and base HEAD verified as above; no commit or push performed.
+- Alembic static graph: one head 20261028_55, parent 20261022_54, parent 20261021_53.
+- Migration 55 is additive. No OIDC, role, permission or identity-rule change was introduced by IG-015.
+
+GATE B — PASS
+- Core v2 resolves exact headers by normalized name, independent of column order:
+  AP Bono de Activación
+  AQ Comisión - Referenciador
+  AR Total Comisiones (sin Activación ni Referenciador)
+  AS Rentabilidad
+- Commission is exact Decimal AP + AQ + AR. AS is stored separately as combined benefit.
+- Missing components remain null with an explicit reason. Zero and negative values are preserved.
+- Percentage uses ratio of sums; sales zero yields null / volume_zero / No calculable.
+- Legacy v1 values and definition are preserved. Corrected commission stays unavailable/pending reprocessing without a verified source workflow.
+
+GATE C — PASS WITH SYNTHETIC SOURCE ONLY
+- Settlement movements preserve physical row, repeated header block, entity, optional Store, original concept, signed Decimal amount, currency, earned period, sheet and source hash.
+- Asesor, Distribuidor and Asociado 15 remain distinct. Identical legitimate rows remain distinct by physical row.
+- Replay of identical source bytes is idempotent. Concurrent acceptance produces one effective transition.
+- Synthetic 291-row fixture verified: positive 25668.64, negative -8187.85, net 17480.79, with repeated headers at rows 7, 152 and 161.
+- This synthetic control is not evidence about the real attachment.
+
+GATE D — PASS
+- API and UI expose combined benefit, corrected commission, reported settlement net, mapping pending and bank not_confirmed separately.
+- Movements without Store and unmatched Store remain visible. No general charge is allocated to a merchant.
+- Concepts retain original text. Candidate classification is non-authoritative and comparability remains unconfirmed until approved mapping exists.
+- Playwright final run: 4 passed in 12.6s. The two earlier failures were corrected by matching the actual reconciliation route contract in mocks; no production expectation was weakened.
+
+GATE E — PASS LOCALLY
+- Ruff on the 11 IG-015 backend/migration files: All checks passed.
+- Backend affected regression:
+  pytest -q --durations=15 tests/test_ig015_commissions.py tests/test_ig015_migration.py tests/test_netpay_operational_data.py tests/test_netpay_commerce_attention.py tests/test_netpay_d1_conformance.py tests/test_historical_ingestion.py tests/test_canonical_contracts.py
+  Result: 99 passed, 1 third-party deprecation warning, 52.53s.
+- Concurrent test isolated:
+  pytest -q --durations=10 tests/test_netpay_d1_conformance.py::test_real_concurrent_accept_is_one_transition
+  Result: 8 passed, 1 third-party deprecation warning, 7.78s. Calls completed in 0.17–0.29s; no lock or fixture deadlock reproduced.
+- The apparent earlier wait was the tail of the suite. The slowest tests restart an API process and took 7.56s and 7.44s.
+- IG-015 migration test performs upgrade/downgrade/re-upgrade in disposable PostgreSQL and protects downgrade when v2 evidence exists; included in the 99 passed.
+- Vitest: 18 files, 83 tests passed in 12.49s. Existing React Router warnings and one existing act warning were non-fatal.
+- Fresh build: data/ig015-web-build-final-20261029; Vite built 110 modules in 1.89s.
+- git diff --check: passed; only configured LF-to-CRLF warnings.
+
+LIMITATIONS
+- The real file C:/Users/minos/Downloads/GUILLERMO MARIO DE HOYOS OLIVERA (3).xlsx was not copied to the container or parsed by the final implementation.
+- The latest recorded rejection reason was that automatic review could not complete because its usage limit was reached; it was not a safety determination. The rejected operation was not retried or reformulated.
+- Therefore the previously reported real-source controls and similarly named files do not establish byte identity or final-parser conformance. Real-source validation remains explicitly pending.
+- `alembic current` after the final suite reports that yarvis_test no longer exists because the disposable fixture removed it. Static heads/history and the migration round-trip test passed.
+- No production data, productive migration, deployment, operational activation, OIDC, role, identity, commit or push action occurred.

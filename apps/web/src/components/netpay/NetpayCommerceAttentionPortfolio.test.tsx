@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+﻿import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +19,26 @@ function configured() {
 }
 
 describe('Cartera operativa reportada', () => {
+  it('renders Decimal strings and legacy commission absence without displaying AS as commission', async () => {
+    const client=configured();
+    vi.mocked(client.listCommerceAttention).mockResolvedValue({items:[{...row,p2:{...row.p2!,monthly_sales_mxn:'1000',combined_benefit_mxn:'700',distributor_commission_mxn:null,effective_commission_on_sales_percent:null,quality:'pending_reprocessing',metric_definition_version:'legacy_as_v1',percentage_reason:'commission_components_unavailable'}}],page:1,page_size:50,total:1,filtered_total:1,pages:1});
+    render(<MemoryRouter initialEntries={['/netpay-portfolio?period=2026-09']}><NetpayCommerceAttentionPortfolio client={client}/></MemoryRouter>);
+    expect(await screen.findByText(/Histórico v1: comisión corregida pendiente/)).toBeTruthy();
+    expect(screen.getByText('No calculable')).toBeTruthy();
+    expect(client.listCommerceAttention).toHaveBeenCalledWith(expect.objectContaining({reporting_period:'2026-09'}));
+  });
+  it('keeps settlement entities and unassigned charges visible without claiming bank payment', async () => {
+    const client=configured(); vi.spyOn(client,'can').mockImplementation(scope=>scope==='netpay.portfolio.reconciliation.read');
+    vi.spyOn(client,'listCommissionSettlements').mockResolvedValue([{batch_id:'settlement',reporting_period:'2026-09',currency_code:'MXN',net_reported:'11.00',positive:'13.00',negative:'-2.00',announced_payment_date:'2026-10-15',bank_status:'not_confirmed',unexplained_difference:null,difference_reason:'concept_and_entity_mapping_pending',movements:['Asesor','Distribuidor','Asociado 15'].map((entity,i)=>({source_row_number:i+8,source_sheet:'sheet1',source_hash:'a'.repeat(64),entity_original:entity,store_id:i===2?null:'SYN-001',concept_original:'Concepto original',amount_signed:i===2?'-2':'6.5',reasons:['concept_mapping_pending']}))}]);
+    render(<MemoryRouter><NetpayCommerceAttentionPortfolio client={client}/></MemoryRouter>);
+    await userEvent.click(screen.getByRole('button',{name:'Ver liquidaciones'}));
+    expect(await screen.findByText('Asociado 15')).toBeTruthy();
+    expect(screen.getByText('Asesor')).toBeTruthy(); expect(screen.getByText('Distribuidor')).toBeTruthy();
+    expect(screen.getByText('Sin Store — sin asignar')).toBeTruthy();
+    expect(screen.getByText('Cobro bancario: No confirmado')).toBeTruthy();
+    expect(screen.getByText(/correspondencia de conceptos y entidades pendiente/)).toBeTruthy();
+    expect(client.listCommissionSettlements).toHaveBeenCalledWith('',true);
+  });
   beforeEach(()=>{ vi.restoreAllMocks(); });
   it('renders minimized rows, filters, columns and empty-state labels', async () => {
     const client=configured(); render(<MemoryRouter><NetpayCommerceAttentionPortfolio client={client}/></MemoryRouter>);
@@ -30,7 +50,7 @@ describe('Cartera operativa reportada', () => {
   });
   it('opens detail and keeps sensitive data redacted without permission', async () => {
     const client=configured(); render(<MemoryRouter initialEntries={[`/netpay-portfolio/${encodeURIComponent(row.row_key)}`]}><Routes><Route path="/netpay-portfolio/:rowKey" element={<NetpayCommerceAttentionDetail client={client}/>}/></Routes></MemoryRouter>);
-    expect(await screen.findByRole('heading',{name:'Comercio Sintético'})).toBeTruthy(); expect(screen.getByText(/RFC: \*+/)).toBeTruthy(); expect(screen.getByText('Correo redactado o no disponible')).toBeTruthy(); expect(client.getCommerceAttentionDetail).toHaveBeenCalledWith(row.row_key,false);
+    expect(await screen.findByRole('heading',{name:'Comercio Sintético'})).toBeTruthy(); expect(screen.getByText(/RFC: \*+/)).toBeTruthy(); expect(screen.getByText('Correo redactado o no disponible')).toBeTruthy(); expect(client.getCommerceAttentionDetail).toHaveBeenCalledWith(row.row_key,false,'');
   });
   it('shows the separate queue only with reconciliation permission', async () => {
     const client=new NetpayApiClient({baseUrl:'http://api.test',organizationLabel:'Sintética',capabilities:new Set(['netpay.portfolio.read','netpay.portfolio.reconciliation.read'])});

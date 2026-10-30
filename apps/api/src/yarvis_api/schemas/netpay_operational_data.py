@@ -38,6 +38,9 @@ class OperationalDataBatchRead(BaseModel):
     delivery_channel: str | None
     row_counts: dict
     source_discarded: bool
+    settlement_metadata: dict = Field(default_factory=dict)
+    settlement_effective: bool = False
+    predecessor_batch_id: UUID | None = None
     created_at: datetime
     updated_at: datetime
     rows: list[OperationalDataRowRead] = Field(default_factory=list)

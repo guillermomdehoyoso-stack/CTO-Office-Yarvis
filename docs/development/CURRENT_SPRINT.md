@@ -11,6 +11,22 @@
 | Operational effect | None. No Membership transition, OIDC change, bootstrap activation or production migration occurred. |
 | Successor | IG-015 may retain `down_revision = "20261022_54"` after this package is published. |
 
+## IG-015 technical closure — 2026-10-29
+
+| Field | Current value |
+| --- | --- |
+| Work package | Corrected Netpay Core v2 commission, settlement capture and read-only reconciliation. |
+| Ratified authority | Amendment 028 and IG-015, local implementation and synthetic tests only. |
+| Gate result | A–F PASS on the final publication candidate. Gate F was rerun on 2026-10-30 after the exact source path became readable; the earlier access block remains historical evidence. |
+| Formula | AP + AQ + AR; AS remains combined benefit; zero sales is `No calculable`. |
+| Compatibility | Legacy v1 AS is preserved and is never presented as corrected commission; verified-source reprocessing remains pending. |
+| Migration | One head `20261028_55`, parent `20261022_54`; disposable PostgreSQL round trip passed. |
+| Validation | Final candidate: Ruff clean, 125 backend, 80 Vitest, 3 affected Playwright journeys and fresh 110-module Vite build passed. |
+| Source validation | Gate F PASS on 2026-10-30 for SHA-256 `04ca3675a8075c119a4db503a71e9ddb3759df525dce66be534aea1d29eb7978`: 291 movements and all controls reproduced twice; isolated replay/concurrency and duplicate preservation passed. |
+| Next allowed action | Review and stage exactly the validated IG-015 candidate, create the single authorized commit and push normally only if the remote remains at the Governance base. |
+
+Evidence: [IG-015 conformance 2026-10-29](../engineering/evidence/netpay-commission-ig015-conformance-20261029.txt) and [Gate F real-source validation](../engineering/evidence/netpay-commission-ig015-gate-f-source-validation-20261029.txt).
+
 ## Commerce Attention Portfolio P2A/P2B technical closure — 2026-10-21
 
 | Field | Current value |

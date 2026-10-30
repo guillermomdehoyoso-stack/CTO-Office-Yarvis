@@ -22,6 +22,7 @@ router = APIRouter(prefix="/netpay/commerce-attention", tags=["netpay-commerce-a
 
 @router.get("", response_model=PortfolioPage)
 def list_portfolio(
+    reporting_period: str | None = Query(None, pattern=r"^20\d{2}-(0[1-9]|1[0-2])$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=100),
     search: str | None = Query(None, max_length=255),
@@ -41,7 +42,7 @@ def list_portfolio(
     envelope: IdentityAuthorityEnvelope = Depends(authority_envelope),
 ) -> PortfolioPage:
     current = netpay_portfolio_envelope(envelope, required_scope=PORTFOLIO_READ)
-    return NetpayCommerceAttentionService(db, current.organization_id).list(
+    return NetpayCommerceAttentionService(db, current.organization_id, reporting_period).list(
         PortfolioFilters(
             search,
             tuple(entity_scopes),
@@ -67,9 +68,25 @@ def list_reconciliation(
     return NetpayCommerceAttentionService(db, current.organization_id).reconciliation()
 
 
+@router.get("/settlements")
+def list_settlements(
+    reporting_period: str | None = Query(None, pattern=r"^20\d{2}-(0[1-9]|1[0-2])$"),
+    include_details: bool = False,
+    db: Session = Depends(get_db),
+    envelope: IdentityAuthorityEnvelope = Depends(authority_envelope),
+):
+    from yarvis_api.services.netpay_commission_reconciliation import settlements
+
+    current = netpay_portfolio_envelope(envelope, required_scope=PORTFOLIO_READ)
+    if include_details:
+        netpay_portfolio_envelope(envelope, required_scope=PORTFOLIO_RECONCILIATION_READ)
+    return settlements(db, current.organization_id, reporting_period, include_details=include_details)
+
+
 @router.get("/{row_key}", response_model=PortfolioDetail)
 def get_portfolio_detail(
     row_key: str,
+    reporting_period: str | None = Query(None, pattern=r"^20\d{2}-(0[1-9]|1[0-2])$"),
     include_sensitive: bool = False,
     db: Session = Depends(get_db),
     envelope: IdentityAuthorityEnvelope = Depends(authority_envelope),
@@ -77,7 +94,9 @@ def get_portfolio_detail(
     current = netpay_portfolio_envelope(envelope, required_scope=PORTFOLIO_READ)
     if include_sensitive:
         netpay_portfolio_envelope(envelope, required_scope=PORTFOLIO_SENSITIVE_READ)
-    detail = NetpayCommerceAttentionService(db, current.organization_id).detail(row_key, sensitive=include_sensitive)
+    detail = NetpayCommerceAttentionService(db, current.organization_id, reporting_period).detail(
+        row_key, sensitive=include_sensitive
+    )
     if detail is None:
         raise HTTPException(status_code=404, detail="not found")
     return detail
