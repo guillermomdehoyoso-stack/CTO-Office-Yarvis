@@ -891,6 +891,16 @@ CANONICAL_CONTRACTS += tuple(
             "bootstrap administration",
         ),
         (
+            "IC-GOVERNANCE-CMD-010",
+            ContractType.COMMAND,
+            "governance",
+            "Governance",
+            "membership",
+            "ChangeMembershipRoleForPortfolioRead",
+            "Bounded Inbox operator to Portfolio reader role transition",
+            "authenticated Netpay validation",
+        ),
+        (
             "IC-GOVERNANCE-QRY-003",
             ContractType.QUERY,
             "governance",

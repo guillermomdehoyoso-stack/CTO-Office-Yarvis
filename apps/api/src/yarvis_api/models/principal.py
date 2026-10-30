@@ -48,7 +48,10 @@ class PrincipalMembershipCommand(TimestampedUUIDMixin, Base):
     __tablename__ = "principal_membership_commands"
     __table_args__ = (
         UniqueConstraint("organization_id", "idempotency_key", name="uq_principal_membership_commands_organization_key"),
-        CheckConstraint("command_type IN ('activate', 'revoke')", name="ck_principal_membership_commands_type"),
+        CheckConstraint(
+            "command_type IN ('activate', 'revoke', 'change_role')",
+            name="ck_principal_membership_commands_type",
+        ),
     )
 
     organization_id: Mapped[object] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="RESTRICT"), nullable=False, index=True)

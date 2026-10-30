@@ -1,5 +1,20 @@
 # Current Engineering State
 
+## IG-014 Governance role transition technical closure — 2026-10-29
+
+Amendment 027, F-011 Governance Contract Amendment 002 and IG-014 are ratified.
+The closed `netpay_inbox_portfolio_reader` role and the sole transition from
+`netpay_inbox_operator` passed final local conformance on base
+`99709fc1dacc852d783dc45e09bd5d5a6b3a902f`. The role grants exactly Inbox
+read/manage plus Master and Portfolio read. It grants no Master mutation,
+sensitive data or reconciliation access.
+
+Revision `20261022_54` descends directly from `20261021_53`. Upgrade,
+downgrade before any transition receipt and re-upgrade passed in disposable
+PostgreSQL. The final candidate had one Alembic head; Ruff and 99 affected
+Governance, authentication, bootstrap and authorization tests passed. The
+operational Membership transition remains blocked and was not executed.
+
 ## Commerce Attention Portfolio P2A/P2B technical closure — 2026-10-21
 
 Amendment 025 and IG-012 are ratified. P2A source integrity and P2B read-only

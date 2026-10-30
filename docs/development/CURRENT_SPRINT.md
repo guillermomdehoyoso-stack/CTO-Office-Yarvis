@@ -1,5 +1,16 @@
 # Current Sprint
 
+## IG-014 Governance publication — 2026-10-29
+
+| Field | Current value |
+| --- | --- |
+| Work package | Closed Netpay Inbox + Portfolio reader role and canonical role transition. |
+| Authority | Ratified Amendment 027, F-011 Governance Contract Amendment 002 and IG-014. |
+| Migration | `20261022_54`, parent `20261021_53`; isolated upgrade/downgrade/re-upgrade passed. |
+| Validation | One Alembic head; Ruff clean; 99 affected backend tests passed. |
+| Operational effect | None. No Membership transition, OIDC change, bootstrap activation or production migration occurred. |
+| Successor | IG-015 may retain `down_revision = "20261022_54"` after this package is published. |
+
 ## Commerce Attention Portfolio P2A/P2B technical closure — 2026-10-21
 
 | Field | Current value |

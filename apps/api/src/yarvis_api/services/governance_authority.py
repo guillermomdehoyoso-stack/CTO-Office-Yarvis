@@ -7,13 +7,20 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from yarvis_api.application.authority import IdentityAuthorityEnvelope, permissions_for_role
+from yarvis_api.application.authority import (
+    IdentityAuthorityEnvelope,
+    permissions_for_role,
+)
 from yarvis_api.application.errors import ApplicationError, ApplicationErrorCode
 from yarvis_api.clock import utc_now
 from yarvis_api.models.domain_event import record_event
 from yarvis_api.models.organization import Organization
 from yarvis_api.models.principal import Principal, PrincipalMembership, PrincipalMembershipCommand
 from yarvis_api.models.productive_auth import BootstrapWindow, ProductiveSession
+
+
+PORTFOLIO_READER_SOURCE_ROLE = "netpay_inbox_operator"
+PORTFOLIO_READER_TARGET_ROLE = "netpay_inbox_portfolio_reader"
 
 
 def evaluate_authority(
@@ -270,6 +277,133 @@ def revoke_membership(
             "membership_id": str(membership.id),
             "principal_id": str(membership.principal_id),
             "actor_principal_id": str(envelope.principal_id),
+        },
+    )
+    return membership
+
+
+def change_membership_role_for_portfolio_read(
+    db: Session,
+    *,
+    envelope: IdentityAuthorityEnvelope,
+    membership_id: UUID,
+    expected_role: str,
+    target_role: str,
+    reason: str,
+    idempotency_key: str,
+    causation_id: UUID | None = None,
+) -> PrincipalMembership:
+    """Implement the single ratified IC-GOVERNANCE-CMD-010 role transition."""
+    envelope.require("governance.membership.create")
+    envelope.require("governance.membership.revoke")
+    if (expected_role, target_role) != (PORTFOLIO_READER_SOURCE_ROLE, PORTFOLIO_READER_TARGET_ROLE):
+        raise ApplicationError(
+            ApplicationErrorCode.AUTHORIZATION_DENIED,
+            "role transition denied",
+            {"reason": "transition_not_allowed"},
+        )
+    permissions_for_role(target_role)
+    normalized_reason = reason.strip()
+    if not normalized_reason:
+        raise ApplicationError(
+            ApplicationErrorCode.PRECONDITION_FAILED,
+            "reason is required",
+            {"reason": "missing_reason"},
+        )
+    fingerprint = _fingerprint(
+        "change_role", membership_id, (expected_role, target_role, normalized_reason)
+    )
+    replay = _replay(db, envelope=envelope, key=idempotency_key, fingerprint=fingerprint)
+    if replay is not None:
+        return replay
+
+    membership = db.scalar(
+        select(PrincipalMembership)
+        .where(
+            PrincipalMembership.id == membership_id,
+            PrincipalMembership.organization_id == envelope.organization_id,
+        )
+        .with_for_update()
+    )
+    if membership is None:
+        raise ApplicationError(
+            ApplicationErrorCode.RESOURCE_NOT_FOUND, "not found", {"reason": "foreign_membership"}
+        )
+    # A concurrent equivalent request can become visible only after this row lock is acquired.
+    replay = _replay(db, envelope=envelope, key=idempotency_key, fingerprint=fingerprint)
+    if replay is not None:
+        return replay
+    if membership.status != "active":
+        raise ApplicationError(
+            ApplicationErrorCode.CONFLICT,
+            "membership is not active",
+            {"reason": "membership_revoked"},
+        )
+    if membership.principal_id == envelope.principal_id:
+        raise ApplicationError(
+            ApplicationErrorCode.AUTHORIZATION_DENIED,
+            "self escalation denied",
+            {"reason": "self_escalation"},
+        )
+    if membership.role != expected_role:
+        raise ApplicationError(
+            ApplicationErrorCode.CONFLICT,
+            "membership role changed",
+            {"reason": "expected_role_conflict"},
+        )
+
+    membership.role = target_role
+    sessions = db.scalars(
+        select(ProductiveSession).where(
+            ProductiveSession.membership_id == membership.id,
+            ProductiveSession.status == "active",
+        )
+    ).all()
+    for session in sessions:
+        session.status = "revoked"
+        session.revoked_at = utc_now()
+        session.revoke_reason = "authority_changed"
+        record_event(
+            db,
+            event_type="ProductiveSessionRevoked",
+            aggregate_type="ProductiveSession",
+            aggregate_id=session.id,
+            organization_id=envelope.organization_id,
+            correlation_id=_correlation_uuid(envelope.correlation_id),
+            causation_id=causation_id,
+            payload={
+                "contract_id": "IC-IDENTITY-EVT-005",
+                "contract_version": "1.0.0",
+                "reason": "authority_changed",
+            },
+        )
+    db.add(
+        PrincipalMembershipCommand(
+            organization_id=envelope.organization_id,
+            membership_id=membership.id,
+            command_type="change_role",
+            idempotency_key=idempotency_key,
+            request_fingerprint=fingerprint,
+        )
+    )
+    record_event(
+        db,
+        event_type="AuthorityChanged",
+        aggregate_type="PrincipalMembership",
+        aggregate_id=membership.id,
+        organization_id=envelope.organization_id,
+        correlation_id=_correlation_uuid(envelope.correlation_id),
+        causation_id=causation_id,
+        payload={
+            "contract_id": "IC-GOVERNANCE-EVT-001",
+            "contract_version": "1.2.0",
+            "transition": "role_changed",
+            "membership_id": str(membership.id),
+            "principal_id": str(membership.principal_id),
+            "actor_principal_id": str(envelope.principal_id),
+            "previous_role": expected_role,
+            "current_role": target_role,
+            "reason": normalized_reason,
         },
     )
     return membership

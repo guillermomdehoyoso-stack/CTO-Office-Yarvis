@@ -59,6 +59,14 @@ def test_document_registry_roles_are_closed_and_separated():
 
 
 def test_portfolio_permissions_are_separated_by_ratified_roles():
+    assert permissions_for_role("netpay_inbox_portfolio_reader") == frozenset(
+        {
+            "netpay.inbox.read",
+            "netpay.inbox.manage",
+            "netpay.master.read",
+            "netpay.portfolio.read",
+        }
+    )
     assert "netpay.portfolio.read" in permissions_for_role("netpay_master_viewer")
     assert "netpay.portfolio.sensitive.read" not in permissions_for_role("netpay_master_operator")
     assert "netpay.portfolio.reconciliation.read" not in permissions_for_role("netpay_inbox_operator")

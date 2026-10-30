@@ -1,0 +1,65 @@
+IG-014 NETPAY PORTFOLIO AUTHENTICATED READER — CURRENT CONFORMANCE
+Date: 2026-10-22
+Repository base: 99709fc1dacc852d783dc45e09bd5d5a6b3a902f
+
+Scope
+- New closed role netpay_inbox_portfolio_reader has exactly inbox read/manage,
+  Master read and Portfolio read.
+- IC-GOVERNANCE-CMD-010 permits only netpay_inbox_operator ->
+  netpay_inbox_portfolio_reader.
+- No operational Membership transition was executed.
+
+Current validation
+- PostgreSQL 16, tmpfs, internal Docker network, no published ports.
+- Alembic: one head 20261022_54; parent 20261021_53; upgrade, downgrade to
+  parent before any role-transition receipt, and re-upgrade: PASS.
+- Focal authority, contract and bootstrap tests: 30 passed. This includes real
+  two-session concurrency, equivalent replay, conflicts, tenant isolation,
+  exact capabilities, one receipt/event and ProductiveSession invalidation.
+- Configured Ruff: PASS.
+- Focal Pyright: only the same three preexisting diagnostics in
+  tests/test_productive_auth.py; zero new diagnostics in IG-014 files.
+- compileall with PYTHONPYCACHEPREFIX in disposable /tmp: PASS.
+- git diff --check: PASS before final evidence append; final check required.
+
+Operational checkpoint
+- Read-only inventory for Organization 686cdbbc-a672-4e62-a452-3978403a9a3d
+  found one active Membership, role netpay_inbox_operator.
+- No independently authenticated Membership with both
+  governance.membership.create and governance.membership.revoke is present.
+- Therefore the canonical transition cannot yet be applied. Creating or
+  provisioning that administrative actor requires separate authority.
+
+Isolation and exclusions
+- No operational migration, Membership change, session invalidation, import,
+  Master record, staging, commit or push occurred.
+- The preexisting local Portfolio interface changes and their evidence remain
+  a separate worktree concern.
+- AUDIT_REPORT.md was not opened or incorporated.
+
+Continuation — 2026-10-23
+- Operational read-only inventory: the sole operator Principal has no active
+  ExternalIdentityBinding, no active ProductiveSession and an active
+  netpay_inbox_operator Membership. The local runtime is deterministic; OIDC,
+  ordinary bootstrap and founder bootstrap are disabled. There are no bootstrap
+  windows, founder receipts or eligible unconsumed handoffs. No distinct
+  administrative identity exists.
+- Consequently the operator is not merely missing Portfolio permission: it
+  cannot use the productive OIDC session flow in the current configuration.
+- Additional synthetic regression: 86 passed. It covers the HTTP transition
+  route, canonical administrator authorization, self-escalation denial,
+  session invalidation, founder bootstrap/CLI, authentication boundaries and
+  a downgrade attempt with an existing change_role receipt.
+- The protected downgrade failed closed as designed, retained the receipt and
+  left Alembic at 20261022_54.
+- Configured Ruff and compileall: PASS. Focal Pyright reported only the same
+  three preexisting organization_id typing diagnostics in the pre-IG-014
+  activate/revoke implementation; no IG-014 regression.
+
+Publication validation — 2026-10-29
+- Candidate reconstructed independently from base 99709fc1dacc852d783dc45e09bd5d5a6b3a902f; no IG-015 file or revision 55 was present.
+- Alembic reported one head, 20261022_54, directly descending from 20261021_53.
+- The isolated migration suite repeated upgrade, downgrade, re-upgrade and protected-downgrade behavior.
+- Configured Ruff over the complete API candidate: PASS.
+- Final affected Governance/authentication/authorization/bootstrap regression: 99 passed, one third-party Starlette deprecation warning, 22.87s.
+- `git diff --check`: PASS. No operational Membership transition, OIDC change, productive migration, import or deployment occurred.

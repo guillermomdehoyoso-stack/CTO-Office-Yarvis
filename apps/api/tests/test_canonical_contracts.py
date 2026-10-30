@@ -648,6 +648,7 @@ AUTH_PROD_IDS = {
     "IC-GOVERNANCE-CMD-001",
     "IC-GOVERNANCE-CMD-002",
     "IC-GOVERNANCE-CMD-003",
+    "IC-GOVERNANCE-CMD-010",
     "IC-GOVERNANCE-QRY-003",
     "IC-GOVERNANCE-QRY-004",
     "IC-GOVERNANCE-EVT-002",
@@ -771,8 +772,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
     assert {
         contract.interaction_contract_id for contract in contracts if contract.interaction_contract_id in AUTH_PROD_IDS
     } == AUTH_PROD_IDS
-    assert len(contracts) == 158
-    assert len({contract.interaction_contract_id for contract in contracts}) == 158
+    assert len(contracts) == 159
+    assert len({contract.interaction_contract_id for contract in contracts}) == 159
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -813,7 +814,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
     contracts = canonical_contracts()
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
-        ContractType.COMMAND: 72,
+        ContractType.COMMAND: 73,
         ContractType.QUERY: 41,
         ContractType.EVENT: 43,
         ContractType.NOTIFICATION: 2,
@@ -825,7 +826,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
     assert owner_counts == {
         "platform": 1,
         "identity": 13,
-        "governance": 9,
+        "governance": 10,
         "relationship": 3,
         "observation_evidence": 6,
         "knowledge": 3,
@@ -972,13 +973,13 @@ def test_amendment021_contracts_have_exact_ratified_metadata() -> None:
 def test_amendment022_contracts_have_complete_traceability() -> None:
     by_id = {contract.interaction_contract_id: contract for contract in canonical_contracts()}
 
-    assert len(canonical_contracts()) == 158
-    assert len(by_id) == 158
+    assert len(canonical_contracts()) == 159
+    assert len(by_id) == 159
     assert {
         kind: sum(contract.contract_type == kind for contract in by_id.values())
         for kind in ContractType
     } == {
-        ContractType.COMMAND: 72,
+            ContractType.COMMAND: 73,
         ContractType.QUERY: 41,
         ContractType.EVENT: 43,
         ContractType.NOTIFICATION: 2,
