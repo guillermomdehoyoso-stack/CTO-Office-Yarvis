@@ -20,5 +20,5 @@ def test_ig015_empty_roundtrip_and_evidence_guard():
     with pytest.raises(RuntimeError, match="would discard evidence"):
         command.downgrade(config, "20261022_54")
     with app.state.yarvis.persistence.engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "20261028_55"
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "20261030_56"
         assert connection.scalar(text("SELECT commission_v2_exact FROM netpay_store_profitability_facts")) == 100

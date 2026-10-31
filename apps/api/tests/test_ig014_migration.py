@@ -39,7 +39,7 @@ def test_ig014_downgrade_refuses_to_destroy_existing_role_transition_receipt():
     with pytest.raises(DBAPIError, match="cannot downgrade while change_role receipts exist"):
         command.downgrade(config, "20261021_53")
     with app.state.yarvis.persistence.engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "20261022_54"
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "20261030_56"
         assert connection.scalar(
             select(PrincipalMembershipCommand.id).where(
                 PrincipalMembershipCommand.idempotency_key == "protected-receipt"

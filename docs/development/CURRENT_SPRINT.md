@@ -1,5 +1,18 @@
 # Current Sprint
 
+## IG-016 Gates A/B local closure — 2026-10-30
+
+| Field | Current value |
+| --- | --- |
+| Current gate | Gate A **PASS**; Gate B **PASS sintético — validación de fuentes reales pendiente en Gate G**. |
+| Work package | Internal tenant-scoped Store/terminal/MID/serial identity and evidence only. |
+| Migration | `20261030_56`, single head, reversible in disposable PostgreSQL. |
+| Contracts | No public registration; `CMD-043+`, `QRY-025+`, `EVT-031+` remain free. |
+| Validation | Ruff PASS; focused 6/6; pertinent regression 95/95. |
+| Next allowed action | Gate G read-only source validation, only after separate explicit authority for each literal source. Gates C–F and H–I remain closed. |
+| Publication | One bounded repository commit and normal push for this A/B closure were authorized on 2026-10-31. |
+| Closed scope | Real sources, import, No Uso, queue, contacts, penalties, rates/spread, trends, frontend, endpoints, identity/role/OIDC changes and deployment. |
+
 ## IG-014 Governance publication — 2026-10-29
 
 | Field | Current value |

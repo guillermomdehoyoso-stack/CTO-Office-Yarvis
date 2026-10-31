@@ -1,0 +1,99 @@
+IG-016 GATES A/B LOCAL CONFORMANCE EVIDENCE
+Date: 2026-10-30
+Branch: feat/netpay-gmail-intake-sentinel
+Base HEAD: 5c5cb8c4a93a96754b2e8c273b315e2da68fc68a
+Authority: Amendment 029 / IG-016, local Gates A/B and synthetic tests only
+
+RESULT
+- Gate A: PASS
+- Gate B: PASS sintético — validación de fuentes reales pendiente en Gate G
+- Gates C-I: CLOSED / NOT EXECUTED
+
+MIGRATION
+- Revision: 20261030_56
+- Parent: 20261028_55
+- `alembic heads`: `20261030_56 (head)`
+- Upgrade, downgrade to 20261028_55, re-upgrade and empty round trip passed in
+  isolated disposable PostgreSQL.
+- No backfill or productive migration was executed.
+
+IMPLEMENTED BOUNDARY
+- Internal models: equipment identities, source evidence, Store/equipment links,
+  append-only decisions and idempotency receipts.
+- Internal service: normalization with original value retention; exact
+  tenant-scoped Store validation; pending/confirmed/ambiguous/contradictory/
+  superseded states; temporal serial conflict detection; replay; advisory-lock
+  concurrency; expected-version supersession.
+- No API route, frontend, capability, role, OIDC change or public contract.
+- CMD-043+, QRY-025+ and EVT-031+ remain unregistered and free.
+
+EXECUTED COMMANDS AND RESULTS
+1. Ruff on migration, models, service and affected tests:
+   `ruff check ...`
+   Result: All checks passed.
+2. Focused migration and identity tests:
+   `pytest -q tests/test_ig016_migration.py tests/test_ig016_equipment_identity.py`
+   Result: 6 passed, 1 third-party deprecation warning.
+3. Pertinent backend/contract regression:
+   `pytest -q tests/test_canonical_contracts.py tests/test_application_contracts.py
+   tests/test_contract_registry.py tests/test_governance_authority_contracts.py
+   tests/test_ig014_migration.py tests/test_ig015_commissions.py
+   tests/test_ig015_migration.py tests/test_netpay_commerce_attention.py
+   tests/test_netpay_operational_data.py tests/test_ig016_migration.py
+   tests/test_ig016_equipment_identity.py`
+   Result: 95 passed, 2 warnings (Starlette deprecation and intentional duplicate
+   OOXML entry fixture).
+
+SYNTHETIC CRITERIA VERIFIED
+- Multiple terminals per Store; terminal/MID/serial kept as separate identities.
+- Terminal without Store and serial without Store remain visible as pending.
+- Two exact Store candidates remain ambiguous.
+- Overlapping same serial across different Stores becomes contradictory.
+- Same serial in different Organizations remains isolated.
+- Original and normalized values plus normalization method are retained.
+- Source profile, batch, hash, sheet, row, period and validity are retained.
+- Distinct legitimate evidence for one identity is preserved.
+- Missing Store is rejected and no Store is created.
+- Exact replay and concurrent replay return one result; key/payload conflict is
+  rejected; stale version is rejected; decision history remains append-only.
+
+ENVIRONMENT
+- Compose project: ig016ab20261030
+- PostgreSQL had no published port and used tmpfs for database storage.
+- No real source or operational/productive data was accessed or persisted.
+
+LIMITS
+- Gate G real-source validation was not authorized or executed.
+- Gates C-I, import, operational activation, commit, push and deployment were not
+  executed.
+
+FINAL PUBLICATION CANDIDATE VALIDATION
+- Candidate worktree was created detached from
+  5c5cb8c4a93a96754b2e8c273b315e2da68fc68a and contained only the 15
+  authorized IG-016 A/B paths.
+- Compose configuration exposed zero host ports and mounted PostgreSQL data as
+  tmpfs.
+- Ruff passed on all new implementation/migration/test files. E501 passed on
+  the two modified historical registry/fixture files; their unrelated legacy
+  import/F401 debt was not rewritten.
+- `python -m compileall -q src`: PASS.
+- `alembic heads`: `20261030_56 (head)`.
+- Final pertinent suite: 95 passed, 2 known third-party/fixture warnings.
+- Preliminary Ruff runs stopped before tests while the new import order and
+  changed fixture line length were corrected. No failed test was hidden.
+
+SHA-256 MANIFEST (evidence file excluded to avoid self-reference)
+- 2a6b778202673d62ba4da9c393c8fbfdcde402ad6b17572eb7e70872fbbc3a7f  apps/api/src/yarvis_api/models/__init__.py
+- 2e05a5ca0db8d27ee59f151dcf32b6fd8e4aab11cb8076e043f67fababf74627  apps/api/tests/conftest.py
+- b5c32e672467251584eb10962d87a69698a8e90ce3c144bf607dd328eee3d1e6  apps/api/tests/test_ig014_migration.py
+- 9be8550dcef26af88a161a0a916ca0099b326dcd768ff2b3bd0840b8c3eba56e  apps/api/tests/test_ig015_migration.py
+- 7fdf0a73bfbeb57c3af096e6c165de9ea6a425cf60d6fbd4a5442a0d4cab3d94  docs/development/CURRENT_SPRINT.md
+- e2eb3c1923e41aea7e8ccd3861c8790322b2004b0cd9ca40642e6e3f4f3e5f69  docs/development/CURRENT_STATE.md
+- 91ff7ef96ebe91d895d422cc9b760e26fa62951043cf380adc87d13b21bb6e6a  apps/api/migrations/versions/20261030_56_netpay_profitability_protection.py
+- 224b2d151eae7a6bfc446b33145fd6025b3da1039bf4577ca9f1d0b2aeef30df  apps/api/src/yarvis_api/models/netpay_equipment_identity.py
+- 7cafb9aaf2ecad8f3622b201840bd3397b833dff5d036eb5a381173b2330d67d  apps/api/src/yarvis_api/services/netpay_equipment_identity.py
+- 13ef31c4a20ea376356dd8249619782318006b549a6b98ef61a4945c3d0c440f  apps/api/tests/test_ig016_equipment_identity.py
+- 594d6fed8318f87ca8f896c5450546144e9dc793576cc4503c5fba6d94352776  apps/api/tests/test_ig016_migration.py
+- 52f2d823eb8fa0eda84ed3346d1a90f0d2a2144d5e826ae389422280977dde3c  docs/engineering/IG-016_NETPAY_PROFITABILITY_PROTECTION_AND_RECOVERY_MVP.md
+- 68bb016207027c194ad8c3fd2b97b48092bc8876a4abe57f03bab0c363d18782  docs/engineering/IMPLEMENTATION_ROADMAP_AMENDMENT_029.md
+- 164ccf982f7d541d1bba9993e9883530b03bd15f6acdad8f325182d4007100cb  docs/engineering/NETPAY_PROFITABILITY_PROTECTION_SOURCE_GAP_REVIEW_20261030.md

@@ -1,5 +1,25 @@
 # Current Engineering State
 
+## IG-016 profitability protection Gates A/B — 2026-10-30
+
+Amendment 029 and IG-016 are ratified only for local Gates A/B. Gate A is
+**PASS** and Gate B is **PASS sintético — validación de fuentes reales
+pendiente en Gate G**. Revision `20261030_56` descends from `20261028_55` and
+adds only tenant-scoped equipment identity, evidence, Store relationships,
+append-only decisions and idempotency receipts. The graph has one head.
+
+Validation used synthetic fixtures and isolated disposable PostgreSQL: Ruff
+passed; the focused suite passed 6/6; the pertinent IG-014/IG-015, contract and
+Netpay regressions passed 95/95. No public contract was registered, so
+`CMD-043+`, `QRY-025+` and `EVT-031+` remain free. Gates C–I, real sources,
+imports, frontend and operational activation remain closed. Repository
+publication of this bounded A/B closure was authorized on 2026-10-31.
+
+Evidence: [IG-016 Gates A/B](../engineering/evidence/netpay-profitability-protection-ig016-ab-20261030.txt).
+
+The next eligible action is Gate G read-only source validation under separate,
+literal source authority. Gates C–F and H–I remain closed.
+
 ## IG-014 Governance role transition technical closure — 2026-10-29
 
 Amendment 027, F-011 Governance Contract Amendment 002 and IG-014 are ratified.

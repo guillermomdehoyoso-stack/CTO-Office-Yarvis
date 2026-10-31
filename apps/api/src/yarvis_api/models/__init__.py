@@ -25,6 +25,13 @@ from yarvis_api.models.mission_inbox import MissionInboxItem, ProjectionCheckpoi
 from yarvis_api.models.mission_work import MissionWorkItem
 from yarvis_api.models.mission_work_event import MissionWorkEvent
 from yarvis_api.models.netpay import NetpayDeviceAssignment, NetpayServiceCase, NetpayShipment
+from yarvis_api.models.netpay_equipment_identity import (
+    NetpayEquipmentEvidence,
+    NetpayEquipmentIdentity,
+    NetpayEquipmentIdentityDecision,
+    NetpayEquipmentIdentityReceipt,
+    NetpayStoreEquipmentLink,
+)
 from yarvis_api.models.netpay_gmail_intake import (
     NetpayCandidateCommercialIntakeTrace,
     NetpayCandidateHumanFollowUp,
