@@ -1,0 +1,175 @@
+IG-016 GATE G — REAL-SOURCE READ-ONLY CHARACTERIZATION
+Date: 2026-10-31 America/Mexico_City
+Result: PASS CON BRECHAS
+
+REPOSITORY AND AUTHORITY
+- Branch: feat/netpay-gmail-intake-sentinel
+- Local HEAD and tracking ref:
+  06fabf3f7fd5167c7d679ae56f8c1c68b6ef5b2f
+- Alembic head: 20261030_56. No migration was executed.
+- Index: empty before and after analysis/documentation.
+- Scope: literal read-only inspection of the three authorized sources. No
+  search, substitution, persistence, import, productive parser or Gate C work.
+
+SOURCE IDENTITY
+1. Comercios No Uso Oct26.xlsx
+   Size: 54,999 bytes
+   SHA-256: 2f93cb0589219642c129c764ce29328974400a1a942b068f7b09b466e1899d0c
+   Modified UTC metadata: 2026-10-19T19:11:42.4303656Z
+2. Reporte Global Netpay GD Oct26.xlsx
+   Size: 29,480 bytes
+   SHA-256: 58bb41ec0d273122820822362953565e3aa82c092b75b5377c98c7c06f49c6d7
+   Modified UTC metadata: 2026-10-14T22:25:15.7524926Z
+3. Ticket 97580 Reporte Global Netpay GD Oct26.xlsx
+   Size: 72,711 bytes
+   SHA-256: b22849379cfa03a70edda41744ae0956a5667ccbb8e92b596fcf4e5a84f896da
+   Modified UTC metadata: 2026-10-31T01:15:05.8820071Z
+
+All hashes are distinct. Each workbook remains an independent source and lot.
+Modification time is metadata only, not identity, cutoff or validity.
+
+SAFE OOXML AND STRUCTURE
+- All three are readable ZIP/OOXML workbooks with one visible Sheet1.
+- No unsafe ZIP paths, duplicate entries, canonical collisions, encryption,
+  macros or external-link parts were found.
+- No repeated primary headers or formulas were found.
+- No Uso: A1:O1001; header row 1; 1,000 physical post-header rows. Thirty-two
+  are business rows with Store; 968 are numbered template-only rows without
+  Store and are not treated as business records.
+- Global: A1:Q347; grouping row 1; header row 2; 345 data rows.
+- Ticket: A1:Y348; grouping row 1; two-level header rows 2–3; 345 data rows.
+- No Uso and Global have no cell errors. Ticket has 18 literal #N/A cells in
+  address subfield ESTADO. They affect optional address enrichment only; Store,
+  serial, terminal and client relationship fields remain intact.
+- Oct26 occurs only in filenames. No internal field confirms report period,
+  cutoff or relationship validity. Fecha de creacion is an equipment attribute.
+
+RELEVANT DATA DICTIONARY
+- No Uso: #, Store ID, Store Name, Master Name, Distributor Name, Estatus,
+  Meses No Uso, Alertas, Motivo del no uso, two blank headers, commitment date,
+  rental decision, cancellation decision and Comentarios.
+- Global base identity: Serial TPV, Estatus de producto, Numero de comercio,
+  Nombre del comercio, Numero de terminal, Folio, Producto, Fecha de creacion.
+  Declared client/contact columns are empty.
+- Ticket preserves those fields and adds Client ID, Company Id, Branch Id,
+  representative/contact fields, RFC, legal name, ESTADO, CIUDAD, CP, COLONIA,
+  CALLE, NO EXTERIOR, NO INTERIOR and local telephone.
+- Numero de comercio is used only as the observed exact Store matching key. It
+  is not redefined as MID. Numero de terminal is an observed terminal token; it
+  is not asserted to be TID. No explicit MID or TID column exists.
+- Column types, value/null counts, uniqueness, duplicates and whitespace were
+  measured. No raw name, RFC, address, email or telephone is recorded here.
+
+GRAIN, PLACEHOLDER AND 136 VERSUS 137
+- No Uso has 32 business rows and 32 unique Stores. No business row lacks Store;
+  the 968 rows without Store are unused template rows.
+- Each Global has 345 product/assignment rows, 327 populated unique Stores and
+  18 rows without Store.
+- Serial TPV and Numero de terminal each contain 137 normalized unique tokens.
+  The literal token NA repeats in 209 rows in both columns. NA is a missing/not
+  applicable marker, not equipment identity, and is excluded from identity.
+- The remaining 136 rows each have a unique non-NA serial and terminal token,
+  so “distinguishable equipment” means a row with both non-NA identifiers.
+  This explains 136 equipment items versus the prior approximate 137 tokens.
+- No distinguishable serial/terminal maps to multiple Stores or clients. No
+  Store maps to multiple distinguishable equipment items in these workbooks.
+
+GLOBAL COMPARISON AND TICKET INCREMENT
+- Both Global files contain the same 345 base rows and all 137 normalized tokens.
+  There are zero added, absent or modified core equipment relations and zero
+  Store/terminal contradictions. They remain independent evidence lots.
+- Original Global identifies no client for the 136 distinguishable equipment.
+- Ticket identifies a nonzero Client ID for 118/136 equipment (86.76%) and
+  leaves 18/136 pending (13.24%). All 18 pending equipment rows also lack Store;
+  they are distinct from the 12 No Uso Stores without Global correspondence.
+- The 118 client-linked equipment map to 53 unique clients; 26 clients have
+  multiple equipment. No equipment maps to multiple clients.
+- Ticket adds 118 client-linked equipment and +86.76 percentage points of
+  equipment-client coverage. It introduces no relationship conflict.
+
+NO USO CHAIN AND CARDINALITY
+- Exact Store match reaches 20/32 No Uso rows (62.50%); 12/32 (37.50%) have an
+  exact Store value that is absent from both Global lots. They do not fail for
+  missing No Uso Store, missing client or incompatible equipment identifier.
+- The 20 matched Stores each map to exactly one distinguishable equipment row,
+  one terminal token, one serial token and one nonzero Client ID.
+- All 20 have usable email and usable representative or local telephone; here
+  “contact available” means at least one nonzero, non-error email or phone.
+  In fact all 20 have both an email and at least one telephone.
+- The 20 Store-equipment links are one-to-one. Equipment-client is one-to-one.
+  Client-Store is many-to-one: 20 Stores map to 15 clients; four clients are
+  shared by multiple matched Stores, covering nine Stores, with a maximum of
+  three Stores for one client. No identity is inferred from contact data.
+- Full-chain classification: exact/evidenced 20; pending 0; ambiguous 0;
+  contradictory 0; without correspondence 12.
+
+COVERAGE MATRIX
+Link                                      Total  Exact  Pending  Ambig  Contra  No match  Coverage  Evidence
+No Uso business row -> Store                 32     32        0      0       0         0   100.00%  No Uso
+No Uso Store -> distinguishable equipment    32     20        0      0       0        12    62.50%  No Uso + each Global
+Global row -> distinguishable equipment      345   136      209      0       0         0    39.42%  each Global; NA pending
+Equipment -> terminal token                 136    136        0      0       0         0   100.00%  each Global
+Equipment -> explicit MID/TID               136      0      136      0       0         0     0.00%  field absent
+Equipment -> serial token                   136    136        0      0       0         0   100.00%  each Global
+Equipment -> client                         136    118       18      0       0         0    86.76%  Ticket 97580
+Matched client-link -> usable contact        20     20        0      0       0         0   100.00%  Ticket 97580
+No Uso -> Store -> equipment -> client
+  -> contact                                 32     20        0      0       0        12    62.50%  all three lots
+
+The 209 NA observations remain visible as non-identifying product assignments;
+they are not silently discarded from source provenance or converted to IDs.
+
+GATE B COMPATIBILITY
+- The model can preserve three separate immutable batches, hash, sheet/row,
+  optional Store, terminal/serial observation, evidence and all published link
+  states without loss.
+- A later profile must support Ticket's two-level header, retain #N/A/nulls,
+  classify NA explicitly, keep Numero de comercio separate from MID and leave
+  cutoff/validity absent.
+- Potential later fields: observed Store, serial, terminal, product status,
+  folio, product, creation date, Client/Company/Branch references and protected
+  contact/address fields. This statement grants no import authority.
+
+PRIVACY AND MINIMIZATION
+- Potential PII/sensitive data: merchant/person names, legal representative,
+  email, telephone, RFC, legal name, address and comments.
+- Analysis output contains aggregates, headers, hashes, source-quality tokens
+  and type/count summaries only. PII was not used for identity or fuzzy match.
+- Future contact/identity enrichment requires tenant scope, existing sensitive
+  query permission and audit control; general lists should show presence only.
+
+FORMAL RESULT
+- G1 No Uso identity/legibility: PASS CON BRECHAS — legible and hash-identified;
+  no equipment IDs, internal cutoff, activity date or period; 968 template rows.
+- G2 original Global identity/legibility: PASS CON BRECHAS — legible and
+  hash-identified; no internal cutoff, client data or explicit MID/TID.
+- G3 Ticket identity/legibility: PASS CON BRECHAS — legible, enriched and
+  hash-identified; 18 #N/A address-state cells and 18 equipment without client.
+- G4 dictionary/grain: PASS — multirow headers, physical/business rows, types,
+  nulls, uniqueness, placeholder and cell errors are characterized.
+- G5 Store-equipment-client correspondence: PASS CON BRECHAS — 20 complete
+  exact chains, 12 unmatched Stores, 18 separate equipment-client gaps, no
+  ambiguity or contradiction in equipment relations.
+- G6 Gate B compatibility: PASS CON BRECHAS — lossless representation is
+  possible; separate profiles and temporal authority remain required.
+- G7 privacy/minimization/increment: PASS — PII minimized; Ticket adds 86.76
+  points of equipment-client coverage without changing base relations.
+- Overall Gate G: PASS CON BRECHAS.
+
+REPRODUCIBILITY
+- The aggregate analyzer enforces 10 MiB/file, 20,000-row and 200-column limits.
+- Sources were mounted read-only into ephemeral containers with network none.
+- No dependency was downloaded during final runs; a pre-existing temporary
+  local analysis image supplied openpyxl.
+- Two final executions produced byte-identical sanitized JSON, SHA-256:
+  c4b22a859dd845128f01b40991e8a80a00f62d791393ccc012d9bfbbac749b39
+- Temporary scripts/results were removed after this method and all necessary
+  aggregate evidence were captured. They are not product or Git content.
+
+LIMITS AND NEXT ACTION
+- No import, persistence, migration, productive parser, contact, staging,
+  commit, push or deployment occurred. Gates C-F and H-I remain closed.
+- Minimum next authority: a documentary IG-016A source-profile proposal for
+  these three independent hashes/profiles, exact Store matching, NA/#N/A
+  handling, unresolved MID/cutoff/validity and protected client/contact fields.
+  Any real acceptance/import and Gate C require separate explicit ratification.

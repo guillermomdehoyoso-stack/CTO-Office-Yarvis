@@ -1,5 +1,18 @@
 # Current Sprint
 
+## IG-016 Gate G read-only closure — 2026-10-31
+
+| Field | Current value |
+| --- | --- |
+| Current gate | Gate G **PASS CON BRECHAS**; Gates A/B remain closed as previously published. |
+| Sources | Three independent XLSX lots, hash-identified and read-only; no equivalence inferred by name. |
+| Coverage | 20/32 No Uso Stores reach exact equipment/client/contact presence; Ticket adds client to 118/136 distinguishable equipment. |
+| Breaches | No explicit MID, internal cutoff or validity; 209 placeholder equipment rows; 18 `ESTADO` cell errors; 12 No Uso Stores unmatched. |
+| Next allowed action | Prepare a separately ratified IG-016A profile/contract proposal. Gates C–F and H–I, import, contact and operation remain closed. |
+| Operational effect | None: no persistence, migration, parser implementation, contact, staging, commit or push. |
+
+Evidence: [IG-016 Gate G](../engineering/evidence/netpay-profitability-protection-ig016-gate-g-20261031.txt).
+
 ## IG-016 Gates A/B local closure — 2026-10-30
 
 | Field | Current value |
@@ -9,7 +22,7 @@
 | Migration | `20261030_56`, single head, reversible in disposable PostgreSQL. |
 | Contracts | No public registration; `CMD-043+`, `QRY-025+`, `EVT-031+` remain free. |
 | Validation | Ruff PASS; focused 6/6; pertinent regression 95/95. |
-| Next allowed action | Gate G read-only source validation, only after separate explicit authority for each literal source. Gates C–F and H–I remain closed. |
+| Next allowed action | Superseded by the executed Gate G section above; Gates C–F and H–I remain closed. |
 | Publication | One bounded repository commit and normal push for this A/B closure were authorized on 2026-10-31. |
 | Closed scope | Real sources, import, No Uso, queue, contacts, penalties, rates/spread, trends, frontend, endpoints, identity/role/OIDC changes and deployment. |
 

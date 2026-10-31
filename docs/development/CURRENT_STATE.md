@@ -1,5 +1,19 @@
 # Current Engineering State
 
+## IG-016 Gate G read-only source characterization — 2026-10-31
+
+Gate G es **PASS CON BRECHAS** sobre tres lotes XLSX identificados por SHA-256
+y leídos sin persistencia. De 32 Stores de No Uso, 20 (62.50%) enlazan por Store
+exacto a equipo, cliente y presencia de contacto; 12 quedan sin correspondencia.
+Ticket 97580 agrega cliente a 118/136 equipos distinguibles (86.76%) sin cambiar
+las relaciones base del Global anterior. No hay MID explícito ni corte/vigencia
+interna confirmada; 209 filas usan placeholder de equipo y 18 celdas `ESTADO`
+contienen error. Gates C–F y H–I siguen cerrados. La siguiente acción elegible
+es proponer IG-016A con perfiles separados y brechas explícitas, sujeta a nueva
+ratificación; no importar ni contactar.
+
+Evidence: [IG-016 Gate G](../engineering/evidence/netpay-profitability-protection-ig016-gate-g-20261031.txt).
+
 ## IG-016 profitability protection Gates A/B — 2026-10-30
 
 Amendment 029 and IG-016 are ratified only for local Gates A/B. Gate A is
@@ -17,8 +31,8 @@ publication of this bounded A/B closure was authorized on 2026-10-31.
 
 Evidence: [IG-016 Gates A/B](../engineering/evidence/netpay-profitability-protection-ig016-ab-20261030.txt).
 
-The next eligible action is Gate G read-only source validation under separate,
-literal source authority. Gates C–F and H–I remain closed.
+Gate G was subsequently executed under separate literal source authority and is
+recorded above. Gates C–F and H–I remain closed.
 
 ## IG-014 Governance role transition technical closure — 2026-10-29
 

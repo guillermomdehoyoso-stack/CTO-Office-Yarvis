@@ -27,6 +27,42 @@ registró rutas, capabilities, roles, commands, queries ni eventos públicos. Ga
 C–I permanecen cerrados. La evidencia reproducible está en
 [`netpay-profitability-protection-ig016-ab-20261030.txt`](evidence/netpay-profitability-protection-ig016-ab-20261030.txt).
 
+## Estado ejecutado de Gate G — 2026-10-31
+
+Gate G queda **PASS CON BRECHAS** para tres lotes reales independientes,
+inspeccionados de forma literal y de sólo lectura. No Uso contiene 32 filas de
+negocio con Store dentro de una plantilla de 1,000 filas, pero no contiene
+terminal, MID ni serie. Los dos Reportes Globales comparten las mismas 345
+relaciones base; 136 filas tienen equipo distinguible y 209 usan un token
+placeholder repetido que no puede convertirse en identidad.
+
+El archivo Ticket 97580 no contradice ninguna relación Store–equipo del Global
+anterior. Añade Client ID verificable a 118 de 136 equipos distinguibles
+(86.76%) y deja 18 pendientes. En la cadena No Uso → Store → equipo → cliente
+→ contacto, 20 de 32 Stores (62.50%) tienen correspondencia exacta evidenciada
+y 12 carecen de correspondencia. No existe columna MID explícita y `Numero de
+comercio` no se reinterpreta como MID. `Oct26` sólo aparece en los nombres de
+archivo: periodo, corte y vigencia no están confirmados dentro de los libros.
+
+El modelo de Gate B puede conservar los tres lotes, sus hashes, fila, Store
+opcional, terminal/serie, evidencia y estados pendientes/ambiguos/contradictorios
+sin pérdida. Una futura aceptación requiere perfiles independientes, encabezado
+multinivel para Ticket 97580, exclusión explícita del placeholder, conservación
+de 18 errores de celda en `ESTADO` como brecha y control sensible para contacto,
+RFC, razón social y domicilio. Gate G no abre C–F, H o I ni autoriza importación
+o contacto. Evidencia:
+[`netpay-profitability-protection-ig016-gate-g-20261031.txt`](evidence/netpay-profitability-protection-ig016-gate-g-20261031.txt).
+
+Los 137 tokens normalizados de serie/terminal se dividen en 136 equipos con
+identificadores distintos y el literal `NA`, repetido en 209 filas y excluido
+como identidad. Los 20 enlaces completos son uno a uno entre Store y equipo;
+alcanzan 15 clientes, cuatro de ellos compartidos por varios Stores. Los 12 casos
+sin correspondencia sí contienen Store en No Uso, pero ese Store no aparece en
+ninguno de los dos Globales. Los 18 equipos sin cliente son otro conjunto: todos
+carecen también de Store. Los 18 `#N/A` de `ESTADO` afectan sólo dirección, no
+identidad ni relación. El detalle formal G1–G7 y la matriz de cobertura están en
+la evidencia enlazada.
+
 ## 1. Objetivo y límites
 
 Diseñar un sistema de atención que encuentre riesgo económico por Store, lo
