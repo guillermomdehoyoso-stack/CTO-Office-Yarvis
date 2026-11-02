@@ -66,6 +66,14 @@ from yarvis_api.models.netpay_master import (
     NetpayMasterCommandReceipt,
     NetpayStoreReference,
 )
+from yarvis_api.models.netpay_no_usage_acceptance import (
+    NetpayNoUsageBatch,
+    NetpayNoUsageCheckpoint,
+    NetpayNoUsageException,
+    NetpayNoUsageHistory,
+    NetpayNoUsageReceipt,
+    NetpayNoUsageSource,
+)
 from yarvis_api.models.netpay_operational_data import (
     NoUsageCampaignEntry,
     OperationalDataBatch,
@@ -152,6 +160,12 @@ __all__ = [
     "NetpayBranch",
     "NetpayStoreReference",
     "NetpayMasterCommandReceipt",
+    "NetpayNoUsageBatch",
+    "NetpayNoUsageCheckpoint",
+    "NetpayNoUsageException",
+    "NetpayNoUsageHistory",
+    "NetpayNoUsageReceipt",
+    "NetpayNoUsageSource",
     "RadarActivity",
     "RadarCommandReceipt",
     "RadarChecklistItem",

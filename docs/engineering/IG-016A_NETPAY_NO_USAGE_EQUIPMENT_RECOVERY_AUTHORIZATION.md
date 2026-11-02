@@ -1,6 +1,6 @@
 # IG-016A — No Uso, identidad de equipos y recuperación de rentabilidad
 
-**RATIFIED — C1 LOCAL IMPLEMENTATION AND VALIDATION ONLY**
+**RATIFIED — C1 AND C2 LOCAL IMPLEMENTATION AND VALIDATION ONLY**
 
 Fecha: 2026-11-01
 
@@ -19,7 +19,7 @@ identidad y temporalidad explícitas, permita una decisión humana entre
 reactivación y devolución y verifique después el resultado operativo y
 financiero sin doble contabilización.
 
-Ratificado el 2026-11-01 exclusivamente para C1 local. C2–C4 permanecen cerrados. La denominación
+Ratificado el 2026-11-01 para C1 y, mediante decisión separada, C2 local. C3–C4 permanecen cerrados. La denominación
 IG-016A es válida porque Amendment 029 ya la define como subpaquete de IG-016; no consume un nuevo
 IG numérico.
 
@@ -197,7 +197,7 @@ causalidad. Neto reportado para pago no equivale a depósito bancario.
 | ID | Nombre | Gate | Actor / scope | Evento |
 | --- | --- | --- | --- | --- |
 | QRY-025 | `PreviewNoUsageRecoverySources` | C1 | operations operator; inbox manage | ninguno |
-| CMD-043 | `AcceptNoUsageRecoverySource` | C2 | operations operator; inbox manage | EVT-031 |
+| CMD-043 | `AcceptNoUsageRecoverySource` | C2 | operations operator; inbox manage | historial interno; sin evento |
 | QRY-026 | `RetrieveNoUsageSourceReview` | C2 | inbox read; reconciliation para excepciones | ninguno |
 | CMD-044 | `OpenOrUpdateNoUsageRecoveryCase` | C3 | operations operator; inbox manage | EVT-032 |
 | CMD-045 | `RecordNoUsageRecoveryAction` | C3 | operations operator; inbox manage; sensitive para contacto | EVT-032 |
@@ -210,9 +210,9 @@ QRY-028..029 o EVT-034..038.
 
 ## 12. Migración candidata
 
-`20261031_57` está libre y, si se ratifica, desciende de `20261030_56`. C1 no la
-necesita. El diseño candidato separa lotes, filas clasificadas, casos, historial,
-outcomes y receipts; referencia Master para PII y reutiliza identidades/evidencia
+`20261031_57` desciende de `20261030_56` y está implementada sólo para C2. C1 no la
+necesita. El diseño separa lotes, clasificaciones agregadas, excepciones, historial
+y receipts; referencia Master para PII y reutiliza identidades/evidencia
 de Gate B. Debe ser reversible y probar upgrade/downgrade/re-upgrade en
 PostgreSQL aislado. No incluye tasas, spread ni tendencias.
 
@@ -278,4 +278,4 @@ No se usarán fixtures con PII real.
 
 Ratificar solamente C1: tres perfiles y QRY-025 local, read-only, con fuentes
 literales/hash allowlisted, sin persistencia, migración, contratos runtime,
-frontend, contacto, commit o despliegue. C2–C4 permanecen cerrados.
+frontend, contacto, commit o despliegue. C3–C4 permanecen cerrados.

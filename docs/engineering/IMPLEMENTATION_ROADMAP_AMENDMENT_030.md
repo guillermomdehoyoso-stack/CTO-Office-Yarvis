@@ -1,6 +1,6 @@
 # Amendment 030 — IG-016A No Uso, identidad de equipos y recuperación
 
-**RATIFIED — C1 LOCAL IMPLEMENTATION AND VALIDATION ONLY**
+**RATIFIED — C1 AND C2 LOCAL IMPLEMENTATION AND VALIDATION ONLY**
 
 Fecha: 2026-11-01
 
@@ -16,11 +16,11 @@ Perfiles y contratos propuestos:
 
 Se propone subdividir el Gate C de IG-016 en cuatro autorizaciones independientes
 para llevar fuentes reales de No Uso y equipo desde preview controlado hasta una
-recuperación verificada. La ratificación del 2026-11-01 abre únicamente C1; C2–C4 permanecen cerrados.
+recuperación verificada. Las ratificaciones del 2026-11-01 abren C1 y C2; C3–C4 permanecen cerrados.
 
 La primera decisión recomendada es autorizar únicamente **C1 — perfiles y
 preview**, sin persistencia operativa, migración, contacto ni aceptación real.
-C2–C4 requerirían ratificaciones posteriores con evidencia propia.
+C3–C4 requieren ratificaciones posteriores con evidencia propia.
 
 ## 2. Autoridad y propiedad
 
@@ -101,7 +101,7 @@ Activación operativa requiere C3 y una decisión humana por caso.
 | Subgate | Alcance | Persistencia | Estado propuesto |
 | --- | --- | --- | --- |
 | C1 | perfiles, parsers, firmas, preview y clasificación | ninguna | primera ratificación recomendada |
-| C2 | checkpoint, aceptación, evidencia, identidad pendiente y readback | local/aislada tras ratificación | cerrado |
+| C2 | checkpoint, aceptación, evidencia, identidad pendiente y readback | local/aislada | PASS local; sin activación operativa |
 | C3 | contacto protegido, casos, asignación, estados y acciones | casos/historial | cerrado |
 | C4 | reactivación, devolución y resultado financiero verificable | outcomes/snapshots | cerrado |
 
@@ -139,8 +139,8 @@ C3 queda BLOCKED y requiere Governance separado.
 
 ## 10. Migración candidata
 
-`20261031_57` está libre y sería descendiente directa de `20261030_56`. No se
-crea por este borrador ni por C1. Antes de C2 debe decidirse si una sola revisión
+`20261031_57` desciende directamente de `20261030_56` y materializa sólo C2.
+Antes de C3 debe decidirse si una revisión separada
 abarca lotes/filas/casos/historial/outcomes o si el principio de subgates exige
 revisiones separadas. Ninguna revisión incluirá tasas, spread o tendencias de
 IG-016B/C ni duplicará PII canónica.
@@ -156,4 +156,4 @@ IG-016B/C y Gates D–I.
 
 Este documento es una propuesta. Una ratificación debe nombrar expresamente el
 subgate autorizado, allowlist de archivos, fuentes reales permitidas, migración
-si aplica y pruebas. Ratificar C1 no autoriza C2–C4.
+si aplica y pruebas. Las ratificaciones C1/C2 no autorizan C3–C4.

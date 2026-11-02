@@ -90,6 +90,11 @@ AMENDMENT_024_TRACEABILITY = (
     "NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DESIGN.md",
     "NETPAY_COMMERCE_ATTENTION_PORTFOLIO_DATA_PRIVACY_MATRIX.md",
 )
+AMENDMENT_030_CONTRACT_IDS = ("IC-NETPAY-CMD-043", "IC-NETPAY-QRY-026")
+AMENDMENT_030_TRACEABILITY = (
+    "IMPLEMENTATION_ROADMAP_AMENDMENT_030.md",
+    "IG-016A_NETPAY_NO_USAGE_EQUIPMENT_RECOVERY_AUTHORIZATION.md",
+)
 
 CANONICAL_RUNTIME_BASELINE_V1 = (
     (
@@ -740,6 +745,24 @@ CANONICAL_RUNTIME_BASELINE_V1 += (
         *_RATIFIED_PLANNED,
     ),
 )
+CANONICAL_RUNTIME_BASELINE_V1 += (
+    (
+        "IC-NETPAY-CMD-043",
+        ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "no-usage source acceptance",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.VERIFIED,
+    ),
+    (
+        "IC-NETPAY-QRY-026",
+        ContractType.QUERY,
+        "netpay_merchant_operations",
+        "no-usage source acceptance",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.VERIFIED,
+    ),
+)
 CANONICAL_CONTRACT_IDS = tuple(contract[0] for contract in CANONICAL_RUNTIME_BASELINE_V1)
 
 
@@ -772,8 +795,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
     assert {
         contract.interaction_contract_id for contract in contracts if contract.interaction_contract_id in AUTH_PROD_IDS
     } == AUTH_PROD_IDS
-    assert len(contracts) == 159
-    assert len({contract.interaction_contract_id for contract in contracts}) == 159
+    assert len(contracts) == 161
+    assert len({contract.interaction_contract_id for contract in contracts}) == 161
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -805,6 +828,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
         if contract.interaction_contract_id in AMENDMENT_022_CONTRACT_IDS
         else contract.traceability_references == AMENDMENT_024_TRACEABILITY
         if contract.interaction_contract_id in AMENDMENT_024_CONTRACT_IDS
+        else contract.traceability_references == AMENDMENT_030_TRACEABILITY
+        if contract.interaction_contract_id in AMENDMENT_030_CONTRACT_IDS
         else contract.traceability_references == ()
         for contract in contracts
     )
@@ -814,8 +839,8 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
     contracts = canonical_contracts()
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
-        ContractType.COMMAND: 73,
-        ContractType.QUERY: 41,
+        ContractType.COMMAND: 74,
+        ContractType.QUERY: 42,
         ContractType.EVENT: 43,
         ContractType.NOTIFICATION: 2,
     }
@@ -832,7 +857,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
         "knowledge": 3,
         "execution": 6,
         "mission_control": 5,
-        "netpay_merchant_operations": 95,
+        "netpay_merchant_operations": 97,
         "operational_execution": 7,
         "document_registry": 10,
     }
@@ -973,14 +998,11 @@ def test_amendment021_contracts_have_exact_ratified_metadata() -> None:
 def test_amendment022_contracts_have_complete_traceability() -> None:
     by_id = {contract.interaction_contract_id: contract for contract in canonical_contracts()}
 
-    assert len(canonical_contracts()) == 159
-    assert len(by_id) == 159
-    assert {
-        kind: sum(contract.contract_type == kind for contract in by_id.values())
-        for kind in ContractType
-    } == {
-            ContractType.COMMAND: 73,
-        ContractType.QUERY: 41,
+    assert len(canonical_contracts()) == 161
+    assert len(by_id) == 161
+    assert {kind: sum(contract.contract_type == kind for contract in by_id.values()) for kind in ContractType} == {
+        ContractType.COMMAND: 74,
+        ContractType.QUERY: 42,
         ContractType.EVENT: 43,
         ContractType.NOTIFICATION: 2,
     }

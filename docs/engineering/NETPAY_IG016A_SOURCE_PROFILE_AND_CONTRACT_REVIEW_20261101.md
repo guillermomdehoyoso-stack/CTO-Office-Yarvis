@@ -1,6 +1,6 @@
 # IG-016A — revisión de perfiles de fuente y contratos
 
-**PROPOSED — DESIGN AND IMPLEMENTATION AUTHORIZATION DRAFT — NOT RATIFIED**
+**RATIFIED FOR C1/C2 ONLY — C3/C4 REMAIN PROPOSED AND CLOSED**
 
 Fecha: 2026-11-01
 
@@ -160,7 +160,7 @@ contra Global y disponibilidad de email/teléfono por conteo.
 - Errores: preview mismatch/expired, hash/profile conflict, Store-state conflict,
   incompatible format, unauthorized, idempotency conflict.
 - PII: no valores en respuesta general.
-- Evento: EVT-031 `NoUsageRecoverySourceAccepted`.
+- Evento: ninguno; C2 usa historial interno append-only porque no existe consumidor real para EVT-031.
 - Consumidor: proyección de source review y futura inicialización explícita de
   casos; auditoría.
 - Gate: C2.
@@ -251,7 +251,7 @@ el evento correspondiente no se registra.
 
 ## 11. Persistencia candidata y migración 57
 
-La revisión `20261031_57` no se crea. Diseño lógico candidato:
+La revisión `20261031_57` implementa exclusivamente el diseño lógico C2:
 
 - source batch: Organization, profile/version, source hash, safe filename,
   sheet, temporal metadata, status, counts, actor y timestamps;
@@ -265,7 +265,7 @@ La revisión `20261031_57` no se crea. Diseño lógico candidato:
 
 Se reutilizan `netpay_equipment_*` de revisión 56 y Master. No se duplican
 contactos. Constraints son tenant-scoped y downgrade revierte en orden inverso.
-La decisión de una revisión integral versus revisiones por C2–C4 queda pendiente.
+C3 y C4 requieren revisiones y ratificaciones separadas; no están incluidas en 57.
 
 ## 12. Retención y auditoría
 

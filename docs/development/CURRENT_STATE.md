@@ -1,5 +1,22 @@
 # Current Engineering State
 
+## IG-016A C2 local acceptance - 2026-11-01
+
+Amendment 030 and IG-016A are ratified for C1 and C2 only. C2 is **PASS local**:
+an explicit expiring checkpoint binds tenant, actor, three profile/hash pairs,
+the C1 digest, counts and contract version. Revision `20261031_57` persists one
+tenant-scoped accepted batch, minimized source evidence, aggregate exceptions,
+20 `pending/pending_temporality` identity links, append-only internal history and
+idempotency receipts. It stores no XLSX bytes or contact PII.
+
+`IC-NETPAY-CMD-043` and `IC-NETPAY-QRY-026` are ratified/verified. EVT-031
+remains free because no consumer was found. Real read-only validation reproduced
+digest `2360f230ce91976ce02f3a87afc56b526fb94a29e9d3b1ead0125d5f734f1ff9`
+and the 20/12/118/18, 209 placeholder and 18 cell-error controls in disposable
+PostgreSQL. C3/C4, cases, contact, frontend and operational activation remain closed.
+
+Evidence: [IG-016A C2](../engineering/evidence/netpay-ig016a-c2-acceptance-20261101.txt).
+
 ## IG-016A C1 read-only preview - 2026-11-01
 
 Amendment 030 and IG-016A are ratified only for C1. C1 is **PASS** on the

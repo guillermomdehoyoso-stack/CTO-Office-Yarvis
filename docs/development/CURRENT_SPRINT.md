@@ -1,5 +1,18 @@
 # Current Sprint
 
+## IG-016A C2 local closure - 2026-11-01
+
+| Field | Current value |
+| --- | --- |
+| Current gate | C1 PASS; C2 **PASS local**; C3-C4 closed. |
+| Work package | Human checkpoint, idempotent three-source acceptance, pending identity and minimized readback. |
+| Migration | `20261031_57`, parent `20261030_56`; one head; isolated upgrade/downgrade/re-upgrade PASS. |
+| Contracts | CMD-043 and QRY-026 ratified/verified; EVT-031 remains free with no consumer. |
+| Validation | Final C1/C2, contracts, Governance/IG-014, IG-015 and IG-016 A/B regression 88/88 PASS; real read-only replay, new-key and concurrent acceptance PASS in disposable PostgreSQL. |
+| Next allowed action | Review the C2 diff and evidence. C3 requires separate ratification. |
+
+Evidence: [IG-016A C2](../engineering/evidence/netpay-ig016a-c2-acceptance-20261101.txt).
+
 ## IG-016A C1 local closure - 2026-11-01
 
 | Field | Current value |

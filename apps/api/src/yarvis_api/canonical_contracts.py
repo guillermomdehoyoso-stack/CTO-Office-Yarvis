@@ -1566,6 +1566,41 @@ CANONICAL_CONTRACTS += tuple(
     )
 )
 
+CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(
+        interaction_contract_id=contract_id,
+        version="1.0.0",
+        contract_type=contract_type,
+        owner_module_id="netpay_merchant_operations",
+        owning_context="Netpay Merchant Operations",
+        owning_capability="no-usage source acceptance",
+        name=name,
+        semantic_purpose=purpose,
+        lifecycle=ContractLifecycle.RATIFIED,
+        operational_status=ContractOperationalStatus.VERIFIED,
+        criticality=ContractCriticality.CORE,
+        primary_consumer_or_use_case="IG-016A C2 checkpoint and readback",
+        traceability_references=(
+            "IMPLEMENTATION_ROADMAP_AMENDMENT_030.md",
+            "IG-016A_NETPAY_NO_USAGE_EQUIPMENT_RECOVERY_AUTHORIZATION.md",
+        ),
+    )
+    for contract_id, contract_type, name, purpose in (
+        (
+            "IC-NETPAY-CMD-043",
+            ContractType.COMMAND,
+            "AcceptNoUsageRecoverySource",
+            "Accept one checkpoint-approved three-source set idempotently without PII",
+        ),
+        (
+            "IC-NETPAY-QRY-026",
+            ContractType.QUERY,
+            "RetrieveNoUsageSourceReview",
+            "Retrieve minimized tenant-scoped acceptance evidence and exceptions",
+        ),
+    )
+)
+
 
 def canonical_contracts() -> tuple[ContractDefinition, ...]:
     """Return the immutable, explicit canonical Tier 1 contract baseline."""

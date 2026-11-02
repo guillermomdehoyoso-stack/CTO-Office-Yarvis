@@ -1,0 +1,41 @@
+IG-016A C2 local acceptance evidence - 2026-11-01
+
+Authority and scope
+-------------------
+Amendment 030 and IG-016A were ratified for C2 local implementation and validation. C1 remains PASS. C3/C4, cases, contact, frontend, operational import, deployment, commit and push remain closed.
+
+Base and migration
+------------------
+Branch: feat/netpay-gmail-intake-sentinel
+Base HEAD/local remote: de5f5e174ee24d00068a1ce3dc21e45b117d1fb0
+Revision: 20261031_57, parent 20261030_56
+Alembic: one head; isolated upgrade, downgrade to 56 and re-upgrade PASS.
+
+Contracts and event decision
+----------------------------
+IC-NETPAY-CMD-043 AcceptNoUsageRecoverySource and IC-NETPAY-QRY-026 RetrieveNoUsageSourceReview are RATIFIED/VERIFIED. No real EVT-031 consumer was found, so no event was registered or emitted; append-only internal history covers C2 audit evidence.
+
+Checkpoint and persistence
+--------------------------
+The checkpoint binds organization, actor, explicit acceptance, contract version, expiry, C1 preview digest, minimized counts and all three profile/version/hash records. Acceptance uses transaction-scoped advisory locks for both idempotency key and source set. Persistence contains one tenant-scoped batch, source hashes/signatures/sheet, aggregate exceptions, pending identity evidence/links, one acceptance history record and receipts. XLSX bytes, client IDs, contact values, addresses and names are not persisted or returned.
+
+Real read-only validation
+-------------------------
+Sources were mounted read-only from the three authorized C:\Temp\yarvis-ig016-gate-g paths and matched the authorized hashes. C1 digest: 2360f230ce91976ce02f3a87afc56b526fb94a29e9d3b1ead0125d5f734f1ff9.
+
+Readback reproduced: 20 exact evidenced links, all pending/pending_temporality; 12 missing_equipment_match; 118 equipment with client; 18 missing_store_and_client; 209 placeholders; 18 cell errors; 968 template rows; zero ambiguous/contradictory; unknown MID/TID. Exact replay returned the same batch. No PII appeared in minimized readback.
+
+Validation executed on final workspace bytes
+--------------------------------------------
+- Ruff format/check: PASS
+- Python compileall: PASS
+- C1/C2, OOXML security, Governance/IG-014, IG-015, IG-016 A/B and canonical contract/module regression after final append-only hardening: 88 passed, 2 warnings
+- focused C2/contracts on final bytes, including the database append-only guard: 15 passed, 1 warning
+- real distinct-key and concurrent acceptance: one batch, four receipts, one acceptance history record
+- real source acceptance/readback/exact replay/new-key replay/concurrency: PASS in disposable PostgreSQL
+- migration upgrade/downgrade/re-upgrade: PASS; head 20261031_57
+- append-only history DELETE after re-upgrade: rejected by the database trigger
+
+During real validation, an initial readback exposed an in-place JSON mutation that omitted pending_links. The implementation was corrected to assign a new JSON value and the database was destroyed and recreated before the successful rerun. An earlier runner invocation omitted the read-only source mount and made no acceptance.
+
+No operational database, source XLSX, frontend, OIDC, role, deployment, staging, commit or push was changed.
