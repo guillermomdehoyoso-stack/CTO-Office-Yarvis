@@ -1,5 +1,25 @@
 # Current Engineering State
 
+## IG-016A C1 read-only preview - 2026-11-01
+
+Amendment 030 and IG-016A are ratified only for C1. C1 is **PASS** on the
+three hash-identified XLSX lots. Strict profiles, safe OOXML parsing, ephemeral
+classification and exact matching reproduce 32 No Uso Stores, 20 exact pending
+links, 12 unmatched Stores, 118 equipment rows with a valid client and 18
+without Store or client. All 20 exact links remain
+`pending/pending_temporality`; none is confirmed.
+
+Ticket v1 requires `Correo Rep Legal`, `Tel Rep Legal` and `Razon Social`.
+Only Ticket `Client ID` numeric zero or exact string `0` after outer trim is a
+missing-client placeholder. The minimized preview returns no PII and performs
+no persistence, event, cache or filesystem write. Two real executions produced
+`2360f230ce91976ce02f3a87afc56b526fb94a29e9d3b1ead0125d5f734f1ff9`.
+QRY-025 remains internal and unregistered. C2-C4, migration 57, acceptance,
+contact, queue, endpoint and frontend remain closed.
+
+Evidence: [IG-016A C1](../engineering/evidence/netpay-ig016a-c1-preview-20261101.txt).
+
+
 ## IG-016 Gate G read-only source characterization — 2026-10-31
 
 Gate G es **PASS CON BRECHAS** sobre tres lotes XLSX identificados por SHA-256

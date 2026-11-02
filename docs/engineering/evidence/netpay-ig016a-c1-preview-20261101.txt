@@ -1,0 +1,50 @@
+IG-016A C1 local preview evidence - 2026-11-01
+
+Authority and result
+--------------------
+Amendment 030 and IG-016A were ratified only for local C1 implementation and read-only validation. C1 is PASS. C2-C4, migration 57, persistence, acceptance, public runtime contracts, frontend and publication remain closed.
+
+Base
+----
+Branch: feat/netpay-gmail-intake-sentinel
+Local/remote base: c43361a491db9a8c0d4f8b3d190dd2faef4d0a15
+Alembic head: 20261030_56; revision 57 absent.
+
+Historical sequence
+-------------------
+1. BLOCKED: the first authorized Ticket path was incorrect/inaccessible.
+2. FAIL: the synthetic Ticket signature abbreviated three real headers.
+3. FAIL: Ticket numeric Client ID zero was interpreted as identity "0".
+4. PASS: strict full headers and the Ticket-only zero-placeholder rule were implemented and the three literal sources were rerun.
+
+Implementation
+--------------
+QRY-025 semantics remain internal and unregistered. The parser strictly requires `Correo Rep Legal`, `Tel Rep Legal` and `Razon Social`; abbreviated and mixed signatures are rejected. Only Ticket v1 `Client ID` numeric zero or exact string `0` after outer trim is missing. The 18 real cells are Python `int`, openpyxl type `n`. `00`, `0.0`, negatives and other identity spaces do not inherit this rule.
+
+The service has no SQLAlchemy, session, model, event, cache or filesystem-write dependency. Responses contain aggregate counts, hashes and signatures only.
+
+Real sources and controls
+-------------------------
+No Uso: 54,999 bytes; SHA-256 2f93cb0589219642c129c764ce29328974400a1a942b068f7b09b466e1899d0c; signature bac7a2c89f35495f43ff754545f97da3938bce9aeaced2519d8def983e64d153; 32 business rows; 968 template rows; 32 unique Stores.
+
+Global: 29,480 bytes; SHA-256 58bb41ec0d273122820822362953565e3aa82c092b75b5377c98c7c06f49c6d7; signature 2a4f74e5ed127db8114dba41e83db6d2632a9fc5de08607f4c87bcdbd82f9e2f; 345 observations; 209 NA; 136 distinguishable equipment, terminals and serials; zero MID/TID.
+
+Ticket: path C:\Temp\yarvis-ig016-gate-g\Ticket 97580 Reporte Global Netpay GD Oct26.xlsx; 72,711 bytes; SHA-256 b22849379cfa03a70edda41744ae0956a5667ccbb8e92b596fcf4e5a84f896da; signature 8c67741a6a82d1ab35ddd60402c68a20f239757cc4464a49377c4eacb6dcc55c; 345 observations; 209 NA; 136 distinguishable equipment, terminals and serials; 118 with valid client; 18 without Store/client; 18 ESTADO cell errors; zero MID/TID.
+
+Joint preview: 20 exact evidenced links; 12 missing equipment matches; 18 missing Store/client; zero ambiguous and contradictory; status pending with pending_temporality; zero confirmed; no PII; database writes 0; events 0; cache writes 0.
+
+Determinism
+-----------
+SHA-256 is computed over UTF-8 JSON of the complete minimized response before adding the digest field, with sorted keys and separators `,` and `:`. Both executions produced:
+2360f230ce91976ce02f3a87afc56b526fb94a29e9d3b1ead0125d5f734f1ff9
+
+Executed validation
+-------------------
+- Ruff: PASS
+- compileall: PASS
+- focused C1 synthetic/security/privacy/effects: 25 passed
+- isolated disposable PostgreSQL project `ig016ac1`, current workspace bytes: C1 + IG-015 + IG-016 A/B + contract regressions 75 passed, 2 warnings
+- isolated container, network and volume removed after the run
+- git diff --check: PASS
+
+No XLSX was modified. No operational data, migration, endpoint, contract, contact, queue, staging, commit, push or deployment was performed.

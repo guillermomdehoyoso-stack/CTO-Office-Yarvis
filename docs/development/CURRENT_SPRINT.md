@@ -1,5 +1,20 @@
 # Current Sprint
 
+## IG-016A C1 local closure - 2026-11-01
+
+| Field | Current value |
+| --- | --- |
+| Current gate | C1 **PASS**; C2-C4 remain closed. |
+| Work package | Three strict read-only XLSX profiles, safe parsing, ephemeral classification and minimized exact-match preview. |
+| Real controls | 32 No Uso Stores; 20 exact pending links; 12 unmatched; 118 equipment with client; 18 without Store/client; 0 ambiguous or contradictory. |
+| Privacy/effects | No PII output; zero database, event, cache or filesystem writes. |
+| Contracts/migration | QRY-025 semantics remain internal and unregistered; migration 57 absent. |
+| Validation | 25/25 focused tests and 75/75 combined C1, IG-015, IG-016 A/B and contract regressions passed. |
+| Next allowed action | Review C1 diff and evidence. C2 checkpoint/acceptance requires separate ratification. |
+
+Evidence: [IG-016A C1](../engineering/evidence/netpay-ig016a-c1-preview-20261101.txt).
+
+
 ## IG-016 Gate G read-only closure — 2026-10-31
 
 | Field | Current value |
