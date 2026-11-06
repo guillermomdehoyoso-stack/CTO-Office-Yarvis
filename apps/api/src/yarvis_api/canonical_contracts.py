@@ -1602,6 +1602,78 @@ CANONICAL_CONTRACTS += tuple(
 )
 
 
+CANONICAL_CONTRACTS += tuple(
+    ContractDefinition(
+        interaction_contract_id=contract_id,
+        version="1.0.0",
+        contract_type=contract_type,
+        owner_module_id="netpay_merchant_operations",
+        owning_context="Netpay Merchant Operations",
+        owning_capability="profitability protection case handling",
+        name=name,
+        semantic_purpose=purpose,
+        lifecycle=ContractLifecycle.RATIFIED,
+        operational_status=ContractOperationalStatus.VERIFIED,
+        criticality=ContractCriticality.CORE,
+        primary_consumer_or_use_case="IG-016A C3 local synthetic case handling",
+        traceability_references=(
+            "IMPLEMENTATION_ROADMAP_AMENDMENT_031.md",
+            "IG-016A_C3_CASE_QUEUE_AND_PROTECTED_CONTACT_AUTHORIZATION.md",
+        ),
+    )
+    for contract_id, contract_type, name, purpose in (
+        (
+            "IC-NETPAY-CMD-044",
+            ContractType.COMMAND,
+            "ResolveStoreEquipmentLink",
+            "Resolve only allowlisted synthetic temporal evidence for a Store-equipment link",
+        ),
+        (
+            "IC-NETPAY-CMD-045",
+            ContractType.COMMAND,
+            "OpenProfitabilityProtectionCase",
+            "Open one tenant-scoped idempotent protection case from accepted C2 evidence",
+        ),
+        (
+            "IC-NETPAY-CMD-046",
+            ContractType.COMMAND,
+            "AssignAndPlanProtectionCase",
+            "Assign and plan a protection case using closed catalogs",
+        ),
+        (
+            "IC-NETPAY-CMD-047",
+            ContractType.COMMAND,
+            "RecordProtectionContactAttempt",
+            "Record a protected human contact attempt without persisting contact PII",
+        ),
+        (
+            "IC-NETPAY-CMD-048",
+            ContractType.COMMAND,
+            "DecideEquipmentRecoveryPath",
+            "Record a human recovery path decision without asserting a C4 outcome",
+        ),
+        (
+            "IC-NETPAY-QRY-027",
+            ContractType.QUERY,
+            "RetrieveStoreEquipmentIdentity",
+            "Retrieve minimized tenant-scoped equipment identity evidence and gaps",
+        ),
+        (
+            "IC-NETPAY-QRY-028",
+            ContractType.QUERY,
+            "ListProfitabilityProtectionCases",
+            "List a minimized tenant-scoped protection case queue",
+        ),
+        (
+            "IC-NETPAY-QRY-029",
+            ContractType.QUERY,
+            "RetrieveProfitabilityProtectionCase",
+            "Retrieve case history and separately authorized purpose-bound contact",
+        ),
+    )
+)
+
+
 def canonical_contracts() -> tuple[ContractDefinition, ...]:
     """Return the immutable, explicit canonical Tier 1 contract baseline."""
 

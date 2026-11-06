@@ -1,5 +1,21 @@
 # Current Engineering State
 
+## IG-016A C3 local synthetic closure — 2026-11-05
+
+Amendment 031 and IG-016A C3 are ratified and **PASS local sintético**. Revision
+`20261102_58` descends directly from 57 and adds tenant-scoped protection cases,
+append-only history, safe receipts and minimized sensitive-access audit only.
+CMD-044..048 and QRY-027..029 are registered RATIFIED/VERIFIED; no EVT or other
+contract was added. Server-resolved permissions protect contact access, which is
+purpose-bound, revalidated against Master and never persisted in case state.
+
+Ruff and compilation passed; 17 focused and 94 consolidated tests passed. The
+single-head migration round trip passed in PostgreSQL tmpfs without published
+ports. C4, real sources/links, real contact, frontend, production, deployment,
+staging, commit and push remain closed.
+
+Evidence: [IG-016A C3](../engineering/evidence/netpay-ig016a-c3-local-20261105.txt).
+
 ## IG-016A C2 local acceptance - 2026-11-01
 
 Amendment 030 and IG-016A are ratified for C1 and C2 only. C2 is **PASS local**:

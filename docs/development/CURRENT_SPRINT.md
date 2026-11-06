@@ -1,5 +1,18 @@
 # Current Sprint
 
+## IG-016A C3 local synthetic closure - 2026-11-05
+
+| Field | Current value |
+| --- | --- |
+| Current gate | C1-C3 **PASS local**; C4 closed. |
+| Work package | Cases, minimized queue, protected contact access and deterministic human transitions. |
+| Migration | `20261102_58`, parent 57; one head; tmpfs upgrade/downgrade/re-upgrade PASS. |
+| Contracts | CMD-044..048 and QRY-027..029 RATIFIED/VERIFIED; no EVT or additional contract. |
+| Validation | Ruff/compile PASS; focused 17/17; consolidated 94/94. |
+| Next allowed action | Review the local diff and evidence. Publication or C4 requires separate authority. |
+
+Evidence: [IG-016A C3](../engineering/evidence/netpay-ig016a-c3-local-20261105.txt).
+
 ## IG-016A C2 local closure - 2026-11-01
 
 | Field | Current value |

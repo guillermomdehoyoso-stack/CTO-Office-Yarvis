@@ -1,0 +1,55 @@
+IG-016A C3 LOCAL SYNTHETIC EVIDENCE — 2026-11-05
+
+Base
+- Branch: feat/netpay-gmail-intake-sentinel
+- HEAD and origin: afb95a537784fd30b49b28e62b3ea179a2944842
+- Approved Amendment 031 proposal SHA-256:
+  AFAC8A038924F96D352BD0BAC8012B4A1A4CE4494744DE305444410ED03B6938
+- Approved IG-016A C3 proposal SHA-256:
+  3F9D0D5AEA9AE7946F828B9BCF0F60053960B0DD9DF8208E7C3111214D55889F
+
+Implemented scope
+- Migration 20261102_58, direct descendant of 20261031_57.
+- Tenant-scoped protection cases, append-only history, safe command receipts
+  and minimized sensitive-access audit references.
+- Closed catalogs, explicit state transitions and partial active-case uniqueness.
+- Synthetic temporal profile only; invalid, empty, future/past and timezone-free
+  intervals are rejected. Real C2 links remain pending and were not read.
+- Server-resolved IdentityAuthorityEnvelope permissions; no caller role field.
+- QRY-029 contact is purpose-bound, audited, revalidated against Master and
+  referenced by an opaque five-minute token. Contact values are not persisted.
+- Deterministic replay, idempotency conflict, case_already_exists and
+  stale_version behavior without partial case/history mutation.
+
+Contracts registered
+- IC-NETPAY-CMD-044 ResolveStoreEquipmentLink
+- IC-NETPAY-CMD-045 OpenProfitabilityProtectionCase
+- IC-NETPAY-CMD-046 AssignAndPlanProtectionCase
+- IC-NETPAY-CMD-047 RecordProtectionContactAttempt
+- IC-NETPAY-CMD-048 DecideEquipmentRecoveryPath
+- IC-NETPAY-QRY-027 RetrieveStoreEquipmentIdentity
+- IC-NETPAY-QRY-028 ListProfitabilityProtectionCases
+- IC-NETPAY-QRY-029 RetrieveProfitabilityProtectionCase
+- No EVT or additional contract was registered.
+
+Environment
+- Docker project: ig016a-c3
+- API source mounted from the final workspace bytes.
+- PostgreSQL 16 data directory on tmpfs; no ports published.
+- No real source, operational import, production database or external contact.
+
+Executed validation
+- Python compileall: PASS.
+- Ruff focused changed backend/tests: PASS.
+- Focused canonical + C3 suite: 17 passed.
+- Append-only trigger: UPDATE and DELETE were rejected independently; after
+  each transaction rollback, the committed history row retained its original
+  action code and the history count remained unchanged.
+- Consolidated C3/C2/C1, IG-016 A/B, IG-015, IG-014 and Portfolio regression:
+  94 passed, 2 non-failing third-party warnings.
+- Alembic: one head 20261102_58.
+- Migration: upgrade 57->58, downgrade 58->57 and re-upgrade 57->58 PASS.
+
+Boundary
+- C4, real sources/links, real contact, frontend, deployment, productive
+  migration, staging, commit and push remain unauthorized and unperformed.

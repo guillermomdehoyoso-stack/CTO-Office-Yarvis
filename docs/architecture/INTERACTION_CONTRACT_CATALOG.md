@@ -313,4 +313,24 @@ The baseline is ready for formal review when the 37 Tier 1 entries remain owner-
 
 ## 14. Required Follow-On Artifact and Closing Statement
 
+### IG-016A C3 registered local contracts — 2026-11-05
+
+Amendment 031 and IG-016A C3 register exactly the following local synthetic
+contracts. They add no event and do not authorize real sources or contact:
+
+| Contract | Type | Owner / capability | Lifecycle / status |
+| --- | --- | --- | --- |
+| IC-NETPAY-CMD-044 `ResolveStoreEquipmentLink` | CMD | Netpay Merchant Operations / profitability protection case handling | RATIFIED / VERIFIED |
+| IC-NETPAY-CMD-045 `OpenProfitabilityProtectionCase` | CMD | same | RATIFIED / VERIFIED |
+| IC-NETPAY-CMD-046 `AssignAndPlanProtectionCase` | CMD | same | RATIFIED / VERIFIED |
+| IC-NETPAY-CMD-047 `RecordProtectionContactAttempt` | CMD | same | RATIFIED / VERIFIED |
+| IC-NETPAY-CMD-048 `DecideEquipmentRecoveryPath` | CMD | same | RATIFIED / VERIFIED |
+| IC-NETPAY-QRY-027 `RetrieveStoreEquipmentIdentity` | QRY | same | RATIFIED / VERIFIED |
+| IC-NETPAY-QRY-028 `ListProfitabilityProtectionCases` | QRY | same | RATIFIED / VERIFIED |
+| IC-NETPAY-QRY-029 `RetrieveProfitabilityProtectionCase` | QRY | same | RATIFIED / VERIFIED |
+
+The authorization envelope uses server-resolved permissions. No role, grant or
+permission supplied by a caller is authoritative. EVT-031+ and every additional
+contract remain unregistered by this decision.
+
 The required next artifact is `INTERACTION_CONTRACT_REVIEW.md`. It must review this catalog before `ARCHITECTURAL_DECISION_TRACE.md`, then `TECHNICAL_BLUEPRINT.md`. The catalog makes Yarvis operational language governable across implementation changes: commands request, queries answer, events assert, notifications inform, and all preserve ownership, authority, provenance, time, and traceability.
