@@ -333,4 +333,18 @@ The authorization envelope uses server-resolved permissions. No role, grant or
 permission supplied by a caller is authoritative. EVT-031+ and every additional
 contract remain unregistered by this decision.
 
+### IG-016A C4 registered local contracts — 2026-11-06
+
+Amendment 032 and IG-016A C4 register exactly these local synthetic contracts:
+
+| Contract | Type | Owner / capability | Lifecycle / status |
+| --- | --- | --- | --- |
+| IC-NETPAY-CMD-049 `RecordProtectionOutcomeEvidence` | CMD | Netpay Merchant Operations / profitability protection outcome verification | RATIFIED / VERIFIED |
+| IC-NETPAY-CMD-050 `CloseProfitabilityProtectionCase` | CMD | same | RATIFIED / VERIFIED |
+| IC-NETPAY-QRY-030 `RetrieveProtectionOutcomeAssessment` | QRY | same | RATIFIED / VERIFIED |
+
+They use only closed synthetic profiles and server-resolved permissions. They do
+not authorize real sources, import, contact, ledger, bank confirmation, pilot or
+production. No EVT or additional contract is registered.
+
 The required next artifact is `INTERACTION_CONTRACT_REVIEW.md`. It must review this catalog before `ARCHITECTURAL_DECISION_TRACE.md`, then `TECHNICAL_BLUEPRINT.md`. The catalog makes Yarvis operational language governable across implementation changes: commands request, queries answer, events assert, notifications inform, and all preserve ownership, authority, provenance, time, and traceability.

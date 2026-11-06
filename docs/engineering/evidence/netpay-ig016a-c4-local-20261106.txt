@@ -1,0 +1,57 @@
+IG-016A C4 LOCAL SYNTHETIC EVIDENCE — 2026-11-06
+
+Authority and base
+- Branch: feat/netpay-gmail-intake-sentinel
+- Base HEAD and origin: 70c6f9397c0ec772ec19c3f5d84f7a61c4024a4c
+- Approved Amendment 032 draft SHA-256:
+  B5EDF8C6710DA432396986EC5B426F3840756C936947B90117548F80998A60D8
+- Approved IG-016A C4 draft SHA-256:
+  97C9BDC4EE57C3CCBEBE0273D67BC1EC2579DD1C01DF4DF71CFD40EF42F1FF29
+- Ratification limited to local synthetic implementation and validation.
+
+Implemented scope
+- Migration 20261105_59, direct descendant of 20261102_58.
+- IC-NETPAY-CMD-049 RecordProtectionOutcomeEvidence.
+- IC-NETPAY-CMD-050 CloseProfitabilityProtectionCase.
+- IC-NETPAY-QRY-030 RetrieveProtectionOutcomeAssessment.
+- No EVT or additional contract.
+- Closed synthetic activity, return/inventory and financial profiles only.
+- Tenant-scoped append-only evidence, assessments and financial snapshots.
+- Typed closure matrix, deterministic rejection, evidence supersession and
+  derived assessment_stale without historical UPDATE/DELETE.
+- Decimal/ROUND_HALF_EVEN financial calculation, attribution fingerprint and
+  direct/transitive overlap rejection.
+- C4 attempt receipts support exact replay and safe idempotency conflict without
+  partial case, history, evidence, assessment or snapshot mutation.
+
+Environment
+- Docker project: ig016a-c4.
+- API bytes mounted from the workspace.
+- PostgreSQL 16 data directory on tmpfs; no ports published.
+- No real source/link, import, contact, external write or operational database.
+
+Executed validation
+- C4 outcome suite after concurrency coverage: 14 passed.
+- Focused outcomes + migration + canonical contracts before the final
+  concurrency addition: 26 passed; the added concurrency test passed in the
+  final C4 outcome suite and in consolidated regression.
+- Consolidated C4/C3/C2/C1, IG-016 A/B, IG-015, IG-014, contracts and Portfolio:
+  110 passed, 2 non-failing third-party warnings.
+- Each closure_kind has an allowed path and deterministic rejection coverage.
+- Post-close supersession produces assessment_stale; branch, self-cycle and
+  cross-tenant references are rejected.
+- Direct and transitive financial double counting leave no partial mutation.
+- Concurrent supersession produces one recorded winner and one
+  supersession_conflict with no branch.
+- UPDATE and DELETE are rejected for evidence, assessments and snapshots; row
+  counts remain unchanged after rollback.
+- Ruff focused changed backend/tests: PASS.
+- Python compileall: PASS.
+- Alembic: one head 20261105_59.
+- Migration test: 58->59->58->59 PASS in disposable PostgreSQL.
+- Direct fresh upgrade to head and `alembic current`: 20261105_59 (head).
+
+Boundary
+- Real sources/links, import, reprocessing, contact, frontend, messaging,
+  export, pilot, ledger, bank, production, deployment, productive migration,
+  OIDC, roles, grants, capabilities, staging, commit and push remain excluded.

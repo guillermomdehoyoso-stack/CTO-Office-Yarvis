@@ -1,5 +1,18 @@
 # Current Sprint
 
+## IG-016A C4 local synthetic closure — 2026-11-06
+
+| Field | Current value |
+| --- | --- |
+| Current gate | C1-C4 **PASS local synthetic**; operational pilot remains closed. |
+| Work package | Verified outcomes, typed closure, supersession and reproducible financial assessment. |
+| Migration | `20261105_59`, parent 58; one head; tmpfs 58→59→58→59 PASS. |
+| Contracts | CMD-049/050 and QRY-030 RATIFIED/VERIFIED; no EVT or additional contract. |
+| Validation | Ruff/compile PASS; final C4 14/14; consolidated 110/110. |
+| Next allowed action | Review local diff and evidence. Publication or any operational use requires separate authority. |
+
+Evidence: [IG-016A C4](../engineering/evidence/netpay-ig016a-c4-local-20261106.txt).
+
 ## IG-016A C3 local synthetic closure - 2026-11-05
 
 | Field | Current value |

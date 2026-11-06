@@ -103,6 +103,11 @@ AMENDMENT_031_TRACEABILITY = (
     "IMPLEMENTATION_ROADMAP_AMENDMENT_031.md",
     "IG-016A_C3_CASE_QUEUE_AND_PROTECTED_CONTACT_AUTHORIZATION.md",
 )
+AMENDMENT_032_CONTRACT_IDS = ("IC-NETPAY-CMD-049", "IC-NETPAY-CMD-050", "IC-NETPAY-QRY-030")
+AMENDMENT_032_TRACEABILITY = (
+    "IMPLEMENTATION_ROADMAP_AMENDMENT_032.md",
+    "IG-016A_C4_VERIFIED_OUTCOMES_AND_FINANCIAL_EFFECTS.md",
+)
 
 CANONICAL_RUNTIME_BASELINE_V1 = (
     (
@@ -782,6 +787,17 @@ CANONICAL_RUNTIME_BASELINE_V1 += tuple(
     )
     for contract_id in AMENDMENT_031_CONTRACT_IDS
 )
+CANONICAL_RUNTIME_BASELINE_V1 += tuple(
+    (
+        contract_id,
+        ContractType.QUERY if "-QRY-" in contract_id else ContractType.COMMAND,
+        "netpay_merchant_operations",
+        "profitability protection outcome verification",
+        ContractLifecycle.RATIFIED,
+        ContractOperationalStatus.VERIFIED,
+    )
+    for contract_id in AMENDMENT_032_CONTRACT_IDS
+)
 CANONICAL_CONTRACT_IDS = tuple(contract[0] for contract in CANONICAL_RUNTIME_BASELINE_V1)
 
 
@@ -814,8 +830,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
     assert {
         contract.interaction_contract_id for contract in contracts if contract.interaction_contract_id in AUTH_PROD_IDS
     } == AUTH_PROD_IDS
-    assert len(contracts) == 169
-    assert len({contract.interaction_contract_id for contract in contracts}) == 169
+    assert len(contracts) == 172
+    assert len({contract.interaction_contract_id for contract in contracts}) == 172
     assert all(INTERACTION_CONTRACT_ID_PATTERN.fullmatch(contract.interaction_contract_id) for contract in contracts)
     assert all(SEMANTIC_VERSION_PATTERN.fullmatch(contract.version) for contract in contracts)
     assert all(contract.version == "1.0.0" for contract in contracts)
@@ -851,6 +867,8 @@ def test_canonical_tier_one_projection_is_explicit_complete_and_deterministic() 
         if contract.interaction_contract_id in AMENDMENT_030_CONTRACT_IDS
         else contract.traceability_references == AMENDMENT_031_TRACEABILITY
         if contract.interaction_contract_id in AMENDMENT_031_CONTRACT_IDS
+        else contract.traceability_references == AMENDMENT_032_TRACEABILITY
+        if contract.interaction_contract_id in AMENDMENT_032_CONTRACT_IDS
         else contract.traceability_references == ()
         for contract in contracts
     )
@@ -860,8 +878,8 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
     contracts = canonical_contracts()
 
     assert {kind: sum(contract.contract_type == kind for contract in contracts) for kind in ContractType} == {
-        ContractType.COMMAND: 79,
-        ContractType.QUERY: 45,
+        ContractType.COMMAND: 81,
+        ContractType.QUERY: 46,
         ContractType.EVENT: 43,
         ContractType.NOTIFICATION: 2,
     }
@@ -878,7 +896,7 @@ def test_canonical_tier_one_projection_has_ratified_kind_and_owner_distributions
         "knowledge": 3,
         "execution": 6,
         "mission_control": 5,
-        "netpay_merchant_operations": 105,
+        "netpay_merchant_operations": 108,
         "operational_execution": 7,
         "document_registry": 10,
     }
@@ -1019,11 +1037,11 @@ def test_amendment021_contracts_have_exact_ratified_metadata() -> None:
 def test_amendment022_contracts_have_complete_traceability() -> None:
     by_id = {contract.interaction_contract_id: contract for contract in canonical_contracts()}
 
-    assert len(canonical_contracts()) == 169
-    assert len(by_id) == 169
+    assert len(canonical_contracts()) == 172
+    assert len(by_id) == 172
     assert {kind: sum(contract.contract_type == kind for contract in by_id.values()) for kind in ContractType} == {
-        ContractType.COMMAND: 79,
-        ContractType.QUERY: 45,
+        ContractType.COMMAND: 81,
+        ContractType.QUERY: 46,
         ContractType.EVENT: 43,
         ContractType.NOTIFICATION: 2,
     }
@@ -1040,6 +1058,19 @@ def test_amendment031_registers_exactly_the_ratified_c3_contracts() -> None:
     assert all(
         by_id[contract_id].owning_capability == "profitability protection case handling"
         for contract_id in AMENDMENT_031_CONTRACT_IDS
+    )
+    assert not any(contract_id.startswith("IC-NETPAY-EVT-031") for contract_id in by_id)
+
+
+def test_amendment032_registers_exactly_the_ratified_c4_contracts() -> None:
+    by_id = {contract.interaction_contract_id: contract for contract in canonical_contracts()}
+    assert all(
+        by_id[contract_id].traceability_references == AMENDMENT_032_TRACEABILITY
+        for contract_id in AMENDMENT_032_CONTRACT_IDS
+    )
+    assert all(
+        by_id[contract_id].owning_capability == "profitability protection outcome verification"
+        for contract_id in AMENDMENT_032_CONTRACT_IDS
     )
     assert not any(contract_id.startswith("IC-NETPAY-EVT-031") for contract_id in by_id)
 

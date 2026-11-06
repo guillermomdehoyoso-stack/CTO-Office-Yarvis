@@ -1,9 +1,10 @@
 """IG-016A C3 minimized protection cases; contact values are never persisted."""
 
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, func, text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -42,6 +43,9 @@ class NetpayProtectionCase(Base):
     supersedes_case_id: Mapped[UUID | None] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("netpay_protection_cases.id")
     )
+    closure_kind: Mapped[str | None] = mapped_column(String(48))
+    closure_evidence_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True))
+    closure_snapshot_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -91,4 +95,96 @@ class NetpayProtectionSensitiveAccess(Base):
     master_version: Mapped[str] = mapped_column(String(64), nullable=False)
     opaque_reference: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class NetpayProtectionOutcomeEvidence(Base):
+    __tablename__ = "netpay_protection_outcome_evidence"
+    __table_args__ = (UniqueConstraint("supersedes_evidence_id", name="uq_netpay_outcome_evidence_successor"),)
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
+    case_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_protection_cases.id"), nullable=False
+    )
+    evidence_kind: Mapped[str] = mapped_column(String(48), nullable=False)
+    profile_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_authority: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_reference: Mapped[str] = mapped_column(String(128), nullable=False)
+    evidence_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    identity_scope: Mapped[str] = mapped_column(String(24), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    valid_to: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    period_key: Mapped[str | None] = mapped_column(String(16))
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    currency: Mapped[str | None] = mapped_column(String(3))
+    supersedes_evidence_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_protection_outcome_evidence.id")
+    )
+    actor_principal_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), nullable=False)
+    correlation_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class NetpayProtectionOutcomeAssessment(Base):
+    __tablename__ = "netpay_protection_outcome_assessments"
+    __table_args__ = (UniqueConstraint("supersedes_assessment_id", name="uq_netpay_outcome_assessment_successor"),)
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
+    case_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_protection_cases.id"), nullable=False
+    )
+    evidence_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_protection_outcome_evidence.id"), nullable=False
+    )
+    assessment_kind: Mapped[str] = mapped_column(String(48), nullable=False)
+    certainty: Mapped[str] = mapped_column(String(16), nullable=False)
+    rule_version: Mapped[str] = mapped_column(String(48), nullable=False)
+    supersedes_assessment_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_protection_outcome_assessments.id")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class NetpayProtectionFinancialSnapshot(Base):
+    __tablename__ = "netpay_protection_financial_snapshots"
+    __table_args__ = (UniqueConstraint("supersedes_snapshot_id", name="uq_netpay_financial_snapshot_successor"),)
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
+    case_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_protection_cases.id"), nullable=False
+    )
+    evidence_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_protection_outcome_evidence.id"), nullable=False
+    )
+    assessment_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_protection_outcome_assessments.id"), nullable=False
+    )
+    category: Mapped[str] = mapped_column(String(48), nullable=False)
+    certainty: Mapped[str] = mapped_column(String(16), nullable=False)
+    currency: Mapped[str | None] = mapped_column(String(3))
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(18, 6))
+    period_key: Mapped[str | None] = mapped_column(String(16))
+    components: Mapped[list] = mapped_column(JSONB, nullable=False)
+    supersedes_snapshot_id: Mapped[UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("netpay_protection_financial_snapshots.id")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class NetpayProtectionOutcomeReceipt(Base):
+    __tablename__ = "netpay_protection_outcome_receipts"
+    __table_args__ = (
+        UniqueConstraint(
+            "organization_id", "idempotency_key", "request_fingerprint", name="uq_netpay_outcome_receipt_attempt"
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4)
+    organization_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
+    command_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(255), nullable=False)
+    request_fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    case_id: Mapped[UUID | None] = mapped_column(PG_UUID(as_uuid=True), ForeignKey("netpay_protection_cases.id"))
+    response_body: Mapped[dict] = mapped_column(JSONB, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

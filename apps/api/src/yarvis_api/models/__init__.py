@@ -82,9 +82,13 @@ from yarvis_api.models.netpay_operational_data import (
     StoreProfitabilityFact,
 )
 from yarvis_api.models.netpay_protection_case import (
+    NetpayProtectionFinancialSnapshot,
     NetpayProtectionCase,
     NetpayProtectionCaseHistory,
     NetpayProtectionCommandReceipt,
+    NetpayProtectionOutcomeAssessment,
+    NetpayProtectionOutcomeEvidence,
+    NetpayProtectionOutcomeReceipt,
     NetpayProtectionSensitiveAccess,
 )
 from yarvis_api.models.observation_engine import (
@@ -175,6 +179,10 @@ __all__ = [
     "NetpayProtectionCase",
     "NetpayProtectionCaseHistory",
     "NetpayProtectionCommandReceipt",
+    "NetpayProtectionFinancialSnapshot",
+    "NetpayProtectionOutcomeAssessment",
+    "NetpayProtectionOutcomeEvidence",
+    "NetpayProtectionOutcomeReceipt",
     "NetpayProtectionSensitiveAccess",
     "RadarActivity",
     "RadarCommandReceipt",

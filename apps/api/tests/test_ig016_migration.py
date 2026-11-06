@@ -22,4 +22,4 @@ def test_ig016_migration_roundtrip_and_single_head():
     command.downgrade(config, "20261028_55")
     command.upgrade(config, "head")
     with app.state.yarvis.persistence.engine.connect() as connection:
-        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "20261102_58"
+        assert connection.scalar(text("SELECT version_num FROM alembic_version")) == "20261105_59"

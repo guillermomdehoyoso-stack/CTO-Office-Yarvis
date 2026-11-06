@@ -1,5 +1,26 @@
 # Current Engineering State
 
+## IG-016A C4 local synthetic closure — 2026-11-06
+
+Amendment 032 and IG-016A C4 are ratified and **PASS local sintético**. Revision
+`20261105_59` descends directly from 58 and adds tenant-scoped append-only
+outcome evidence, assessments, financial snapshots and safe attempt receipts.
+CMD-049/050 and QRY-030 are registered RATIFIED/VERIFIED; no EVT or additional
+contract was added.
+
+The three profiles accept synthetic fixtures only. Typed closures distinguish
+human commitment, operational outcome and financial effect. Post-close
+supersession preserves history and exposes `assessment_stale`. Direct/transitive
+double counting, mutable history, cross-tenant references and partial conflict
+mutations are rejected.
+
+Ruff and compilation passed; 14 final C4 tests and 110 consolidated tests passed.
+The 58→59→58→59 round trip and direct fresh upgrade passed in PostgreSQL tmpfs
+without published ports. All real sources/links, import, contact, frontend,
+pilot, ledger, bank, production and deployment remain closed.
+
+Evidence: [IG-016A C4](../engineering/evidence/netpay-ig016a-c4-local-20261106.txt).
+
 ## IG-016A C3 local synthetic closure — 2026-11-05
 
 Amendment 031 and IG-016A C3 are ratified and **PASS local sintético**. Revision
